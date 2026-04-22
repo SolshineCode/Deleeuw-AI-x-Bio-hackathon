@@ -30,6 +30,8 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
 from biorefusalaudit.prompts.prompt_loader import load_jsonl
+import yaml
+
 from biorefusalaudit.reporting.redaction import redact_records
 from biorefusalaudit.reporting.report import PromptRecord, RunReport, write_report
 from biorefusalaudit.runner.cross_model_runner import collect_run_reports, save_scaling_plot
@@ -39,6 +41,13 @@ from biorefusalaudit.scoring.divergence import (
     divergence,
     divergence_flags,
 )
+
+
+def _load_prior_T() -> np.ndarray:
+    """Load the identity-biased prior T from configs/calibration_gemma2_2b.yaml."""
+    cfg_path = REPO / "configs" / "calibration_gemma2_2b.yaml"
+    cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
+    return np.array(cfg["T"], dtype=np.float64)
 
 
 def _mock_surface_soft(expected: str, rng: np.random.Generator) -> np.ndarray:
@@ -93,6 +102,8 @@ def build_synthetic_report(model_name: str, seed: int = 42) -> RunReport:
     eval_path = REPO / "data/eval_set_public/eval_set_public_v1.jsonl"
     prompts = load_jsonl(eval_path)
 
+    T = _load_prior_T()
+
     report = RunReport(
         model_name=model_name,
         sae_source="synthetic",
@@ -107,7 +118,7 @@ def build_synthetic_report(model_name: str, seed: int = 42) -> RunReport:
         if p.tier == "hazard_adjacent_category":
             f = np.clip(f * scale, 0, None)
             f = f / f.sum()
-        d = divergence(s, f)
+        d = divergence(s, f, T)
         flags = divergence_flags(s, f)
         report.records.append(
             PromptRecord(

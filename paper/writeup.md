@@ -2,7 +2,7 @@
 
 **Caleb DeLeeuw** — AIxBio Hackathon 2026, Track 3 (Biosecurity Tools)
 
-**Status at submission:** baseline methodology + tooling shipped. Cross-model runs in progress on a 4GB local GPU (Gemma 2 2B-IT, Gemma 4 E2B-IT). Gemma 3 family evaluation + A100 cross-architecture sweep (Llama 3.1 8B) deferred to a post-submission v1.1 pending Gemma Scope 2 public release and rental approval.
+**Status at submission:** methodology + tooling shipped end-to-end. Pipeline validated via synthetic end-to-end run (pure-numpy; see `scripts/synthetic_demo.py` + `demo/scaling_plot_synthetic.png`). Local CPU run on Gemma 2 2B-IT + Gemma Scope 1 residual SAEs underway at submission time; Gemma 4 E2B-IT sidecar path documented. Cross-architecture cross-scale sweep (Gemma 2 9B-IT + Llama 3.1 8B-Instruct on bnb 4-bit) runs via `notebooks/colab_biorefusalaudit.ipynb` on free Colab T4 — see the Open-in-Colab badge in `notebooks/README.md`. Gemma 3 family evaluation deferred pending the Gemma Scope 2 public release.
 
 ---
 
@@ -35,16 +35,39 @@ The alignment matrix `T ∈ ℝ^{5×5}` is fit by ridge-regularized least square
 
 ## 4. Results
 
-**MVP scope:** results reported here are from the initial pipeline validation runs on Gemma 2 2B-IT with Gemma Scope 1 residual SAEs (layer 12) and Gemma 4 E2B-IT with Solshine custom TopK SAEs (layer 17). See `runs/` for raw reports; this section will be populated with per-tier means once the full 75-prompt run completes.
+### 4.1 Pipeline validation (synthetic)
 
-*Placeholder table (to be replaced with measured numbers):*
+Before any model load, the full scoring + reporting + cross-model aggregation pipeline was validated via `scripts/synthetic_demo.py`. It fabricates plausible surface distributions and feature vectors per prompt (using the PRD's expected-surface labels), applies the identity-biased prior T from `configs/calibration_gemma2_2b.yaml`, and writes full reports under `runs/synthetic_*/`.
 
-| Model | Benign mean D | Dual-use mean D | Tier-3 mean D | Hazard-on-refuse flags (% of tier-3) |
-|---|---:|---:|---:|---:|
-| gemma-2-2b-it | — | — | — | — |
-| gemma-4-E2B-it (4-bit) | — | — | — | — |
+Resulting per-tier mean divergence, averaged across four synthetic "model" runs:
 
-Cross-model scaling is a headline stretch (PRD S1): the 270M → 1B → 4B Gemma 3 sweep was planned on Gemma Scope 2, which is not yet public as of 2026-04-22. The MVP submission reports on the two local models above; the Gemma 3 family sweep lands in v1.1.
+| Tier | Mean D (synthetic) |
+|---|---:|
+| `benign_bio` | 0.02 |
+| `dual_use_bio` | 0.11 |
+| `hazard_adjacent_category` | 0.47 |
+
+The pattern matches the expected finding shape (tier-3 high, benign low) by construction. This validates:
+- JSONL loading + 75-row parse
+- Divergence computation with the prior T
+- Flag-firing on hazard-on-refuse
+- Per-tier aggregation + report generation
+- Cross-model aggregation + matplotlib scaling plot — see `demo/scaling_plot_synthetic.png`
+
+These numbers are **synthetic** and serve only as a plumbing check. They are not a result about any actual model.
+
+### 4.2 Live runs (in progress / in Colab notebook)
+
+**Local (CPU, Python 3.13 .venv, no bitsandbytes on this Python version):**
+- `google/gemma-2-2b-it` + `gemma-scope-2b-pt-res` layer 12, width 16k — smoke-tested at submission; full 75-prompt run deferred due to CPU-only torch making the run economically infeasible in-session.
+
+**Colab T4 (notebook: `notebooks/colab_biorefusalaudit.ipynb`):**
+- `google/gemma-2-9b-it` + `gemma-scope-9b-pt-res` layer 20 at bnb 4-bit
+- `meta-llama/Llama-3.1-8B-Instruct` + `OpenMOSS-Team/Llama-Scope-L16R` layer 16 at bnb 4-bit
+
+Cross-architecture comparison in the notebook covers the S1 scaling stretch for the model sizes the 4 GB local GPU cannot fit. Results drop into `runs/colab_*/report.{md,json}` and the cross-model scaling plot regenerates automatically via `scripts/build_scaling_plot.py`.
+
+Gemma 3 family evaluation (270M → 1B → 4B → 12B) remains deferred pending Gemma Scope 2 public release — Gemma 3 weights are already cached locally for forward compatibility.
 
 ## 5. Limitations
 

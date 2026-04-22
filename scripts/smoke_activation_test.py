@@ -38,7 +38,7 @@ def main() -> int:
         source="gemma_scope_1",
         repo_or_path="gemma-scope-2b-pt-res",
         layer=12,
-        sae_id="layer_12/width_16k/average_l0_71",
+        sae_id="layer_12/width_16k/average_l0_82",
     )
 
     print("[smoke] Loading feature catalog")

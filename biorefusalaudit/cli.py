@@ -28,7 +28,7 @@ def cli() -> None:
 @click.option("--out", "out_dir", required=True, type=click.Path())
 @click.option("--sae-source", default="gemma_scope_1", show_default=True)
 @click.option("--sae-release", default="gemma-scope-2b-pt-res", show_default=True)
-@click.option("--sae-id", default="layer_12/width_16k/average_l0_71", show_default=True)
+@click.option("--sae-id", default="layer_12/width_16k/average_l0_82", show_default=True)
 @click.option("--layer", default=12, type=int, show_default=True)
 @click.option("--quantize", type=click.Choice(["none", "4bit", "8bit"]), default="none")
 @click.option("--catalog", type=click.Path(), help="Feature catalog JSON (per-model)")
