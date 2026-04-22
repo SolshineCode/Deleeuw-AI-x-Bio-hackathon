@@ -1,0 +1,34 @@
+Hippocratic License Version 3.0 (HL3-FULL)
+
+Copyright (c) 2026 Caleb DeLeeuw
+
+This software is distributed under the Hippocratic License 3.0, FULL variant,
+which binds licensees to the following Compliance Standards:
+
+  - United Nations Universal Declaration of Human Rights
+  - International Labour Organization Core Conventions
+  - United Nations Guiding Principles on Business and Human Rights
+  - United Nations Declaration on the Rights of Indigenous Peoples
+  - Extraction ("fossil fuel extraction, ecocide")
+  - Military activities and surveillance ("mass surveillance, law enforcement")
+  - Taliban / Myanmar military / Xinjiang transactions
+  - Worker protections (hours, paid leave, equal pay, board representation)
+  - Supply-chain transparency and duty of care
+
+The full canonical license text, including all clauses, definitions, and the
+complete list of referenced instruments and ethical-use restrictions, is
+published and maintained at:
+
+    https://firstdonoharm.dev/version/3/0/full.html
+
+By using, modifying, or distributing this software you agree to be bound by
+the full canonical text linked above. If the canonical text and this file
+conflict, the canonical text controls.
+
+For questions about licensing terms, responsible use, or access to the
+HL3-Gated tier-3 dataset, see `SAFETY.md`.
+
+This tool is released under HL3 rather than a permissive license because it
+is a biosecurity and AI-safety artifact. The licensing choice is deliberate:
+HL3 provides a legally enforceable human-rights floor that permissive
+licenses do not. See `docs/HL3_RATIONALE.md`.

@@ -1,0 +1,38 @@
+models:
+  # Primary — fits 4GB VRAM at fp16; SAE support via Gemma Scope 1 (public).
+  - name: google/gemma-2-2b-it
+    quantize: none
+    sae_source: gemma_scope_1
+    sae_release: gemma-scope-2b-pt-res
+    sae_id: layer_12/width_16k/average_l0_71
+    hook_layer: 12
+    catalog: data/feature_catalog/gemma-2-2b-it.json
+    calibration: configs/calibration_gemma2_2b.yaml
+
+  # Custom SAE demonstration — Gemma 4 E2B at 4-bit with cached Solshine SAEs.
+  - name: google/gemma-4-E2B-it
+    quantize: 4bit
+    sae_source: custom
+    sae_release: Solshine/gemma4_e2b_gf1_behaviorSAE_topk_k16_L17_bnb4bit
+    hook_layer: 17
+    architecture: topk
+    k: 16
+    d_model: 2048
+    d_sae: 16384
+    catalog: data/feature_catalog/gemma-4-E2B-it.json
+
+  # Gemma 3 weights downloaded; SAE release pending (Gemma Scope 2).
+  # Included for reference + forward-compatibility; skipped by default runner.
+  - name: google/gemma-3-270m-it
+    quantize: none
+    sae_source: gemma_scope_2
+    sae_release: pending
+    hook_layer: 14
+    skip_reason: "Gemma Scope 2 public release pending (2026-04-22)"
+
+  - name: google/gemma-3-1b-it
+    quantize: 4bit
+    sae_source: gemma_scope_2
+    sae_release: pending
+    hook_layer: 14
+    skip_reason: "Gemma Scope 2 public release pending (2026-04-22)"

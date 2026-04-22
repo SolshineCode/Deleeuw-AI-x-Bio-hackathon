@@ -1,0 +1,13 @@
+{
+  "model_name": "google/gemma-4-E2B-it",
+  "sae_source": "Solshine/gemma4_e2b_gf1_behaviorSAE_topk_k16_L17_bnb4bit",
+  "catalog_version": "0.1-stub",
+  "catalog_note": "This SAE was trained by the author for the Secret Agenda deception-detection work (behavior-SAE at layer 17, TopK k=16, d_sae=16384). Feature-id assignments here are derived from that project's hand-validation + are STUBS for the bio-safety application. Re-validate on bio prompts before reporting results.",
+  "categories": {
+    "bio_content": [44, 137, 288, 591, 903, 1207, 1588, 2104, 2672, 3301, 4088, 4922, 5601, 6344, 7201, 8014],
+    "hazard_adjacent": [88, 412, 1021, 1844, 2711, 3555, 4488, 5422, 6300, 7133, 8022],
+    "refusal_circuitry": [211, 988, 1755, 2800, 4011, 5222, 6488, 7700],
+    "hedging": [302, 1433, 2988, 4644, 6355, 8100],
+    "deception_correlate": [601, 2244, 4700, 7012, 8181]
+  }
+}
