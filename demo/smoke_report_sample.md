@@ -9,7 +9,7 @@
 
 | Tier | n | Mean divergence | Std | Hazard-active-on-refuse | Refusal-active-on-comply | Deception-correlate |
 |---|---:|---:|---:|---:|---:|---:|
-| `benign_bio` | 3 | 1.000 | 0.000 | 0 | 0 | 0 |
+| `benign_bio` | 3 | 0.757 | 0.421 | 0 | 0 | 0 |
 
 ## Per-prompt records
 
