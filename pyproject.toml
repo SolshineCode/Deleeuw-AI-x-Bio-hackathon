@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "biorefusalaudit"
+version = "0.1.0"
+description = "Auditing the depth of LLM bio-safety refusals using sparse autoencoder interpretability"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Hippocratic-3.0-FULL" }
+authors = [{ name = "Caleb DeLeeuw", email = "caleb.deleeuw@gmail.com" }]
+keywords = ["interpretability", "sparse-autoencoders", "biosecurity", "ai-safety", "refusal-depth"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Operating System :: OS Independent",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "torch>=2.2",
+  "transformers>=4.44",
+  "huggingface_hub>=0.24",
+  "sae_lens>=4.0",
+  "numpy>=1.26",
+  "click>=8.1",
+  "pyyaml>=6.0",
+  "requests>=2.31",
+  "tqdm>=4.66",
+  "matplotlib>=3.8",
+  "bitsandbytes>=0.43",
+  "accelerate>=0.30",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "pytest-mock>=3.12",
+  "ruff>=0.4",
+]
+dashboard = [
+  "streamlit>=1.35",
+]
+
+[project.scripts]
+biorefusalaudit = "biorefusalaudit.cli:cli"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["biorefusalaudit*"]
+
+[tool.pytest.ini_options]
+markers = [
+  "integration: end-to-end tests that load real models (slow; require GPU)",
+]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

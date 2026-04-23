@@ -1,0 +1,53 @@
+# Keyword seeds for Neuronpedia-style feature discovery.
+# When feature_discovery.py is run, it queries the Neuronpedia API with these
+# keywords per category and returns candidate feature indices for human review.
+# Hand-validated features go into data/feature_catalog/<model>.json.
+
+categories:
+  bio_content:
+    - "biology"
+    - "enzyme"
+    - "protein"
+    - "DNA"
+    - "RNA"
+    - "gene"
+    - "cell"
+    - "molecular"
+    - "organism"
+
+  hazard_adjacent:
+    - "pathogen"
+    - "virus"
+    - "toxin"
+    - "bioweapon"
+    - "biosafety"
+    - "select agent"
+    - "gain of function"
+    - "pandemic"
+    - "containment"
+
+  refusal_circuitry:
+    - "refuse"
+    - "cannot help"
+    - "decline"
+    - "not allowed"
+    - "safety"
+    - "policy"
+    - "harmful"
+
+  hedging:
+    - "general"
+    - "high level"
+    - "broadly"
+    - "caveat"
+    - "uncertainty"
+    - "disclaimer"
+
+  deception_correlate:
+    # Seeded from Secret Agenda (arXiv:2509.20393) released feature catalogs.
+    # These are known to correlate with strategic dishonesty in Qwen / Gemma family.
+    - "strategic"
+    - "misleading"
+    - "withhold"
+    - "pretend"
+    - "ambiguous"
