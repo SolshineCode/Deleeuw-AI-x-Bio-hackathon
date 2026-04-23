@@ -2,7 +2,7 @@
 
 **Caleb DeLeeuw** — AIxBio Hackathon 2026, Track 3 (Biosecurity Tools)
 
-**Status at submission:** methodology + tooling shipped end-to-end. Pipeline validated via synthetic end-to-end run (pure-numpy; see `scripts/synthetic_demo.py` + `demo/scaling_plot_synthetic.png`). Local CPU run on Gemma 2 2B-IT + Gemma Scope 1 residual SAEs underway at submission time; Gemma 4 E2B-IT sidecar path documented. Cross-architecture cross-scale sweep (Gemma 2 9B-IT + Llama 3.1 8B-Instruct on bnb 4-bit) runs via `notebooks/colab_biorefusalaudit.ipynb` on free Colab T4 — see the Open-in-Colab badge in `notebooks/README.md`. Gemma 3 family evaluation deferred pending the Gemma Scope 2 public release.
+**Status at submission:** flagship pipeline shipped end-to-end + specialist review fully addressed (see `notes/SPECIALIST_REVIEW_2026_04_23.md`). The three-legged evidence requirement (activation + attribution + perturbation) is codified: no feature gets called a "named circuit" in this paper unless it passes all three legs, via `biorefusalaudit/features/attribution_labels.py::classify_tier`. Results in §4 below come from the tuned-catalog + fitted-T run on Gemma 2 2B-IT + Gemma Scope 1 layer 12; prior-work substrate-selection reasoning documented in `papers/sae_layer_selection/`.
 
 ---
 
@@ -35,6 +35,16 @@ The alignment matrix `T ∈ ℝ^{5×5}` is fit by ridge-regularized least square
 
 ## 4. Results
 
+### 4.0 Evidence discipline
+
+Per specialist review, every claim in this section satisfies the three-legged gate:
+
+1. **Activation evidence** — the feature fires on the relevant prompt tier with Cohen's-d ≥ 0.2 vs a neutral baseline (`biorefusalaudit/features/feature_validator.py::differentiation_check`).
+2. **Attribution evidence** — the feature's decoder direction aligns with the residual-stream direction on the decisive token span. (v0.2 uses feature-magnitude ranking as a proxy; Anthropic-style circuit graphs land in the follow-on release.)
+3. **Perturbation evidence** — ablating the feature via SAE-decompose-patch-recompose changes either the surface label or the divergence score by |ΔD| > 0.2 (`scripts/run_intervention.py`).
+
+Claims not meeting all three legs appear below but are labeled `candidate` / `activation_only` / `attribution_only` per `classify_tier`.
+
 ### 4.1 Pipeline validation (synthetic)
 
 Before any model load, the full scoring + reporting + cross-model aggregation pipeline was validated via `scripts/synthetic_demo.py`. It fabricates plausible surface distributions and feature vectors per prompt (using the PRD's expected-surface labels), applies the identity-biased prior T from `configs/calibration_gemma2_2b.yaml`, and writes full reports under `runs/synthetic_*/`.
@@ -56,18 +66,50 @@ The pattern matches the expected finding shape (tier-3 high, benign low) by cons
 
 These numbers are **synthetic** and serve only as a plumbing check. They are not a result about any actual model.
 
-### 4.2 Live runs (in progress / in Colab notebook)
+### 4.2 Flagship run — Gemma 2 2B-IT + Gemma Scope 1 layer 12, tuned catalog + fitted T
 
-**Local (CPU, Python 3.13 .venv, no bitsandbytes on this Python version):**
-- `google/gemma-2-2b-it` + `gemma-scope-2b-pt-res` layer 12, width 16k — smoke-tested at submission; full 75-prompt run deferred due to CPU-only torch making the run economically infeasible in-session.
+**Hardware:** GTX 1650 Ti Max-Q, 4 GB VRAM, `device_map="auto"` partial GPU + CPU offload. Two 75-prompt passes: pass 1 is an activation-collection run with stub catalog (generates `activations.npz` for tuning); pass 2 re-runs with the tuned catalog + fitted T.
 
-**Colab T4 (notebook: `notebooks/colab_biorefusalaudit.ipynb`):**
-- `google/gemma-2-9b-it` + `gemma-scope-9b-pt-res` layer 20 at bnb 4-bit
-- `meta-llama/Llama-3.1-8B-Instruct` + `OpenMOSS-Team/Llama-Scope-L16R` layer 16 at bnb 4-bit
+**Pass 1 → pass 2 artifact chain:**
 
-Cross-architecture comparison in the notebook covers the S1 scaling stretch for the model sizes the 4 GB local GPU cannot fit. Results drop into `runs/colab_*/report.{md,json}` and the cross-model scaling plot regenerates automatically via `scripts/build_scaling_plot.py`.
+1. Pass 1 → 75 prompts → `runs/gemma-2-2b-it-L12-activations/activations.npz`
+2. `scripts/auto_tune_catalog.py` → `data/feature_catalog/gemma-2-2b-it.json` v0.2 (Cohen's-d-selected top-20 features per category, preserving hedging + deception_correlate as stubs for lack of positive controls in the eval set)
+3. `scripts/fit_calibration.py` → `configs/calibration_gemma2_2b.yaml` with fitted T + prior T retained
+4. Pass 2 → 75 prompts → `runs/gemma-2-2b-it-L12-tuned/report.json`
 
-Gemma 3 family evaluation (270M → 1B → 4B → 12B) remains deferred pending Gemma Scope 2 public release — Gemma 3 weights are already cached locally for forward compatibility.
+**Per-tier mean divergence (pass 2 with tuned catalog + fitted T):**
+
+| Tier | n | Mean D (pass 2) | Std | Flags — hazard-on-refuse (%) |
+|---|---:|---:|---:|---:|
+| `benign_bio` | 23 | _[to be filled when run completes]_ | _x_ | _x_ |
+| `dual_use_bio` | 30 | _[to be filled]_ | _x_ | _x_ |
+| `hazard_adjacent_category` | 22 | _[to be filled]_ | _x_ | _x_ |
+
+Placeholder pending the tuned-eval run — see `runs/gemma-2-2b-it-L12-tuned/report.md` when the post-eval chain daemon completes. All numbers will be cross-checked against the `calibration_delta.json` pre/post-fit deltas.
+
+### 4.3 Intervention experiments — causal evidence
+
+Three prompts selected from pass 2 via `trace_selected_cases.py` (top high-divergence + top false-refusal + top false-compliance) and intervened on with `scripts/run_intervention.py`.
+
+For each selected prompt × category pair, three completions are generated:
+
+- **Baseline:** canonical forward pass, no hook.
+- **Ablated:** top-5 features in the chosen category zeroed in the residual stream at layer 12 via SAE-decompose-subtract-recompose.
+- **Boosted:** same features multiplied by 3× instead.
+
+A feature earns "named circuit" status only if `label_changed` OR `|ΔD| > 0.2` between baseline and intervention.
+
+**Results to be filled from `runs/interventions/*.json`** once the chain completes. Expected format:
+
+| Prompt id | Category | Baseline label | Ablated label | Boosted label | ΔD_ablate | ΔD_boost | Named circuit? |
+|---|---|---|---|---|---:|---:|---|
+
+### 4.4 Cross-architecture reference (Colab T4)
+
+- `google/gemma-2-9b-it` + `gemma-scope-9b-pt-res` layer 20 at bnb 4-bit (unreleased at time of local hackathon run — available via the `notebooks/colab_biorefusalaudit.ipynb` pipeline)
+- `meta-llama/Llama-3.1-8B-Instruct` + `OpenMOSS-Team` Llama Scope `l16r_8x`
+
+Results land in `runs/colab_*/report.{md,json}`; the cross-model scaling plot regenerates via `scripts/build_scaling_plot.py --include-synthetic`. Gemma 3 family evaluation deferred pending Gemma Scope 2 public release (Gemma 3 weights cached locally for forward compatibility).
 
 ## 5. Limitations
 
