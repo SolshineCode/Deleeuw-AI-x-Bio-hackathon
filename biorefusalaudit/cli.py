@@ -150,5 +150,67 @@ def check_safety(eval_set) -> None:
     click.echo("OK — no safety problems detected.")
 
 
+@cli.command("trace-cases")
+@click.option("--report", required=True, type=click.Path(exists=True),
+              help="Path to a run's report.json")
+@click.option("--top-k", default=3, type=int)
+@click.option("--out", type=click.Path(),
+              help="Optional JSON output path; defaults to <report-dir>/selected_cases.json")
+def trace_cases(report: str, top_k: int, out: str | None) -> None:
+    """Select top-K prompts per criterion for downstream attribution / intervention.
+
+    Criteria: high_divergence, false_refusal, false_compliance, high_judge_disagreement.
+    """
+    from biorefusalaudit.runner.trace_selected_cases import select_cases, write_selection
+
+    cases = select_cases(report, top_k_per_criterion=top_k)
+    out_path = Path(out) if out else Path(report).parent / "selected_cases.json"
+    write_selection(cases, out_path)
+    click.echo(f"Wrote {out_path} — {len(cases)} cases")
+    for c in cases:
+        click.echo(f"  [{c.criterion:>24}] {c.prompt_id} ({c.tier}/{c.framing}) rank={c.rank_value:.3f}  {c.notes}")
+
+
+@cli.command("minimal-pairs")
+@click.option("--eval-set", required=True, type=click.Path(exists=True))
+@click.option("--out", default="data/eval_set_public/minimal_pairs.json", type=click.Path())
+def minimal_pairs(eval_set: str, out: str) -> None:
+    """Identify minimal-pair prompts across (benign_bio, dual_use_bio) sharing framing + near-topic.
+
+    Used for before/after intervention comparison: the benign member is the baseline,
+    the dual-use member is the probe. A model with a robust refusal-circuit should
+    show distinct feature-activation patterns; a shallow refuser will show similar patterns.
+    """
+    import json
+    from biorefusalaudit.prompts.prompt_loader import load_jsonl
+
+    prompts = load_jsonl(eval_set)
+    benign = [p for p in prompts if p.tier == "benign_bio"]
+    dual_use = [p for p in prompts if p.tier == "dual_use_bio"]
+
+    # Pair within framing; same-category heuristic based on shared keywords in rationale/category
+    pairs: list[dict] = []
+    for b in benign:
+        same_framing = [d for d in dual_use if d.framing == b.framing]
+        if not same_framing:
+            continue
+        # Prefer paired categories by token overlap on `category`
+        def overlap(p):
+            a = set(b.category.lower().replace("_", " ").split())
+            c = set(p.category.lower().replace("_", " ").split())
+            return len(a & c)
+        best = max(same_framing, key=overlap)
+        pairs.append({
+            "benign": {"id": b.id, "category": b.category, "prompt": b.prompt[:120]},
+            "dual_use": {"id": best.id, "category": best.category, "prompt": best.prompt[:120]},
+            "framing": b.framing,
+            "category_overlap": overlap(best),
+        })
+
+    Path(out).parent.mkdir(parents=True, exist_ok=True)
+    Path(out).write_text(json.dumps(pairs, indent=2), encoding="utf-8")
+    click.echo(f"Wrote {out} — {len(pairs)} minimal pairs (by framing)")
+
+
 if __name__ == "__main__":
     cli()
