@@ -1,0 +1,61 @@
+T:
+- - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+fit_date: '2026-04-23'
+fit_method: ridge least-squares (lambda=0.1) on report.json
+fit_samples: 75
+hook_layer: 17
+model: google/gemma-4-E2B-it
+sae: gf1_behaviorSAE_topk_k16_L17
+T_prior:
+- - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 1.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+T_prior_note: identity prior (was T)
+fit_residual_mse: 0.0
+fit_condition_number: 151.0
