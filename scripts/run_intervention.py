@@ -54,6 +54,18 @@ import torch
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
+from biorefusalaudit.features.feature_contribution import (
+    compute_contributions,
+    contributions_to_graph,
+)
+from biorefusalaudit.features.feature_contribution import (
+    compute_contributions,
+    contributions_to_graph,
+)
+from biorefusalaudit.features.feature_contribution import (
+    compute_contributions,
+    contributions_to_graph,
+)
 from biorefusalaudit.features.feature_profiler import FeatureCatalog, categorize
 from biorefusalaudit.judges.consortium import aggregate_votes, soft_distribution_vector
 from biorefusalaudit.models.model_adapter import (
@@ -98,10 +110,11 @@ def _generate_with_residual_patch(lm, prompt, sae, layer, feature_mod_fn, max_ne
         handle.remove()
 
     mean_feats = None
-    if captured_pre:
-        feat_acts = project_activations(sae, captured_pre[-1])  # (1, d_sae)
+    last_resid = captured_pre[-1] if captured_pre else None
+    if last_resid is not None:
+        feat_acts = project_activations(sae, last_resid)  # (1, d_sae)
         mean_feats = feat_acts[0].astype(np.float32)
-    return completion, mean_feats
+    return completion, mean_feats, last_resid
 
 
 def _make_ablation_hook(sae, feature_ids, mode: str, boost: float):
@@ -139,20 +152,35 @@ def _make_ablation_hook(sae, feature_ids, mode: str, boost: float):
     return _mod
 
 
-def _classify_and_diverge(prompt_text, completion, feature_vec, catalog, T):
-    """Run the regex judge + soft distribution + divergence for one (prompt, completion) pair."""
+def _classify_and_diverge(prompt_text, completion, feature_vec, catalog, T, residual=None, sae=None):
+    """Run the regex judge + soft distribution + divergence for one (prompt, completion) pair.
+
+    When `residual` and `sae` are provided, also emit a mini attribution graph
+    from compute_contributions over the mean residual + mean SAE encoding.
+    """
     vote = _regex_as_vote(completion)
     verdict = aggregate_votes([vote])
     s = soft_distribution_vector(verdict)
     f = categorize(feature_vec, catalog)
     d = float(divergence(s, f, T))
-    return {
+    result = {
         "label": verdict.label,
         "confidence": float(max(verdict.soft_distribution.values())),
         "divergence": d,
         "feature_categories": list(FEATURE_CATEGORIES),
         "feature_vec_5": f.tolist(),
     }
+    if residual is not None and sae is not None:
+        # Compute contributions on the mean residual + mean SAE encoding to
+        # produce a per-prompt attribution graph (Anthropic-compatible schema).
+        mean_resid = residual.mean(dim=(0, 1)).detach()  # collapse batch + seq
+        sae.sae_module.to(mean_resid.device)
+        with torch.no_grad():
+            z_mean = sae.sae_module.encode(mean_resid.unsqueeze(0).to(torch.float32)).squeeze(0)
+        W_dec = sae.sae_module.W_dec.detach().to(mean_resid.device).to(torch.float32)
+        contribs = compute_contributions(mean_resid.to(torch.float32), z_mean, W_dec, top_k=10)
+        result["attribution_graph"] = contributions_to_graph(contribs)
+    return result
 
 
 def main() -> int:
@@ -198,34 +226,37 @@ def main() -> int:
 
     # Baseline generation
     print("[intervention] Baseline generation...")
-    baseline_completion, baseline_feats = _generate_with_residual_patch(
+    baseline_completion, baseline_feats, baseline_resid = _generate_with_residual_patch(
         lm, target.prompt, sae, args.layer, lambda r: r,
         args.max_new_tokens, args.temperature,
     )
     baseline_verdict = _classify_and_diverge(target.prompt, baseline_completion,
-                                              baseline_feats, catalog, T)
+                                              baseline_feats, catalog, T,
+                                              residual=baseline_resid, sae=sae)
     print(f"[intervention] baseline: label={baseline_verdict['label']} D={baseline_verdict['divergence']:.3f}")
 
     # Ablation
     print("[intervention] Ablated generation (zero selected features)...")
     ablate_fn = _make_ablation_hook(sae, feature_ids, mode="zero", boost=0.0)
-    ablated_completion, ablated_feats = _generate_with_residual_patch(
+    ablated_completion, ablated_feats, ablated_resid = _generate_with_residual_patch(
         lm, target.prompt, sae, args.layer, ablate_fn,
         args.max_new_tokens, args.temperature,
     )
     ablated_verdict = _classify_and_diverge(target.prompt, ablated_completion,
-                                              ablated_feats, catalog, T)
+                                              ablated_feats, catalog, T,
+                                              residual=ablated_resid, sae=sae)
     print(f"[intervention] ablated: label={ablated_verdict['label']} D={ablated_verdict['divergence']:.3f}")
 
     # Boost
     print(f"[intervention] Boosted generation (boost={args.boost}x selected features)...")
     boost_fn = _make_ablation_hook(sae, feature_ids, mode="boost", boost=args.boost)
-    boosted_completion, boosted_feats = _generate_with_residual_patch(
+    boosted_completion, boosted_feats, boosted_resid = _generate_with_residual_patch(
         lm, target.prompt, sae, args.layer, boost_fn,
         args.max_new_tokens, args.temperature,
     )
     boosted_verdict = _classify_and_diverge(target.prompt, boosted_completion,
-                                              boosted_feats, catalog, T)
+                                              boosted_feats, catalog, T,
+                                              residual=boosted_resid, sae=sae)
     print(f"[intervention] boosted: label={boosted_verdict['label']} D={boosted_verdict['divergence']:.3f}")
 
     label_changed_ablate = baseline_verdict["label"] != ablated_verdict["label"]
