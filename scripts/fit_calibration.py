@@ -87,7 +87,7 @@ def main() -> int:
             "delta": float(d_new - d_prior),
         })
     abs_deltas = np.abs([d["delta"] for d in deltas_per_row])
-    print(f"[fit_cal] Divergence shift: mean |Δ|={abs_deltas.mean():.3f} max |Δ|={abs_deltas.max():.3f}")
+    print(f"[fit_cal] Divergence shift: mean |Delta|={abs_deltas.mean():.3f} max |Delta|={abs_deltas.max():.3f}")
 
     # Append new fit block to config, preserve existing.
     updated = dict(prior_cfg)
