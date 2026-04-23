@@ -2,7 +2,7 @@
 
 **Auditing the depth of LLM bio-safety refusals using sparse autoencoder interpretability**
 
-[![License: HL3-FULL](https://img.shields.io/badge/License-HL3--FULL-lightblue)](https://firstdonoharm.dev)
+[![Hippocratic License HL3-FULL](https://img.shields.io/static/v1?label=Hippocratic%20License&message=HL3-FULL&labelColor=5e2751&color=bc8c3d)](https://firstdonoharm.dev/version/3/0/full.html)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Gemma Scope 2](https://img.shields.io/badge/SAEs-Gemma%20Scope%202-green)](https://deepmind.google/models/gemma/gemma-scope/)
 [![Llama Scope](https://img.shields.io/badge/SAEs-Llama%20Scope-orange)](https://arxiv.org/abs/2410.20526)
