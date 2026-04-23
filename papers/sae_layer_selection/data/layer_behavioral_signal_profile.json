@@ -1,0 +1,111 @@
+{
+  "experiment": "Per-layer behavioral signal strength (neutral vs threat, raw residual)",
+  "model": "meta-llama/Llama-3.2-1B",
+  "n_layers": 16,
+  "n_questions": 50,
+  "layer_stats": {
+    "embed": {
+      "layer": -1,
+      "d_max": 0.0,
+      "d_mean": 0.0,
+      "d_median_top10": 0.0
+    },
+    "L0": {
+      "layer": 0,
+      "d_max": 5.2939,
+      "d_mean": 0.857,
+      "d_median_top10": 3.5415
+    },
+    "L1": {
+      "layer": 1,
+      "d_max": 6.1419,
+      "d_mean": 1.1034,
+      "d_median_top10": 4.8289
+    },
+    "L2": {
+      "layer": 2,
+      "d_max": 4.8294,
+      "d_mean": 1.0095,
+      "d_median_top10": 4.178
+    },
+    "L3": {
+      "layer": 3,
+      "d_max": 3.7993,
+      "d_mean": 0.7152,
+      "d_median_top10": 3.3092
+    },
+    "L4": {
+      "layer": 4,
+      "d_max": 3.7128,
+      "d_mean": 0.653,
+      "d_median_top10": 3.1414
+    },
+    "L5": {
+      "layer": 5,
+      "d_max": 4.2152,
+      "d_mean": 0.7469,
+      "d_median_top10": 3.3967
+    },
+    "L6": {
+      "layer": 6,
+      "d_max": 4.0987,
+      "d_mean": 0.7834,
+      "d_median_top10": 3.6257
+    },
+    "L7": {
+      "layer": 7,
+      "d_max": 3.7361,
+      "d_mean": 0.7478,
+      "d_median_top10": 3.3339
+    },
+    "L8": {
+      "layer": 8,
+      "d_max": 3.8019,
+      "d_mean": 0.5863,
+      "d_median_top10": 2.7559
+    },
+    "L9": {
+      "layer": 9,
+      "d_max": 2.3015,
+      "d_mean": 0.3507,
+      "d_median_top10": 1.7909
+    },
+    "L10": {
+      "layer": 10,
+      "d_max": 1.7068,
+      "d_mean": 0.3042,
+      "d_median_top10": 1.5257
+    },
+    "L11": {
+      "layer": 11,
+      "d_max": 1.5487,
+      "d_mean": 0.2205,
+      "d_median_top10": 1.1535
+    },
+    "L12": {
+      "layer": 12,
+      "d_max": 1.7599,
+      "d_mean": 0.2138,
+      "d_median_top10": 1.0936
+    },
+    "L13": {
+      "layer": 13,
+      "d_max": 1.5012,
+      "d_mean": 0.2146,
+      "d_median_top10": 1.0736
+    },
+    "L14": {
+      "layer": 14,
+      "d_max": 1.4714,
+      "d_mean": 0.2532,
+      "d_median_top10": 1.1611
+    },
+    "L15": {
+      "layer": 15,
+      "d_max": 1.7874,
+      "d_mean": 0.31,
+      "d_median_top10": 1.3285
+    }
+  },
+  "timestamp": "2026-04-18T21:31:57.467264+00:00"
+}

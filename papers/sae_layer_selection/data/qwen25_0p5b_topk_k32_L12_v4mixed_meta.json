@@ -1,0 +1,17 @@
+{
+  "tag": "qwen25_0p5b_topk_k32_L12_v4mixed",
+  "model": "qwen25_0p5b",
+  "hf_name": "Qwen/Qwen2.5-0.5B",
+  "layer": 12,
+  "k": 32,
+  "expansion_factor": 4,
+  "mse_loss": 0.014787987805902958,
+  "explained_variance": 0.9999001810819294,
+  "l0": 32.0,
+  "alive_features": 571,
+  "d_sae": 3584,
+  "train_time_s": 53.5,
+  "final_epoch_loss": 0.016724,
+  "num_activations": 3169,
+  "timestamp": "2026-04-19T07:02:31.876869+00:00"
+}

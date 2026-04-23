@@ -1,0 +1,108 @@
+{
+  "model": "nanochat-d32",
+  "n_layers": 32,
+  "d_model": 2048,
+  "n_samples": 1327,
+  "n_deceptive": 650,
+  "n_honest": 677,
+  "layer_results": [
+    {
+      "layer": 2,
+      "depth_fraction": 0.065,
+      "accuracy": 0.6699106256206554,
+      "accuracy_std": 0.01993464640583554,
+      "balanced_accuracy": 0.6718874643874644,
+      "balanced_accuracy_std": 0.01765244963577423,
+      "auroc": 0.7167903469079939,
+      "auroc_std": 0.01678381245378269,
+      "f1": 0.681295793603539,
+      "f1_std": 0.013964695741264799
+    },
+    {
+      "layer": 4,
+      "depth_fraction": 0.129,
+      "accuracy": 0.6744446020712158,
+      "accuracy_std": 0.010177666678516672,
+      "balanced_accuracy": 0.6744327132562427,
+      "balanced_accuracy_std": 0.008399321765929921,
+      "auroc": 0.7405711412770236,
+      "auroc_std": 0.006052460276871098,
+      "f1": 0.6790383818812121,
+      "f1_std": 0.013109930076023521
+    },
+    {
+      "layer": 8,
+      "depth_fraction": 0.258,
+      "accuracy": 0.7543623208965811,
+      "accuracy_std": 0.0342322439244241,
+      "balanced_accuracy": 0.7570357801240154,
+      "balanced_accuracy_std": 0.030931409797106988,
+      "auroc": 0.8211286240992124,
+      "auroc_std": 0.03139299663074855,
+      "f1": 0.7649924790188087,
+      "f1_std": 0.031883862756360716
+    },
+    {
+      "layer": 12,
+      "depth_fraction": 0.387,
+      "accuracy": 0.8681429990069514,
+      "accuracy_std": 0.020129074279733726,
+      "balanced_accuracy": 0.8688109602815486,
+      "balanced_accuracy_std": 0.017983236836703206,
+      "auroc": 0.9234364839953075,
+      "auroc_std": 0.006979117156266526,
+      "f1": 0.8716147567111724,
+      "f1_std": 0.018330729359655778
+    },
+    {
+      "layer": 16,
+      "depth_fraction": 0.516,
+      "accuracy": 0.8357128670733438,
+      "accuracy_std": 0.021135411528825223,
+      "balanced_accuracy": 0.8355781799899447,
+      "balanced_accuracy_std": 0.019040463879651023,
+      "auroc": 0.902646975029328,
+      "auroc_std": 0.014871691451600687,
+      "f1": 0.8397568387723972,
+      "f1_std": 0.01779611254403154
+    },
+    {
+      "layer": 20,
+      "depth_fraction": 0.645,
+      "accuracy": 0.7950574549581502,
+      "accuracy_std": 0.026268677101198634,
+      "balanced_accuracy": 0.7942110775934305,
+      "balanced_accuracy_std": 0.02428491720529993,
+      "auroc": 0.8738533601474778,
+      "auroc_std": 0.01911615856831479,
+      "f1": 0.798236116824352,
+      "f1_std": 0.02912307672773721
+    },
+    {
+      "layer": 24,
+      "depth_fraction": 0.774,
+      "accuracy": 0.7791998865087246,
+      "accuracy_std": 0.027539548657827883,
+      "balanced_accuracy": 0.777335344394168,
+      "balanced_accuracy_std": 0.022150024050241583,
+      "auroc": 0.8581385118149824,
+      "auroc_std": 0.019551698989652238,
+      "f1": 0.7852032733921279,
+      "f1_std": 0.02027855864129537
+    },
+    {
+      "layer": 28,
+      "depth_fraction": 0.903,
+      "accuracy": 0.7588423889913463,
+      "accuracy_std": 0.03153763955702726,
+      "balanced_accuracy": 0.7602170269817329,
+      "balanced_accuracy_std": 0.028641243232462345,
+      "auroc": 0.8281015585721467,
+      "auroc_std": 0.024034188117157202,
+      "f1": 0.7658719600546225,
+      "f1_std": 0.02721462365169524
+    }
+  ],
+  "peak_layer": 12,
+  "peak_depth_fraction": 0.387
+}

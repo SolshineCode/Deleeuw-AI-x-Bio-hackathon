@@ -1,0 +1,17 @@
+{
+  "tag": "llama_topk_k32_L12_v4mixed",
+  "model": "llama",
+  "hf_name": "meta-llama/Llama-3.2-1B",
+  "layer": 12,
+  "k": 32,
+  "expansion_factor": 4,
+  "mse_loss": 0.0002472393971402198,
+  "explained_variance": 0.9999398416460541,
+  "l0": 32.0,
+  "alive_features": 537,
+  "d_sae": 8192,
+  "train_time_s": 157.2,
+  "final_epoch_loss": 0.000261,
+  "num_activations": 3310,
+  "timestamp": "2026-04-19T07:36:47.076289+00:00"
+}
