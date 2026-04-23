@@ -57,7 +57,11 @@ def load_model(
         kwargs["device_map"] = "auto"
     else:
         kwargs["torch_dtype"] = torch_dtype
-        kwargs["device_map"] = device
+        # Prefer device_map="auto" on CUDA so models larger than VRAM
+        # (e.g., Gemma 2 2B fp16 = 5.2GB on a 4GB GTX 1650) auto-offload
+        # to CPU for the overflow instead of OOM-ing. Keeps GPU busy at
+        # ~90% utilization on the on-device layers.
+        kwargs["device_map"] = "auto" if device == "cuda" else device
 
     tokenizer = AutoTokenizer.from_pretrained(name)
     model = AutoModelForCausalLM.from_pretrained(name, **kwargs)
