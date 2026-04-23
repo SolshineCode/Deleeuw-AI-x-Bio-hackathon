@@ -115,13 +115,56 @@ def load_sae_from_state_dict(
     return sae
 
 
+def _load_gemma_scope_direct(release: str, sae_id: str, layer: int) -> LoadedSAE:
+    """Bypass sae_lens and load a Gemma Scope JumpReLU SAE directly from HF.
+
+    Motivated by segfaults on `import sae_lens` under torch 2.6 + Python 3.13.
+    Gemma Scope SAEs publish as .npz files keyed {W_enc, W_dec, b_enc, b_dec, threshold}.
+    """
+    from huggingface_hub import hf_hub_download
+
+    npz_path = hf_hub_download(repo_id=f"google/{release}", filename=f"{sae_id}/params.npz")
+    data = np.load(npz_path)
+    d_model, d_sae = data["W_enc"].shape  # (2304, 16384) for 2B at width_16k
+    sae = JumpReLUSAE(
+        d_model=int(d_model),
+        d_sae=int(d_sae),
+        threshold=torch.from_numpy(data["threshold"]),
+    )
+    sae.W_enc.data.copy_(torch.from_numpy(data["W_enc"]))
+    sae.W_dec.data.copy_(torch.from_numpy(data["W_dec"]))
+    sae.b_enc.data.copy_(torch.from_numpy(data["b_enc"]))
+    sae.b_dec.data.copy_(torch.from_numpy(data["b_dec"]))
+    sae.eval()
+    return LoadedSAE(
+        source="gemma_scope_direct",
+        name=f"{release}/{sae_id}",
+        d_model=int(d_model),
+        d_sae=int(d_sae),
+        architecture="jumprelu",
+        hook_layer=layer,
+        sae_module=sae,
+    )
+
+
 def load_sae(source: str, repo_or_path: str, layer: int, **kwargs) -> LoadedSAE:
     """Dispatch loader based on source tag.
 
     source ∈ {"gemma_scope_1", "gemma_scope_2", "llama_scope", "custom"}.
-    For sae_lens-indexed sources we import sae_lens lazily.
+    For sae_lens-indexed sources we try sae_lens first and fall back to a
+    direct HF .npz loader when sae_lens is unusable (segfaults on import
+    under torch 2.6 + Py 3.13 were observed on Windows 2026-04-22).
     """
-    if source in {"gemma_scope_1", "gemma_scope_2", "llama_scope"}:
+    if source in {"gemma_scope_1", "gemma_scope_2"}:
+        # Direct HF .npz loader — bypasses sae_lens entirely.
+        # sae_lens 6.39.0 segfaults on import under torch 2.6 + Py 3.13 on
+        # Windows (observed 2026-04-22). A segfault is a signal, not an
+        # exception, so try/except around `import sae_lens` doesn't help —
+        # the process dies before any fallback runs. Use the direct loader
+        # for Gemma Scope unconditionally until the ABI break is resolved.
+        sae_id = kwargs.get("sae_id", "")
+        return _load_gemma_scope_direct(repo_or_path, sae_id, layer)
+    if source == "llama_scope":
         from sae_lens import SAE  # type: ignore
 
         sae, cfg, _ = SAE.from_pretrained(release=repo_or_path, sae_id=kwargs.get("sae_id", ""))
