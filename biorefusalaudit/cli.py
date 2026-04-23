@@ -34,6 +34,12 @@ def cli() -> None:
 @click.option("--catalog", type=click.Path(), help="Feature catalog JSON (per-model)")
 @click.option("--calibration", type=click.Path(), help="Calibration YAML with T matrix")
 @click.option("--use-llm-judges/--no-llm-judges", default=False)
+@click.option("--max-new-tokens", default=50, show_default=True, type=int,
+              help="Completion length cap. 50 keeps wall-clock ~1 min/prompt on partial-GPU; 200 is canonical but 5x slower.")
+@click.option("--temperature", default=0.7, show_default=True, type=float)
+@click.option("--limit", default=0, type=int, help="If > 0, only run the first N prompts (useful for smoke tests).")
+@click.option("--dump-activations/--no-dump-activations", default=False,
+              help="Persist per-prompt d_sae feature vectors to <out>/activations.npz for catalog tuning + interventions.")
 def run(
     model_name,
     eval_set,
@@ -46,6 +52,10 @@ def run(
     catalog,
     calibration,
     use_llm_judges,
+    max_new_tokens,
+    temperature,
+    limit,
+    dump_activations,
 ) -> None:
     """Run a full eval against one model and write report.md + report.json."""
     from biorefusalaudit.features.feature_profiler import FeatureCatalog
@@ -63,7 +73,11 @@ def run(
 
     log.info("Loading eval set: %s", eval_set)
     prompts = load_jsonl(eval_set)
-    log.info("%d prompts loaded", len(prompts))
+    if limit and limit > 0:
+        prompts = prompts[:limit]
+        log.info("%d prompts loaded (--limit %d)", len(prompts), limit)
+    else:
+        log.info("%d prompts loaded", len(prompts))
 
     problems = check_no_hazard_bodies(eval_set)
     if problems:
@@ -91,7 +105,9 @@ def run(
 
         llm_judges = (gemini_judge, claude_haiku_judge, ollama_judge)
 
-    log.info("Running judge consortium: regex%s", " + gemini + haiku + ollama" if use_llm_judges else "")
+    log.info("Running judge consortium: regex%s (max_new_tokens=%d, T=%.2f)",
+             " + gemini + haiku + ollama" if use_llm_judges else "", max_new_tokens, temperature)
+    activation_sink: list = [] if dump_activations else None
     report = run_eval(
         prompts=prompts,
         lm=lm,
@@ -100,6 +116,9 @@ def run(
         hook_layer=layer,
         T=T,
         llm_judges=llm_judges,
+        max_new_tokens=max_new_tokens,
+        temperature=temperature,
+        activation_sink=activation_sink,
         eval_set_path=str(eval_set),
     )
     md, js = write_report(report, out_dir)
@@ -107,6 +126,16 @@ def run(
     log.info("Report: %s", md)
     for tier, a in sorted(report.aggregate.items()):
         log.info("Mean divergence (%s): %.3f", tier, a["mean_divergence"])
+
+    if activation_sink:
+        from pathlib import Path as _Path
+        out_p = _Path(out_dir) / "activations.npz"
+        ids = np.array([r["id"] for r in activation_sink])
+        tiers = np.array([r["tier"] for r in activation_sink])
+        framings = np.array([r["framing"] for r in activation_sink])
+        feats = np.stack([r["feature_acts"] for r in activation_sink], axis=0)
+        np.savez_compressed(out_p, ids=ids, tiers=tiers, framings=framings, feature_acts=feats)
+        log.info("Dumped per-prompt SAE activations to %s (%d x %d)", out_p, feats.shape[0], feats.shape[1])
 
 
 @cli.command()

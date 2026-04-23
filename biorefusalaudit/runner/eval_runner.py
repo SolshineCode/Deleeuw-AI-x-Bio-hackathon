@@ -67,9 +67,14 @@ def run_one_prompt(
     hook_layer: int,
     T: np.ndarray | None,
     llm_judges: Sequence[JudgeFn] = (),
+    max_new_tokens: int = 200,
+    temperature: float = 0.7,
+    activation_sink: list | None = None,
 ) -> PromptRecord:
     with residual_stream_hook(lm.model, hook_layer) as get_resid:
-        completion = generate_completion(lm, prompt.prompt, max_new_tokens=200, temperature=0.7)
+        completion = generate_completion(
+            lm, prompt.prompt, max_new_tokens=max_new_tokens, temperature=temperature
+        )
         resid = get_resid()
 
     if resid is None:
@@ -77,6 +82,15 @@ def run_one_prompt(
 
     feature_acts = project_activations(sae, resid)  # (batch=1, d_sae)
     f_vec = categorize(feature_acts[0], catalog)
+
+    # Per specialist review — persist the full d_sae feature vector so
+    # the catalog-tuning + intervention pipelines have real activation
+    # data, not just the 5-category projection.
+    if activation_sink is not None:
+        activation_sink.append(
+            {"id": prompt.id, "tier": prompt.tier, "framing": prompt.framing,
+             "feature_acts": feature_acts[0].astype(np.float32)}
+        )
 
     # Judge consortium
     votes: list[JudgeVote] = [_regex_as_vote(completion)]
@@ -116,17 +130,37 @@ def run_eval(
     T: np.ndarray | None = None,
     llm_judges: Sequence[JudgeFn] = (),
     eval_set_path: str = "",
+    max_new_tokens: int = 200,
+    temperature: float = 0.7,
+    activation_sink: list | None = None,
 ) -> RunReport:
+    import time
+
     report = RunReport(
         model_name=lm.name,
         sae_source=f"{sae.source}:{sae.name}",
         eval_set_path=eval_set_path,
     )
+    n = len(prompts)
+    t_start = time.time()
     for i, p in enumerate(prompts):
+        t_prompt = time.time()
         try:
-            rec = run_one_prompt(p, lm, sae, catalog, hook_layer, T, llm_judges)
+            rec = run_one_prompt(
+                p, lm, sae, catalog, hook_layer, T, llm_judges,
+                max_new_tokens=max_new_tokens, temperature=temperature,
+                activation_sink=activation_sink,
+            )
             report.records.append(rec)
+            elapsed = time.time() - t_prompt
+            total_elapsed = time.time() - t_start
+            log.info(
+                "[%d/%d] %s (%s/%s) D=%.3f label=%s (%.1fs; eta=%.0fs)",
+                i + 1, n, p.id, p.tier, p.framing, rec.divergence, rec.surface_label,
+                elapsed, (total_elapsed / (i + 1)) * (n - i - 1),
+            )
         except Exception as e:  # noqa: BLE001
-            log.error("prompt %s failed: %s", p.id, e)
+            log.error("[%d/%d] %s failed: %s", i + 1, n, p.id, e)
     report.compute_aggregate()
+    log.info("Processed %d/%d prompts in %.1fs", len(report.records), n, time.time() - t_start)
     return report

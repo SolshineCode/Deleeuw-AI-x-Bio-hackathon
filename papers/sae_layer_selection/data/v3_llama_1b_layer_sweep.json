@@ -1,0 +1,146 @@
+{
+  "model": "unsloth/Llama-3.2-1B",
+  "n_layers": 16,
+  "d_model": 2048,
+  "n_samples": 163,
+  "n_deceptive": 146,
+  "n_honest": 17,
+  "layer_results": [
+    {
+      "layer": 0,
+      "depth_fraction": 0.0,
+      "accuracy": 0.9018939393939395,
+      "accuracy_std": 0.01299454991887456,
+      "balanced_accuracy": 0.5626436781609195,
+      "balanced_accuracy_std": 0.05336323725656761
+    },
+    {
+      "layer": 1,
+      "depth_fraction": 0.06666666666666667,
+      "accuracy": 0.8897727272727274,
+      "accuracy_std": 0.026179901703672553,
+      "balanced_accuracy": 0.5709770114942528,
+      "balanced_accuracy_std": 0.0767386658078203
+    },
+    {
+      "layer": 2,
+      "depth_fraction": 0.13333333333333333,
+      "accuracy": 0.8958333333333333,
+      "accuracy_std": 0.015603463118640224,
+      "balanced_accuracy": 0.5425287356321838,
+      "balanced_accuracy_std": 0.09696136417914089
+    },
+    {
+      "layer": 3,
+      "depth_fraction": 0.2,
+      "accuracy": 0.8899621212121211,
+      "accuracy_std": 0.03978625311133378,
+      "balanced_accuracy": 0.5459770114942528,
+      "balanced_accuracy_std": 0.08609187729229427
+    },
+    {
+      "layer": 4,
+      "depth_fraction": 0.26666666666666666,
+      "accuracy": 0.8897727272727274,
+      "accuracy_std": 0.03425884561998488,
+      "balanced_accuracy": 0.5744252873563218,
+      "balanced_accuracy_std": 0.0721739322486633
+    },
+    {
+      "layer": 5,
+      "depth_fraction": 0.3333333333333333,
+      "accuracy": 0.8958333333333333,
+      "accuracy_std": 0.027050865259632004,
+      "balanced_accuracy": 0.6028735632183907,
+      "balanced_accuracy_std": 0.08807178277926675
+    },
+    {
+      "layer": 6,
+      "depth_fraction": 0.4,
+      "accuracy": 0.9018939393939395,
+      "accuracy_std": 0.02563473381164944,
+      "balanced_accuracy": 0.5994252873563218,
+      "balanced_accuracy_std": 0.09226957351903206
+    },
+    {
+      "layer": 7,
+      "depth_fraction": 0.4666666666666667,
+      "accuracy": 0.8958333333333333,
+      "accuracy_std": 0.027050865259632004,
+      "balanced_accuracy": 0.5959770114942529,
+      "balanced_accuracy_std": 0.09677724073467481
+    },
+    {
+      "layer": 8,
+      "depth_fraction": 0.5333333333333333,
+      "accuracy": 0.8897727272727274,
+      "accuracy_std": 0.03425884561998488,
+      "balanced_accuracy": 0.5959770114942529,
+      "balanced_accuracy_std": 0.09677724073467481
+    },
+    {
+      "layer": 9,
+      "depth_fraction": 0.6,
+      "accuracy": 0.9020833333333332,
+      "accuracy_std": 0.03256804877076025,
+      "balanced_accuracy": 0.6028735632183908,
+      "balanced_accuracy_std": 0.09675676094590786
+    },
+    {
+      "layer": 10,
+      "depth_fraction": 0.6666666666666666,
+      "accuracy": 0.9020833333333332,
+      "accuracy_std": 0.02452633233815102,
+      "balanced_accuracy": 0.6209770114942528,
+      "balanced_accuracy_std": 0.07952245499352113
+    },
+    {
+      "layer": 11,
+      "depth_fraction": 0.7333333333333333,
+      "accuracy": 0.8960227272727274,
+      "accuracy_std": 0.033736584586730074,
+      "balanced_accuracy": 0.6028735632183908,
+      "balanced_accuracy_std": 0.09675676094590786
+    },
+    {
+      "layer": 12,
+      "depth_fraction": 0.8,
+      "accuracy": 0.8960227272727274,
+      "accuracy_std": 0.033736584586730074,
+      "balanced_accuracy": 0.6327586206896552,
+      "balanced_accuracy_std": 0.08974354618824432
+    },
+    {
+      "layer": 13,
+      "depth_fraction": 0.8666666666666667,
+      "accuracy": 0.8960227272727274,
+      "accuracy_std": 0.033736584586730074,
+      "balanced_accuracy": 0.6327586206896552,
+      "balanced_accuracy_std": 0.08974354618824432
+    },
+    {
+      "layer": 14,
+      "depth_fraction": 0.9333333333333333,
+      "accuracy": 0.8958333333333334,
+      "accuracy_std": 0.04062047460137731,
+      "balanced_accuracy": 0.6828735632183908,
+      "balanced_accuracy_std": 0.04216589549347376
+    },
+    {
+      "layer": 15,
+      "depth_fraction": 1.0,
+      "accuracy": 0.8899621212121211,
+      "accuracy_std": 0.03978625311133378,
+      "balanced_accuracy": 0.6577586206896551,
+      "balanced_accuracy_std": 0.03646595880279376
+    }
+  ],
+  "peak_layer": 14,
+  "peak_depth_fraction": 0.9333333333333333,
+  "nanochat_comparison": {
+    "peak_layer": 12,
+    "n_layers": 32,
+    "peak_depth_fraction": 0.3870967741935484,
+    "peak_accuracy": 0.868
+  }
+}

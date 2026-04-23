@@ -1,0 +1,16 @@
+{
+  "model_name": "meta-llama/Llama-3.2-1B",
+  "hook_name": "blocks.12.hook_resid_post",
+  "hook_layer": 12,
+  "d_in": 2048,
+  "d_sae": 8192,
+  "dtype": "float32",
+  "architecture": "topk",
+  "normalize_activations": "none",
+  "context_size": null,
+  "k": 32,
+  "expansion_factor": 4,
+  "dataset_path": "v4_sandbagging_concealment prompts (neutral + V0 threat + V3 threat)",
+  "sae_lens_training_run_notes": "V4 sandbagging SAE \u2014 trained on residuals from n=50 trivia \u00d7 3 templates (neutral, V0 threat, V3 threat) with all-position activations. Model: meta-llama/Llama-3.2-1B, L12, TopK k=32. See https://github.com/SolshineCode/deception-nanochat-sae-research",
+  "training_session": "2026-04-18-deep-work-8h"
+}

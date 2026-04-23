@@ -202,10 +202,22 @@ def project_activations(sae: LoadedSAE, activations: torch.Tensor) -> np.ndarray
     """Encode activations through the SAE; return per-example mean feature magnitudes.
 
     `activations`: (batch, seq_len, d_model). Returns np.ndarray of shape (batch, d_sae).
+    Moves the SAE module to the activations' device on first call to avoid
+    device-mismatch errors when the model is on GPU and the SAE loaded on CPU.
     """
     sae.sae_module.eval()
+    # Match device + dtype to the incoming activations (one-time move, idempotent).
+    target_device = activations.device
+    target_dtype = activations.dtype
+    try:
+        sae_device = next(sae.sae_module.parameters()).device
+    except StopIteration:
+        sae_device = torch.device("cpu")
+    if sae_device != target_device:
+        sae.sae_module.to(target_device)
     with torch.no_grad():
-        z = sae.sae_module.encode(activations)
-        # Mean over sequence positions; this is the "typical activation per feature for this example".
+        # SAE weights are fp32; cast activations to fp32 for the matmul.
+        z = sae.sae_module.encode(activations.to(torch.float32))
+        # Mean over sequence positions; "typical activation per feature for this example".
         mean_z = z.mean(dim=1)
     return mean_z.detach().cpu().float().numpy()
