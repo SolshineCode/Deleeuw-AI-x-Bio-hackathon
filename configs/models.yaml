@@ -10,15 +10,18 @@ models:
     calibration: configs/calibration_gemma2_2b.yaml
 
   # Custom SAE demonstration — Gemma 4 E2B at 4-bit with cached Solshine SAEs.
+  # d_model=1536: Gemma4Config.text_config.hidden_size (confirmed 2026-04-23).
+  # d_sae=6144: 4× expansion, matching gf1_behaviorSAE_topk_k16_L17 cfg.json.
+  # sae_release: local path (SAE not yet on HF; weights in deception-nanochat-sae-research).
   - name: google/gemma-4-E2B-it
     quantize: 4bit
     sae_source: custom
-    sae_release: Solshine/gemma4_e2b_gf1_behaviorSAE_topk_k16_L17_bnb4bit
+    sae_release: C:\Users\caleb\deception-nanochat-sae-research\experiments\gf1_behavior_sae\saes\gemma4_e2b_gf1_behaviorSAE_topk_k16_L17_bnb4bit.pt
     hook_layer: 17
     architecture: topk
     k: 16
-    d_model: 2048
-    d_sae: 16384
+    d_model: 1536
+    d_sae: 6144
     catalog: data/feature_catalog/gemma-4-E2B-it.json
 
   # Gemma 3 weights downloaded; SAE release pending (Gemma Scope 2).
