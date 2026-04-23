@@ -73,8 +73,11 @@ def _resolve_block(model: "torch.nn.Module", layer_idx: int) -> "torch.nn.Module
     """Best-effort resolver for the target transformer block across HF model families."""
     # Most HF causal LMs expose `.model.layers[i]` (Llama, Gemma, Mistral, Qwen)
     # or `.transformer.h[i]` (GPT-2 style, some Gemma variants).
+    # Gemma 4 uses .language_model.model.layers or .model.language_model.layers.
     for attrs in (
         ("model", "layers"),
+        ("language_model", "model", "layers"),
+        ("model", "language_model", "layers"),
         ("transformer", "h"),
         ("gpt_neox", "layers"),
         ("base_model", "layers"),

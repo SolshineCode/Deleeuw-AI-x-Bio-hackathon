@@ -58,10 +58,11 @@ def collect_activations(lm, prompts, layer, max_tokens_per_prompt):
     return torch.cat(all_acts, dim=0) if all_acts else torch.empty(0, 0)
 
 
-def train_topk_sae(acts, k, expansion, epochs, batch_size, lr, patience):
+def train_topk_sae(acts, k, expansion, epochs, batch_size, lr, patience, d_sae=None):
     """Train a TopKSAE on the (N, d_model) activation tensor."""
     d_model = acts.shape[1]
-    d_sae = d_model * expansion
+    if d_sae is None:
+        d_sae = d_model * expansion
     device = "cuda" if torch.cuda.is_available() else "cpu"
     sae = TopKSAE(d_model, d_sae, k).to(device)
     opt = torch.optim.Adam(sae.parameters(), lr=lr)
@@ -139,6 +140,7 @@ def main() -> int:
     ap.add_argument("--batch-size", default=128, type=int)
     ap.add_argument("--lr", default=3e-4, type=float)
     ap.add_argument("--patience", default=15, type=int)
+    ap.add_argument("--d-sae", type=int, help="Force d_sae to a specific value")
     ap.add_argument("--out", required=True, type=Path)
     args = ap.parse_args()
 
@@ -156,6 +158,7 @@ def main() -> int:
     sae, metrics = train_topk_sae(
         acts, k=args.k, expansion=args.expansion, epochs=args.epochs,
         batch_size=args.batch_size, lr=args.lr, patience=args.patience,
+        d_sae=args.d_sae
     )
     metrics["train_time_s"] = time.time() - t0
     metrics["n_training_activations"] = int(acts.shape[0])

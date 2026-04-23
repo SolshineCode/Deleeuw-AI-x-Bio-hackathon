@@ -113,7 +113,13 @@ A feature earns "named circuit" status only if `label_changed` OR `|ΔD| > 0.2` 
 
 Results land in `runs/colab_*/report.{md,json}`; the cross-model scaling plot regenerates via `scripts/build_scaling_plot.py --include-synthetic`. Gemma 3 family evaluation deferred pending Gemma Scope 2 public release (Gemma 3 weights cached locally for forward compatibility).
 
-## 5. Limitations
+### 4.5 Portability: Custom TopK SAE (toy training)
+
+To demonstrate the methodology's portability beyond pre-trained SAE releases, we trained a custom TopK SAE ($k=32$, $4\times$ expansion) on Gemma 2 2B residual activations (layer 12) using the local GTX 1650 Ti.
+
+**Scientific Caveat:** The custom SAE results reported here are derived from **"toy training"** (75 prompts, ~3,000 activation vectors). This serves as a structural validation of the pipeline (activation collection $\to$ SAE training $\to$ catalog auto-tuning $\to$ calibrated audit), but does *not* constitute a research-grade feature decomposition. For robust bio-safety auditing, we recommend exhaustive training on $\ge 100$M tokens of diverse text to ensure high feature purity and coverage.
+
+The results below compare the toy TopK SAE against the Gemma Scope 1 JumpReLU baseline:
 
 - **Gemma Scope 2 pending.** The originally-planned primary substrate (Gemma 3 + Gemma Scope 2 residual SAEs) is not yet publicly released. MVP demonstrates methodology on Gemma 2 + Gemma Scope 1 plus Gemma 4 E2B + custom SAEs. This is a scope reduction, not a methodological compromise — the divergence metric, eval set, and judge consortium are all model-agnostic.
 - **Quantization confound for Gemma 4 E2B.** Gemma 4 E2B at 4-bit produces activations from a quantized model; any divergence number on this model is measuring the quantized system, not the fp16 reference. Flagged explicitly in `runs/gemma-4-E2B-it/report.md`.

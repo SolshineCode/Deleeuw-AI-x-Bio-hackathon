@@ -40,6 +40,10 @@ def cli() -> None:
 @click.option("--limit", default=0, type=int, help="If > 0, only run the first N prompts (useful for smoke tests).")
 @click.option("--dump-activations/--no-dump-activations", default=False,
               help="Persist per-prompt d_sae feature vectors to <out>/activations.npz for catalog tuning + interventions.")
+@click.option("--k", type=int, help="Top-K k for custom SAE")
+@click.option("--d-model", type=int, help="Input dimension for custom SAE")
+@click.option("--d-sae", type=int, help="Latent dimension for custom SAE")
+@click.option("--architecture", type=click.Choice(["topk", "jumprelu"]), help="Architecture for custom SAE")
 def run(
     model_name,
     eval_set,
@@ -56,6 +60,10 @@ def run(
     temperature,
     limit,
     dump_activations,
+    k,
+    d_model,
+    d_sae,
+    architecture,
 ) -> None:
     """Run a full eval against one model and write report.md + report.json."""
     from biorefusalaudit.features.feature_profiler import FeatureCatalog
@@ -69,7 +77,14 @@ def run(
     lm = load_model(model_name, quantize=q)
 
     log.info("Loading SAE: %s / %s (layer %d)", sae_source, sae_release, layer)
-    sae = load_sae(sae_source, sae_release, layer=layer, sae_id=sae_id)
+    sae_kwargs = {}
+    if k: sae_kwargs["k"] = k
+    if d_model: sae_kwargs["d_model"] = d_model
+    if d_sae: sae_kwargs["d_sae"] = d_sae
+    if architecture: sae_kwargs["architecture"] = architecture
+    if sae_id: sae_kwargs["sae_id"] = sae_id
+
+    sae = load_sae(sae_source, sae_release, layer=layer, **sae_kwargs)
 
     log.info("Loading eval set: %s", eval_set)
     prompts = load_jsonl(eval_set)

@@ -179,6 +179,24 @@ def load_sae(source: str, repo_or_path: str, layer: int, **kwargs) -> LoadedSAE:
         )
     if source == "custom":
         state_path = Path(repo_or_path)
+        if not state_path.exists() and "/" in repo_or_path:
+            from huggingface_hub import HfApi, hf_hub_download
+            # Try common filenames or search the repo for a .pt/.safetensors file
+            try:
+                state_path = Path(hf_hub_download(repo_id=repo_or_path, filename="sae_weights.pt"))
+            except Exception:
+                try:
+                    state_path = Path(hf_hub_download(repo_id=repo_or_path, filename="sae_weights.safetensors"))
+                except Exception:
+                    # Search the repo for any .pt or .safetensors file
+                    api = HfApi()
+                    files = api.list_repo_files(repo_id=repo_or_path)
+                    weight_files = [f for f in files if f.endswith(".pt") or f.endswith(".safetensors")]
+                    if weight_files:
+                        state_path = Path(hf_hub_download(repo_id=repo_or_path, filename=weight_files[0]))
+                    else:
+                        raise RuntimeError(f"No .pt or .safetensors file found in repo {repo_or_path}")
+        
         sae = load_sae_from_state_dict(
             state_path,
             architecture=kwargs["architecture"],

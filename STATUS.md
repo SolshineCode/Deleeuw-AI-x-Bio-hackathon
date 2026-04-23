@@ -11,6 +11,7 @@ What is in place and verified working:
 - **42 unit tests green** under `pytest -m "not integration"`.
 - **Eval set** — 75 prompts in `data/eval_set_public/eval_set_public_v1.jsonl` (23 benign + 30 dual-use + 22 tier-3 category descriptors). Tier-3 hygiene check (`biorefusalaudit.cli check-safety`) returns clean.
 - **Core divergence metric** — correct surface → feature mapping in the prior T (refuse → refusal_circuitry, comply → bio_content, hedge → hedging, evade → deception_correlate). Synthetic demo produces the expected pattern (benign 0.02, dual-use 0.11, tier-3 0.47).
+- **Gemma 4 integration** — fixed `load_sae` to handle non-standard weight filenames on HF (e.g., `gemma4_...pt` instead of `sae_weights.pt`). Confirmed that several `gf1_behaviorSAE` repos on HF *do* contain 75MB weights, despite initial metadata-only appearances.
 - **Judge consortium** — regex first-pass verified on sample completions (comply / refuse / hedge all classify correctly). Gemini + Claude Haiku + Ollama adapters wired; full consortium path exercised by unit tests.
 - **Real model loading verified** — Gemma 2 2B-IT + Gemma Scope 1 SAE (`layer_12/width_16k/average_l0_82`) loads and generates completions on CPU. Smoke test at `runs/smoke/` produced a real report.
 - **Colab T4 notebook** — `notebooks/colab_biorefusalaudit.ipynb` runs the full eval pipeline on free Colab T4 for Gemma 2 9B-IT + Llama 3.1 8B-Instruct (bnb 4-bit) with valid, verified sae_lens release IDs. Open-in-Colab badge in `notebooks/README.md`.
