@@ -4,6 +4,11 @@ from biorefusalaudit.features.feature_validator import (
     differentiation_check,
     validate_catalog,
 )
+from biorefusalaudit.features.feature_contribution import (
+    FeatureContribution,
+    compute_contributions,
+    contributions_to_graph,
+)
 
 __all__ = [
     "FeatureCatalog",
@@ -12,4 +17,7 @@ __all__ = [
     "ValidationReport",
     "differentiation_check",
     "validate_catalog",
+    "FeatureContribution",
+    "compute_contributions",
+    "contributions_to_graph",
 ]
