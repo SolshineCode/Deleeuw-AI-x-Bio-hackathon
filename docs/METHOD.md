@@ -284,11 +284,26 @@ After fine-tuning, the validation chain is:
 **Gemma 2 2B-IT layer 12 — 2000 steps (101s wall clock):**
 - **Total loss**: 56.48 → 0.99 (98.3% reduction)
 - **L_recon**: 56.48 → 0.87
-- **L_contrastive**: 0.7447 → 0.9753 (INCREASING — same pattern)
+- **L_contrastive**: 0.7447 → 0.9753 (delta +0.23 — INCREASING)
 - **L0**: 32.0 (TopK(k=32) stable)
 - **Convergence**: NOT CONVERGED (CV=1.003)
 
-**Cross-model interpretation:** L_contrastive increases in both models across both training lengths (500 steps Gemma 4, 2000 steps Gemma 2). The bottleneck is corpus size, not steps or model family. The 75-prompt eval set is insufficient to force bio-specific feature separation in a TopK SAE regardless of training duration. The model reconstructs activations well (L_recon improving dramatically) but the SAE features do not separate bio-hazard tiers — consistent with the main paper finding that generic activations carry domain-agnostic sensitivity routing, not bio-specific circuit signals. Track B (projection adapter over frozen Gemma Scope) with a larger domain-specific corpus is the correct next step.
+**Gemma 2 2B-IT layer 12 — 5000 steps (~250s wall clock):**
+- **Total loss**: 58.48 → 0.38 (99.3% reduction)
+- **L_recon**: 58.17 → 0.28 (much better than 2000-step)
+- **L_contrastive**: 0.8255 → 0.8881 (delta +0.06 — still increasing but far less)
+- **L0**: 32.0 (TopK(k=32) stable)
+- **Convergence**: NOT CONVERGED (CV=1.044)
+
+**Cross-model convergence summary:**
+
+| Run | Steps | L_recon final | L_cont initial | L_cont final | L_cont delta |
+|-----|-------|---------------|----------------|--------------|--------------|
+| Gemma 4 L17 | 500 | 0.20 | 0.74 | 0.97 | +0.23 |
+| Gemma 2 L12 | 2000 | 0.87 | 0.74 | 0.975 | +0.23 |
+| Gemma 2 L12 | 5000 | 0.28 | 0.83 | 0.888 | +0.06 |
+
+**Nuanced interpretation:** More steps reduce L_contrastive degradation (delta +0.23 at 500/2000 steps vs +0.06 at 5000 steps), suggesting the reconstruction objective eventually dominates and the SAE learns more feature-specific representations. However, final L_contrastive remains high (0.888) — hazard/benign means are still aligned. The 75-prompt corpus is insufficient for *convergence* of bio-specific separation regardless of training duration, but the separation trend improves with longer training. The bottleneck is corpus **diversity** (not just size): the 75 prompts all use similar bio-technical vocabulary regardless of tier, so the SAE correctly reconstructs the shared vocabulary but cannot learn tier-discriminative directions. Domain-specific behavioral activation data (genuine hazard completions vs institutional biosecurity refusals) is required to provide tier-contrastive signal at training time.
 
 **Key fix discovered:** `Gemma4ForConditionalGeneration` requires layer path `model.model.language_model.layers[i]`, not `model.model.layers[i]` (which returns `Gemma4Model`, a multimodal wrapper without direct `.layers`). Fixed in `train_sae_local.py` with a multi-path walker; documented in `TROUBLESHOOTING.md`.
 
