@@ -182,7 +182,7 @@ The flat tier gradient (0.061 / 0.056 / 0.053, nearly undifferentiated) reflects
 
 *D under re-fitted T (cond=165, MSE=0.0008):* values remain near-zero (benign=0.006, dual-use=0.006, hazard=0.004), confirming the custom SAE lacks discriminative power to separate safety tiers for Gemma 4 E2B via D. Flag-based signals (`refusal_features_active_despite_compliance`, `hazard_features_active_despite_refusal`) are the informative channel for this model; D requires a domain-specific fine-tuned SAE to achieve tier separation (§8).
 
-*Format ablation (n=36):* B (generic) caused 7/12 loops; A vs D (wrong role) were indistinguishable, consistent with semantic turn-structure keying.
+*Format ablation (n=72, 80tok):* A and D: 24/24 comply (incl. hazard-adjacent). B: 58% loops, 0% refuse. Refusals require >80 tokens.
 
 ## 5. Limitations
 
