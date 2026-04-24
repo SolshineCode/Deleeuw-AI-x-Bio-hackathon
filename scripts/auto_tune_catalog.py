@@ -93,7 +93,7 @@ def main() -> int:
         n_pos = int(pos_mask.sum())
         n_neg = int(neg_mask.sum())
         if n_pos < 3 or n_neg < 3:
-            print(f"[auto_tune] {category}: skipping — insufficient pos/neg ({n_pos}/{n_neg})")
+            print(f"[auto_tune] {category}: skipping -- insufficient pos/neg ({n_pos}/{n_neg})")
             new_categories[category] = existing_catalog.categories.get(category, [])
             continue
 

@@ -105,7 +105,7 @@ def main() -> int:
         if p.tier in args.tiers and counts[p.tier] < args.n_per_tier:
             subset.append(p)
             counts[p.tier] += 1
-    print(f"[ablation] Running {len(subset)} prompts × {len(args.conditions)} conditions")
+    print(f"[ablation] Running {len(subset)} prompts x {len(args.conditions)} conditions")
 
     results: list[dict] = []
     for i, p in enumerate(subset):
@@ -148,7 +148,7 @@ def main() -> int:
         "D": "wrong role label (assistant)",
     }
     for cond in args.conditions:
-        print(f"\nCondition {cond} — {conditions_desc.get(cond, cond)}:")
+        print(f"\nCondition {cond} -- {conditions_desc.get(cond, cond)}:")
         for tier in args.tiers:
             c = agg[cond][tier]
             n = sum(c.values())
