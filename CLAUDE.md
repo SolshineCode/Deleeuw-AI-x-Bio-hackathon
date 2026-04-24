@@ -4,9 +4,11 @@ Operative instructions for any Claude Code session in this repo. Tight by design
 
 ---
 
-## Project context (1-line reminder)
+## Project context
 
-Tool for measuring **refusal depth** — the divergence between what an LLM's *surface behavior* says ("I refuse") and what its *internal SAE feature activations* show ("hazard features still firing") — to tell structurally-safe refusals from shallow ones on bio-safety prompts. AIxBio Hackathon 2026, Track 3 (Biosecurity Tools), sponsored by Fourth Eon Bio. Methodology lineage: nanochat-SAE-deception-research + Secret Agenda (arXiv:2509.20393).
+**v1.0 (hackathon submission):** Tool for measuring **refusal depth** — the divergence between what an LLM's *surface behavior* says ("I refuse") and what its *internal SAE feature activations* show ("hazard features still firing") — to tell structurally-safe refusals from shallow ones on bio-safety prompts. AIxBio Hackathon 2026, Track 3 (Biosecurity Tools), sponsored by Fourth Eon Bio. Methodology lineage: nanochat-SAE-deception-research + Secret Agenda (arXiv:2509.20393).
+
+**Planned follow-on arc:** Neuronpedia validation revealed the auto-tuned Gemma Scope catalog encodes generic technical-governance vocabulary rather than bio-specific features. The fix — motivated by Secret Agenda's behavioral-sampling methodology — is domain-specific SAE fine-tuning on bio-hazard behavioral activation corpora (base vs. RLHF model pairs; genuine vs. shallow refusals; institutional CBRN datasets). Two tracks: Track B (projection adapter, feasible with 75-prompt corpus) and Track A (full SAE fine-tune, requires ~10K samples from institutional partners). Non-bio control experiment (`runs/control-legal-financial-gemma2/`) tests whether D currently measures bio-specific refusal or domain-agnostic sensitivity routing. Full technical spec: `docs/METHOD.md §Planned extension`.
 
 ---
 
@@ -53,7 +55,7 @@ If an experiment plan looks like it might violate any of the above, stop and esc
 
 ## Non-negotiable user directives (broader patterns)
 
-1. **Keep the local GPU running work continuously.** CUDA torch install is mandatory (not CPU fallback); long-running jobs dispatch to `run_in_background=true`; queue the next GPU job as one finishes. Releases only when Caleb says stop. See `~/.claude/projects/C--Users-caleb/memory/feedback_gpu_always_running.md`.
+1. **Keep the local GPU running work continuously.** CUDA torch install is mandatory (not CPU fallback); long-running jobs dispatch to `run_in_background=true`; queue the next GPU job as one finishes. **Any time the GPU becomes free, immediately start the next relevant GPU job without waiting to be asked.** Priority queue: (a) cross-model format ablations, (b) longer SAE training runs, (c) additional intervention experiments, (d) flagship reruns with new seeds. Releases only when Caleb says stop. See `~/.claude/projects/C--Users-caleb/memory/feedback_gpu_always_running.md`.
 2. **No push / PR / gh-comment without explicit approval.** Branch stays local until Caleb says "push it." This supersedes any perceived urgency.
 3. **Brutal honesty on confidence.** Flag stub catalogs as stubs, prior-only calibration as prior-only, synthetic numbers as synthetic — before they get confused for real results in the paper.
 4. **Consolidate related work into single unified PRs.** Per-module PRs add review overhead; the hackathon submission wants one coherent PR.
@@ -150,6 +152,7 @@ Peer-review-grade repo. Every code change traceable:
 4. **Gemma 4 community SAEs** use non-standard weight filenames (not `sae_weights.pt`). Fixed in `sae_adapter.py` with repo-scan fallback.
 5. **`device_map="auto"` silently routes Gemma 4 to CPU.** `Gemma4ForConditionalGeneration` is multimodal; `accelerate`'s memory estimator mis-sizes it and picks CPU even with 4 GB free VRAM. Fix: `device_map={"": 0}` for quantized models when CUDA is available — implemented in `model_adapter.py`. See `TROUBLESHOOTING.md` for full diagnosis and the misleading log message that looks like a capacity error but is actually a bytes-level metadata artifact.
 6. **Residual hook accumulates per-step tensors during generation.** The hook fires once per autoregressive token. Appending each capture to a list fills VRAM (~240 MB for a 200-token generation) and causes silent CPU spill on 4 GB cards, making long generations 20× slower. Fix: overwrite `captured[0]` instead of appending — implemented in `model_adapter.py`. Symptom: alternating fast (1–3 s) and slow (150–200 s) prompts in the same run.
+8. **`device_map={"": "cuda"}` (string) silently falls to CPU on Windows WDDM with bitsandbytes 0.49.2.** Even when CUDA is available and free VRAM is sufficient, the string form routes the model to CPU. Fix: use integer device index `{"": torch.cuda.current_device()}` — implemented in `model_adapter.py` (2026-04-24). Symptom: nvidia-smi never shows the venv Python process, GPU memory stays flat, generation runs at ~2 tok/s instead of 25 tok/s. Full diagnosis in `TROUBLESHOOTING.md`.
 7. **Catalog tuning must use activations from the same quantization regime as the final eval.** If you auto-tune on fp16 activations but eval in 4-bit NF4, the selected catalog features won't fire in the 4-bit run → `feature_vec = 0` → `D = 1.0` everywhere (not a real result — it's a silent catalog failure). Always collect `--dump-activations` under the same `--quantize` flag as the final eval. Similarly, calibration T can only be fitted meaningfully once `feature_vec ≠ 0`; fitting T on degenerate zero-feature data produces a placeholder, not a calibration. Full chain: `pass-1 (correct quantize) → auto_tune → pass-2 (dump) → fit_T → pass-3 (final)`. See `docs/METHOD.md §Required chain ordering`.
 
 ---

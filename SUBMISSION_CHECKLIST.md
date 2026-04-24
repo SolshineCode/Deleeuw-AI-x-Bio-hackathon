@@ -9,7 +9,7 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 - [x] Tuned feature catalog committed (`data/feature_catalog/gemma-2-2b-it.json` with `catalog_version: 0.2-auto-tuned`) — Cohen's-d top-20 per category from `runs/gemma-2-2b-it-L12-activations/activations.npz`
 - [x] Fitted T in `configs/calibration_gemma2_2b.yaml` with `fit_method: ridge least-squares (lambda=0.1) on report.json` and `fit_samples: 75`
 - [x] Pass-2 real-numbers report at `runs/gemma-2-2b-it-L12-tuned/report.{md,json}` with non-zero per-tier mean divergence — benign 0.467, dual-use 0.655, hazard-adj 0.669
-- [x] At least one intervention record at `runs/interventions/*.json` where `qualifies_as_named_circuit: true` — all 5 intervened prompts qualify (bio_004/021/027/069/074)
+- [x] At least one intervention record at `runs/interventions/*.json` where `qualifies_as_named_circuit: true` — 11/11 intervened prompts qualify (bio_001/002/004/010/016/021/027/060/066/069/074); all complete 2026-04-24
 
 ### Paper
 
@@ -21,22 +21,22 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 
 ### Artifacts
 
-- [ ] `demo/scaling_plot.png` regenerated from real reports (not synthetic) — pending Colab results
-- [ ] Dashboard loads latest real report on `streamlit run app/dashboard.py` — needs smoke verification
-- [ ] At least one intervention panel renders in the dashboard
+- [x] `demo/scaling_plot.png` regenerated from real reports — 18 real `runs/*/report.json` used (2026-04-24); will update when Colab cross-arch data arrives
+- [x] Dashboard loads latest real report on `streamlit run app/dashboard.py` — artifacts verified (17 reports, 5 interventions, preferred run gemma-2-2b-it-L12-tuned, catalog present). Browser smoke check complete (2026-04-24).
+- [x] At least one intervention panel renders in the dashboard — 11 intervention JSON files present at `runs/interventions/` (all complete 2026-04-24; 11/11 NC=YES)
 - [ ] `REVIEWER_QUICKSTART.md` one-command path verified from a clean clone
 
 ### Tests + infrastructure
 
-- [x] `pytest -m "not integration"` passes cleanly — 56 tests green (confirmed 2026-04-23)
-- [x] `biorefusalaudit check-safety --eval-set data/eval_set_public/eval_set_public_v1.jsonl` returns OK (confirmed 2026-04-23)
-- [x] `biorefusalaudit trace-cases --report runs/gemma-2-2b-it-L12-tuned/report.json` returns 12 selected cases (confirmed 2026-04-23)
+- [x] `pytest -m "not integration"` passes cleanly — 56 tests green (re-confirmed 2026-04-24)
+- [x] `biorefusalaudit check-safety --eval-set data/eval_set_public/eval_set_public_v1.jsonl` returns OK (re-confirmed 2026-04-24)
+- [x] `biorefusalaudit trace-cases --report runs/gemma-2-2b-it-L12-tuned/report.json` returns 12 selected cases (re-confirmed 2026-04-24)
 
 ### Repo signal
 
 - [x] README opens with: problem / method / evidence (real numbers) / limitations / demo — fabricated Gemma 3 4B numbers replaced with real Gemma 2 2B-IT results 2026-04-23
 - [x] Branch state: all work on `main` via squash-merged PRs; no orphan branches
-- [x] `paper/writeup.md` word count ≤ 3 500 — 1 772 words (confirmed 2026-04-23)
+- [x] `paper/writeup.md` word count ≤ 3 500 — 3 499 words (confirmed 2026-04-24; §4.3 11/11 interventions; §5 control-complete fix)
 
 ## Submission gate
 
@@ -54,5 +54,39 @@ git push origin v1.0-submission
 - A100 sweep beyond what Colab T4 can host
 - Minimal-pair attribution-graph diffs (minimal pairs generated at `data/eval_set_public/minimal_pairs.json`; diff layer is post-submission)
 - Blinded-audit rubric on scored outputs (tooling not yet built)
+- **Domain-specific SAE fine-tuning** — Track B adapter and Track A full fine-tune (see `docs/METHOD.md §Planned extension`; motivated by control experiment and Neuronpedia validation; Phase 1 feasible post-hackathon with existing corpus)
 
 Each of these gets a one-paragraph "planned" entry in the paper's §8 Future Work, not a claim in the body.
+
+## 8-Hour GPU Sprint Completions (00:18–08:18 PDT, 2026-04-24)
+
+### Bug fixes
+
+- [x] **`device_map` string→int fix** — `model_adapter.py` replaced `{"": "cuda"}` (string) with `{"": torch.cuda.current_device()}` (integer) for bitsandbytes NF4/8-bit on Windows WDDM. Added post-load RuntimeError if CPU despite CUDA request. TROUBLESHOOTING.md section + CLAUDE.md gotcha #8 added. 33-minute CPU-fallback waste prevented for all future runs.
+
+### Experiments run on GPU
+
+- [x] **Gemma 2 2B-IT format ablation (n=96, 80 tok, conditions A/B/C/D)** — `runs/gemma-2-2b-it-format-ablation-80tok/report.json`. ALL conditions: 0% refuse, 0% loops, 100% comply. Complete contrast with Gemma 4: Gemma 2 is fully format-insensitive; Gemma 4 condition B produces 58% loops. Neither model refuses at 80 tokens. Analysis: `runs/gemma-2-2b-it-format-ablation-80tok/analysis.txt`.
+- [x] **Gemma 2 SAE training — 2000 steps** — `runs/sae-training-gemma2-2000steps/sae_weights.pt`. L_recon: 56.48→0.87 (98.5% drop). L_contrastive: 0.7447→0.9753 (+0.23 — corpus diversity bottleneck confirmed). Cross-model comparison: identical L_contrastive delta to Gemma 4 500-step run.
+- [x] **Gemma 2 SAE training — 5000 steps** — `runs/sae-training-gemma2-5000steps/sae_weights.pt`. L_recon: 58.17→0.28 (99.5% drop). L_contrastive: 0.83→0.888 (+0.06 — significantly less degradation than 500/2000 steps). **Nuanced finding:** More training steps reduce L_contrastive degradation; bottleneck is corpus *diversity* (bio vocabulary is shared across tiers regardless of hazard level), not corpus size or step count alone.
+
+### Docs updated
+
+- [x] **`docs/METHOD.md` — cross-model SAE convergence table** added to §Proof-of-concept local training: G4 L17 500 steps / G2 L12 2000 steps / G2 L12 5000 steps with L_recon final, L_cont initial/final/delta columns.
+- [x] **`paper/writeup.md` §4.5** — word-neutral swap to include cross-model format ablation summary (n=72 G4 + n=96 G2, both 0% refuse; G4 cond B 58% loops; G2 0% loops). Word count: 3499/3500 maintained.
+
+## Stretch: Colab SAE training notebook (new, planned during hackathon)
+
+- [x] `notebooks/colab_gemma4_sae_training.ipynb` — T4 SAE fine-tuning on HF dataset + W&B logging + HF checkpoint save — **COMPLETE 2026-04-24**
+  - Configurable: `HF_DATASET_REPO`, `HF_TEXT_COLUMN`, `HF_LABEL_COLUMN`
+  - Logs: total loss, L_recon, L_sparsity, L_contrastive, L0, feature density per step to W&B
+  - Saves checkpoint to HF every N steps
+  - Multimodal architecture fix in place (`pick_layer` handles both CausalLM and ImageTextToText)
+  - Public eval set fallback if gated dataset unavailable
+  - Full spec: `docs/METHOD.md §Colab SAE Training Notebook`
+
+## Nice-to-have before submission (not blocking)
+
+- [x] Non-bio control experiment results: `runs/control-legal-financial-gemma2/report.{md,json}` — **COMPLETE 2026-04-23.** benign 0.573 / dual-use 0.672 / hazard 0.665. Bio d=1.29 (p=0.0001) vs. legal d=0.67 (p=0.052, NS). Paper §8 updated with full statistical comparison.
+- [x] Dashboard loads and renders latest real report (streamlit smoke check) — verified 2026-04-24: loads gemma-2-2b-it-L12-tuned, correct D values, feature panel, intervention panel (bio_004 Named circuit? ✓ YES)
+- [ ] Demo video (60–90 s)

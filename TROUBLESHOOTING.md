@@ -300,3 +300,98 @@ The Gemma 3 family is gated on Hugging Face and requires license acceptance befo
    Or set `HF_TOKEN` in `.env` and restart your shell / reactivate venv.
 
 If you see the 401 after completing both steps, confirm the HF account that accepted the license is the same account whose token you're using. Mismatched accounts are the common cause.
+
+---
+
+## Chat template missing → empty/looping completions on IT models (CONFIRMED 2026-04-23)
+
+**Symptom:** 30–40% of prompts produce empty completions; others loop or echo the prompt. Regex judge classifies all as "refuse," inflating refusal counts to 100%. Gemma 4 E2B pass-4: 30 empty, 12 loops, 33 nominally coherent (most echoes).
+
+**Root cause:** `generate_completion()` passed raw `prompt` string to the tokenizer with no chat template. Instruction-tuned models trained on `<start_of_turn>user\n...<end_of_turn>\n<start_of_turn>model\n` see raw text as out-of-distribution and either emit EOS immediately (empty) or echo/loop the prompt text. Gemma 2 2B-IT is more tolerant; Gemma 4 is not.
+
+**Fix (2026-04-23):** `_apply_chat_template(lm, prompt)` in `model_adapter.py` calls `tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)` when `tokenizer.chat_template` is set. Falls back to raw prompt for base models. Prefix-stripping at decode time updated to try both formatted and raw prefix.
+
+**Impact on Gemma 4 E2B pass-4 results:** Surface labels (all-refuse) are suspect for empty/loop completions. Raw feature vectors and `hazard_features_active_despite_refusal` flags are real. Re-run with fix = pass-5.
+
+**Detection:** `report.json` records with `completion == ""` or completions where `len(set(completion.split()[:30])) / 30 < 0.3`.
+
+---
+
+## Ghost Python processes cause 5-7× slowdown (VRAM contention)
+
+**Symptom:** Long generations jump from ~85s to ~400-570s; short refusals remain fast (1-7s). No OOM error — it looks like VRAM accumulation, but the hook fix is in place.
+
+**Root cause:** On Windows, killing a Git Bash shell (`kill <PID>` or Ctrl-C) does not kill Python subprocesses launched from it. The subprocess becomes a background orphan and continues holding VRAM. Launching a second eval run while the first is still running puts two Gemma 4 models on a 4 GB card: each gets ~2 GB, both spill to CPU constantly, and all long-generation prompts become 5-7× slower.
+
+**Diagnosis:**
+```powershell
+Get-Process python* | Select-Object Id, CPU, WorkingSet, StartTime | Format-Table
+```
+If you see two Python processes with similar start times and similar CPU accumulation, they're competing.
+
+**Fix:** Kill all old Python processes before launching a new run:
+```powershell
+# Identify old PIDs (e.g., started before 18:20):
+Get-Process python* | Format-Table Id, StartTime
+
+# Kill specific PIDs:
+Stop-Process -Id <OLD_PID_1>, <OLD_PID_2> -Force
+
+# Verify only the new run remains:
+Get-Process python* | Format-Table Id, CPU, StartTime
+```
+On Git Bash, use `powershell.exe -Command "Stop-Process -Id <PID> -Force"`.
+
+**Occurred:** 2026-04-23, pass-4 Gemma 4 E2B run. Killing 2 ghost processes (PIDs 33260, 40240 from 18:20:33) immediately restored expected throughput. Subsequent prompts completed in normal time.
+
+---
+
+## `AttributeError: 'Gemma4Model' object has no attribute 'layers'` in train_sae_local.py
+
+**Symptom:** `scripts/train_sae_local.py` crashes immediately after model loading with `AttributeError: 'Gemma4Model' object has no attribute 'layers'` (line 91).
+
+**Root cause:** `Gemma4ForConditionalGeneration` has a nested architecture: `model.model` returns a `Gemma4Model` (the multimodal wrapper), which does NOT directly expose `.layers`. The text transformer layers live at `model.model.language_model.layers`. The original code only checked `hasattr(model, "language_model")`, which is False for `Gemma4ForConditionalGeneration` (whose top-level attr is `.model`, not `.language_model`).
+
+**Fix (in train_sae_local.py lines 87–95):** Walk multiple candidate paths:
+```python
+def _find_layer(m, idx):
+    paths = [
+        lambda m: m.model.language_model.layers[idx],  # Gemma4ForConditionalGeneration
+        lambda m: m.language_model.model.layers[idx],  # alt multimodal
+        lambda m: m.model.layers[idx],                 # standard CausalLM
+        lambda m: m.model.model.layers[idx],           # double-wrapped
+    ]
+    for fn in paths:
+        try:
+            return fn(m)
+        except (AttributeError, IndexError, TypeError):
+            continue
+    raise AttributeError(f"Cannot find layer {idx} in {type(m).__name__}")
+target_layer = _find_layer(model, layer)
+```
+
+**Occurred:** 2026-04-24, first SAE training attempt.
+
+---
+
+## `device_map={"": "cuda"}` silently falls back to CPU on Windows WDDM (bitsandbytes 0.49.2, transformers 5.6.0)
+
+**Symptom:** `load_model(..., quantize="4bit")` returns with model on CPU despite CUDA being available. `nvidia-smi` does not show the venv Python process, only other processes. Generation runs at ~1-3 tok/s instead of 20-30 tok/s. Process appears alive but makes no GPU-visible progress for 30+ minutes.
+
+**Root cause:** `device_map={"": "cuda"}` (string) is not recognized correctly by bitsandbytes/accelerate on WDDM. The model silently loads to CPU instead of raising an OOM or device error. Integer device index `{"": 0}` works correctly.
+
+**Diagnosis:**
+- `nvidia-smi` GPU processes: Python `.venv/Scripts/python.exe` NOT listed → model is on CPU
+- `PowerShell: (Get-WmiObject Win32_Process -Filter 'ProcessId=NNN').CommandLine` to map Windows PID to command
+- GPU memory stays flat (no increase when model "loads")
+
+**Fix (implemented in `model_adapter.py`):**
+```python
+cuda_idx = torch.cuda.current_device() if torch.cuda.is_available() else None
+kwargs["device_map"] = {"": cuda_idx} if cuda_idx is not None else "auto"
+```
+Also added post-load device assertion in `load_model` to fail fast if CPU fallback occurs.
+
+**Additional trigger:** VRAM already occupied by Streamlit dashboard (PID 43304, anaconda3 Python) + Ollama (PID 6388) can reduce free VRAM below the threshold needed for 4-bit Gemma 2 2B (~1382 MiB weights + ~150 MiB runtime). If total free VRAM < ~1550 MiB, kill these background processes first. Killing the stuck Python process typically frees all VRAM (CUDA context released on exit).
+
+**First observed:** 2026-04-24 ~05:33 PDT — wasted 33 minutes before diagnosis.

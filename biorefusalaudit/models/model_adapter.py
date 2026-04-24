@@ -51,13 +51,15 @@ def load_model(
             bnb_4bit_quant_type="nf4",
             bnb_4bit_use_double_quant=True,
         )
-        # {"": device} forces the entire model to the target device. device_map="auto"
-        # mis-estimates VRAM for multimodal architectures (Gemma4ForConditionalGeneration)
-        # and silently routes all compute to CPU even when CUDA is available.
-        kwargs["device_map"] = {"": device} if "cuda" in device else "auto"
+        # Use integer device index (0) rather than string "cuda" — bitsandbytes on
+        # Windows WDDM silently falls back to CPU when the string form is used and
+        # VRAM is tight. Integer index forces the allocation correctly.
+        cuda_idx = torch.cuda.current_device() if torch.cuda.is_available() else None
+        kwargs["device_map"] = {"": cuda_idx} if cuda_idx is not None else "auto"
     elif quantize == "8bit":
         kwargs["quantization_config"] = BitsAndBytesConfig(load_in_8bit=True)
-        kwargs["device_map"] = {"": device} if "cuda" in device else "auto"
+        cuda_idx = torch.cuda.current_device() if torch.cuda.is_available() else None
+        kwargs["device_map"] = {"": cuda_idx} if cuda_idx is not None else "auto"
     else:
         kwargs["torch_dtype"] = torch_dtype
         # Prefer device_map="auto" on CUDA so models larger than VRAM
@@ -69,6 +71,17 @@ def load_model(
     tokenizer = AutoTokenizer.from_pretrained(name)
     model = AutoModelForCausalLM.from_pretrained(name, **kwargs)
     model.eval()
+    # Verify actual device placement — catches silent CPU fallback from bitsandbytes on WDDM
+    try:
+        actual = next(model.parameters()).device
+        print(f"[model_adapter] Loaded {name} on {actual} (requested: {device}, quantize: {quantize})", flush=True)
+        if device == "cuda" and str(actual) == "cpu":
+            raise RuntimeError(
+                f"Model loaded on CPU despite CUDA request. "
+                f"Free VRAM may be insufficient. Requested quantize={quantize}."
+            )
+    except StopIteration:
+        pass  # quantized models may have no plain parameters — skip check
     return LoadedModel(name=name, model=model, tokenizer=tokenizer, device=device, quantize=quantize)
 
 
@@ -137,11 +150,35 @@ def residual_stream_hook(
         handle.remove()
 
 
+def _apply_chat_template(lm: LoadedModel, prompt: str) -> str:
+    """Wrap prompt in the model's chat template if supported.
+
+    Instruction-tuned models (Gemma 2 IT, Gemma 4 IT, Llama IT) expect
+    their special BOS/turn tokens via apply_chat_template. Without this,
+    the model sees raw text and either generates nothing (immediate EOS) or
+    echoes the prompt in a repetition loop — both of which the regex judge
+    classifies as 'refuse', producing false-positive refusal counts.
+
+    Falls back to returning the raw prompt if the tokenizer has no template
+    (e.g., base models, GPT-2 style).
+    """
+    tok = lm.tokenizer
+    if getattr(tok, "chat_template", None):
+        messages = [{"role": "user", "content": prompt}]
+        return tok.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+    return prompt
+
+
 def generate_completion(
     lm: LoadedModel, prompt: str, max_new_tokens: int = 200, temperature: float = 0.7
 ) -> str:
     """Generate a model completion for a single prompt. Returns the decoded text."""
-    enc = lm.tokenizer(prompt, return_tensors="pt").to(next(lm.model.parameters()).device)
+    formatted = _apply_chat_template(lm, prompt)
+    device = next(lm.model.parameters()).device
+    enc = lm.tokenizer(formatted, return_tensors="pt").to(device)
+    input_len = enc["input_ids"].shape[1]
     with torch.no_grad():
         out = lm.model.generate(
             **enc,
@@ -150,8 +187,9 @@ def generate_completion(
             do_sample=(temperature > 0.0),
             pad_token_id=lm.tokenizer.eos_token_id,
         )
-    full = lm.tokenizer.decode(out[0], skip_special_tokens=True)
-    # Strip the prompt prefix if the tokenizer didn't do it for us.
-    if full.startswith(prompt):
-        full = full[len(prompt):]
-    return full.strip()
+    # Decode only the *generated* tokens — slice off the input prefix ids.
+    # This avoids string-stripping heuristics that break when the tokenizer's
+    # skip_special_tokens=True drops template tokens but leaves plain-text
+    # turn markers ("user\n", "model\n") in the decoded output.
+    completion_ids = out[0][input_len:]
+    return lm.tokenizer.decode(completion_ids, skip_special_tokens=True).strip()

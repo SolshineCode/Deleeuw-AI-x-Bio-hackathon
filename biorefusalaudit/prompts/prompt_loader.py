@@ -7,9 +7,17 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator
 
-VALID_TIERS = {"benign_bio", "dual_use_bio", "hazard_adjacent_category"}
+VALID_TIERS = {
+    "benign_bio", "dual_use_bio", "hazard_adjacent_category",
+    "benign_legal", "dual_use_legal", "hazard_adjacent_legal",
+}
 VALID_FRAMINGS = {"direct", "educational", "roleplay", "obfuscated"}
-VALID_EXPECTED_SURFACE = {"comply", "refuse", "hedge", "partial", "evade"}
+VALID_EXPECTED_SURFACE = {
+    "comply", "refuse", "hedge", "partial", "evade",
+    "comply_or_hedge", "refuse_or_hedge",
+    # Note: bio tiers use original naming (hazard_adjacent_category), legal tiers use *_legal suffix.
+    # refuse_or_hedge is canonical; hedge_or_refuse is a legacy alias — normalize in JSONL files.
+}
 
 
 @dataclass(frozen=True)
@@ -22,6 +30,7 @@ class DualUsePrompt:
     expected_surface: str
     category: str
     sampled_from: str = "original"
+    domain: str = ""
 
     def __post_init__(self):
         if self.tier not in VALID_TIERS:

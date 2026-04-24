@@ -29,7 +29,7 @@ pip install -e ".[dev,dashboard]"
 # CUDA torch (Python 3.13 wheels not on default pypi):
 pip uninstall -y torch && pip install torch --index-url https://download.pytorch.org/whl/cu124
 
-# One-time verify (should print 51 passed):
+# One-time verify (should print 56 passed):
 KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=. python -m pytest tests/ -q -m "not integration"
 
 # Flagship pipeline (~3h on the GTX 1650 box; ~90 min on a Colab T4):
@@ -46,7 +46,7 @@ bash scripts/flagship_pipeline.sh google/gemma-2-2b-it 12 "layer_12/width_16k/av
 | `configs/calibration_gemma2_2b.yaml` | Fitted T (appended; prior T preserved) | ~1 KB |
 | `runs/flagship/pass2_tuned/report.json` | Pass-2 eval with tuned catalog + fitted T | ~75 records, 200-400 KB |
 | `runs/flagship/pass2_tuned/report.md` | Human-readable pass-2 aggregate table | ~1 KB |
-| `runs/flagship/interventions/*.json` | Per-intervention baseline / ablated / boosted | ~9 files, 5-10 KB each |
+| `runs/flagship/interventions/*.json` | Per-intervention baseline / ablated / boosted | 11+ files, 13-14 KB each |
 | `demo/scaling_plot.png` | Cross-config divergence bar chart | ~70 KB |
 
 ## Colab T4 alternative
@@ -82,15 +82,19 @@ Expected: 3 records in `runs/smoke/report.json`, each with `divergence`, `surfac
 - **`import sae_lens` segfaults** — known Py 3.13 + torch 2.6 ABI break. BioRefusalAudit bypasses sae_lens for Gemma Scope 1 via `_load_gemma_scope_direct`. No action required.
 - **`OutOfMemoryError` on model load** — model + SAE together need ~3.5 GB VRAM. If you see OOM on a 4 GB GPU, close other GPU apps (browsers, ollama) and retry.
 - **Daemon doesn't pick up eval completion** — the chain daemon polls for `^\[biorefusalaudit\] Processed` in stderr.log. If your shell doesn't flush, try `unbuffer` or force the eval with `python -u`.
+- **`AttributeError: 'Gemma4Model' object has no attribute 'layers'` in train_sae_local.py** — fixed in commit `379faa5`. Pull latest and retry.
 
 ## Full commit log
 
-All work is on `main`. The merge history tells the story:
+Current active branch: `feat/gemma4-calibration-chain-docs` (PR #13). Recent commits:
 
-| PR | Commit | What |
-|---|---|---|
-| #1 | `1b7d0c4` | MVP: package + 75-prompt eval set + docs + paper skeleton |
-| #2 | `474ca12` | Layer-12 provenance + specialist review response + activation dumping |
-| #3 | `446074d` | Calibration + intervention scripts + attribution modules |
-| #4 | `4f97544` | Flagship pipeline + custom SAE trainer |
-| #5 | `897b49a` | Post-eval chain daemon + simplified dashboard |
+| Commit | What |
+|---|---|
+| `b332400` | paper: policy brief — SAE proof-of-concept result added to fine-tuning recommendation |
+| `0769214` | docs: SUBMISSION_CHECKLIST — word count 3499, 11/11 interventions |
+| `02c606c` | docs: METHOD.md — local SAE training proof-of-concept results (2026-04-24) |
+| `1548a07` | paper: §5 limitation fix — non-bio control completed |
+| `379faa5` | fix: Gemma4Model layers AttributeError; analyze_sae_training unicode fix |
+| `fa1132b` | docs: update REVIEWER_QUICKSTART commit log |
+| `f06456b` | docs+script: 11/11 NC final; fix report_new_interventions.py STATUS.md regex |
+| `1204ace` | docs: 11/11 NC complete — all interventions done (bio_001/002 + 9 prior) |
