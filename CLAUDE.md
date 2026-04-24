@@ -55,7 +55,7 @@ If an experiment plan looks like it might violate any of the above, stop and esc
 
 ## Non-negotiable user directives (broader patterns)
 
-1. **Keep the local GPU running work continuously.** CUDA torch install is mandatory (not CPU fallback); long-running jobs dispatch to `run_in_background=true`; queue the next GPU job as one finishes. Releases only when Caleb says stop. See `~/.claude/projects/C--Users-caleb/memory/feedback_gpu_always_running.md`.
+1. **Keep the local GPU running work continuously.** CUDA torch install is mandatory (not CPU fallback); long-running jobs dispatch to `run_in_background=true`; queue the next GPU job as one finishes. **Any time the GPU becomes free, immediately start the next relevant GPU job without waiting to be asked.** Priority queue: (a) cross-model format ablations, (b) longer SAE training runs, (c) additional intervention experiments, (d) flagship reruns with new seeds. Releases only when Caleb says stop. See `~/.claude/projects/C--Users-caleb/memory/feedback_gpu_always_running.md`.
 2. **No push / PR / gh-comment without explicit approval.** Branch stays local until Caleb says "push it." This supersedes any perceived urgency.
 3. **Brutal honesty on confidence.** Flag stub catalogs as stubs, prior-only calibration as prior-only, synthetic numbers as synthetic — before they get confused for real results in the paper.
 4. **Consolidate related work into single unified PRs.** Per-module PRs add review overhead; the hackathon submission wants one coherent PR.
