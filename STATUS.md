@@ -80,6 +80,33 @@ TODO (user-action required, planned post-submission):
 4. Record Streamlit dashboard demo video (60–90 s).
 5. Submit.
 
+IN PROGRESS (autonomous, 2026-04-23):
+- Non-bio control experiment: `runs/control-legal-financial-gemma2/` — Gemma 2 2B-IT + Gemma Scope 1 on 30-prompt legal/financial eval set (`data/eval_set_control/control_legal_financial_v1.jsonl`). Tests whether D separates legal tiers (benign_legal / dual_use_legal / hazard_adjacent_legal) as well as bio tiers. If yes → D measures generic sensitivity routing, not bio-specific refusal depth. Results feed paper §8 and motivate domain-specific SAE fine-tuning.
+
+## Planned follow-on research arc (post-hackathon)
+
+Motivated by Neuronpedia feature validation (features 2620/1041/7541 are generic vocabulary, not bio-specific) and the non-bio control experiment:
+
+### Phase 1 — Track B adapter (feasible with existing corpus)
+- Collect multi-token residual-stream activations from all `runs/*/activations.npz` (currently first-token only)
+- Train projection adapter W ∈ ℝ^{k_cat × d_sae} with contrastive loss (hazard_active vs. hazard_suppressed refusals)
+- Validate via Neuronpedia: do projected features show bio-specific semantics?
+- Requires: multi-token activation capture patch to `model_adapter.py` + adapter training script
+
+### Phase 2 — Track A full SAE fine-tune (requires institutional data access)
+- Collect ~10K+ activation vectors from paired bio-hazard completions (base vs. RLHF model; genuine vs. shallow refusals)
+- Fine-tune Gemma Scope SAE encoder+decoder with dual objective: reconstruction + contrastive tier separation
+- Target: Neuronpedia top features should show bio-specific semantics (pathogen terms, mechanism-of-harm vocabulary, containment language)
+- Institutional partners: AISI, CLTR, national biosecurity labs (CBRN red-team datasets under HL3-gated access)
+- Proposal vehicle: Coefficient Giving RFP (due May 11) and AISI-UK research collaboration
+
+### Phase 3 — Battery of domain-specific SAEs
+- Apply same methodology to CSAM-adjacent, financial fraud, CBRN abuse domains
+- Each SAE trained on domain-specific behavioral activation corpus
+- Mirrors the Secret Agenda (arXiv:2509.20393) multi-domain deception detection extension
+
+See `docs/METHOD.md §Planned extension` and `paper/writeup.md §8` for full technical specification.
+
 ## Build branch
 
 - Active branch: `hackathon-mvp-sprint`

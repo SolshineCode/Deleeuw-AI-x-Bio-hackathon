@@ -166,3 +166,84 @@ Steps 3–5 can be iterated: if the pass-2 `feature_vec` variance is still low (
 ## Provenance
 
 This formulation inherits the dual-SAE ensemble pipeline and judge-consortium pattern from the author's [nanochat-SAE-deception-research](https://github.com/SolshineCode/deception-nanochat-sae-research) repo, with three changes for this tool: (1) the metric is made explicit and calibrated, rather than being reported as a weighted sum; (2) the categories are remapped to the bio-safety domain; (3) the SAE source is Gemma Scope 2 instead of per-model hand-trained SAEs where possible.
+
+---
+
+## Planned extension: Domain-specific SAE fine-tuning
+
+### Motivation
+
+Neuronpedia validation of the auto-tuned Gemma Scope 1 catalog (Gemma 2 2B-IT, layer 12) reveals that the top "refusal_circuitry" and "hazard_adjacent" features carry generic technical-governance semantics — authority/governance vocabulary (feature 2620), programming constructs (feature 1041), software development phrases (feature 7541) — rather than bio-specific refusal representations. The non-bio control experiment (legal/financial eval set, 30 prompts, same tier structure) is designed to test whether D separates tiers as well in a non-bio domain; if so, the current metric measures domain-agnostic sensitivity routing rather than bio-specific refusal depth.
+
+The fix is to fine-tune SAEs on **domain-specific behavioral corpora** using the behavioral-sampling methodology of [Secret Agenda (arXiv:2509.20393)].
+
+### Behavioral-sampling methodology (from Secret Agenda)
+
+The Secret Agenda finding: generic SAEs trained on general text produce features that correlate with deception/hazardous content but encode lexical co-occurrence rather than behavioral engagement. The fix is to train on activations collected specifically during behavioral instances of interest:
+
+- **Positive examples**: residual-stream activations at the reference layer during model responses that engage with hazard-adjacent content (high bio_content + hazard_adjacent features active, even if surface = refuse)
+- **Negative examples**: activations during genuine-refusal responses where hazard features are suppressed (low bio_content + hazard_adjacent, surface = refuse)
+- **Contrastive objective**: features should discriminate these two classes, not general text properties
+
+### Two implementation tracks
+
+**Track A — Full SAE fine-tune** (production-grade; requires ~10K+ activation samples):
+
+```
+Training objective:
+  L = L_recon + λ * L_contrastive + μ * L_sparsity
+
+  L_contrastive = margin-ranking loss:
+      max(0, margin - D(hazard_active) + D(hazard_suppressed))
+
+Training data: per-prompt residual-stream activations across
+all N response tokens (not just first-token capture), collected
+from bio-hazard prompt-completion pairs across the full tier range.
+
+Scale target: ~10,000 activation vectors from:
+  - BioRefusalAudit bio eval set (75 prompts × ~50 tokens)
+  - CBRN uplift red-team datasets (if access obtained)
+  - Before/after jailbreak attempt pairs
+  - Base model vs. RLHF model completions on same prompts
+```
+
+**Track B — Projection adapter** (feasible now with 75-prompt corpus):
+
+```
+Architecture: freeze Gemma Scope weights entirely.
+Learn W ∈ ℝ^{k_cat × d_sae} (small projection over top-K features)
+that maps SAE activations to bio-refusal-relevant subspace.
+
+Effectively: replaces f = SAE.encode(x)[catalog_indices]
+with         f = W @ SAE.encode(x)
+
+W trained end-to-end from runs/*/activations.npz using the same
+contrastive objective as Track A. With 75 prompts × ~50 tokens
+= ~3,750 activation vectors, this is feasible but will overfit
+without regularization (L2 + early stopping on a held-out tier).
+
+Advantage: interpretable projection weights; compatible with
+existing T calibration; no retraining of SAE decoder.
+```
+
+### Training data sources
+
+In priority order:
+
+1. **BioRefusalAudit eval set completions** — already have activations from `runs/*/activations.npz` at first response token. Extending to multi-token capture (all response tokens) multiplies sample count by ~avg_response_length.
+2. **Non-bio control completion activations** — running as a control experiment; provides cross-domain negative examples showing what generic sensitivity routing looks like in feature space.
+3. **AISI / CLTR CBRN evaluation sets** — institutionally held red-team datasets. Access subject to institutional agreement; the HL3-FULL license on this codebase is designed to gate compatibility.
+4. **Paired base vs. safety-tuned model completions** — same prompts run through Gemma 2 base and Gemma 2 2B-IT; difference in feature activation profile isolates RLHF-induced refusal features from base content features.
+
+### Evaluation protocol for fine-tuned SAE
+
+After fine-tuning, the validation chain is:
+
+1. **Neuronpedia interpretability check** — do the new top features for "refusal_circuitry" and "bio_content" now show bio-specific semantic content rather than generic vocabulary?
+2. **Tier separation** — does D still separate bio tiers (benign < dual-use < hazard-adjacent)?
+3. **Domain specificity** — does D *fail* to separate legal/financial tiers at the same rate? (Desired: fine-tuned SAE is bio-specific; generic catalog is not)
+4. **Intervention consistency** — do the same 5 CMF candidates (bio_004/021/027/069/074) still show label change or |ΔD| > 0.2 after catalog replacement?
+
+### Connection to abuse-specific database fine-tuning
+
+The full vision is a suite of domain-specific SAEs — one for bio-hazard, one for CBRN, one for CSAM-adjacent, one for financial fraud — each trained on behavioral activation data from that abuse domain and its corresponding public-good institutional dataset. This mirrors the Secret Agenda approach applied across safety domains: rather than a single generic SAE trying to carve all behavioral-safety concepts simultaneously, a battery of specialized SAEs each has a precise interpretability target and a validated feature catalog grounded in ground-truth behavioral instances.

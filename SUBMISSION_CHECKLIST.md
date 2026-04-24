@@ -54,5 +54,12 @@ git push origin v1.0-submission
 - A100 sweep beyond what Colab T4 can host
 - Minimal-pair attribution-graph diffs (minimal pairs generated at `data/eval_set_public/minimal_pairs.json`; diff layer is post-submission)
 - Blinded-audit rubric on scored outputs (tooling not yet built)
+- **Domain-specific SAE fine-tuning** — Track B adapter and Track A full fine-tune (see `docs/METHOD.md §Planned extension`; motivated by control experiment and Neuronpedia validation; Phase 1 feasible post-hackathon with existing corpus)
 
 Each of these gets a one-paragraph "planned" entry in the paper's §8 Future Work, not a claim in the body.
+
+## Nice-to-have before submission (not blocking)
+
+- [ ] Non-bio control experiment results: `runs/control-legal-financial-gemma2/report.{md,json}` — in progress 2026-04-23. If complete before submission, add D values to paper §8 framing and update this checklist.
+- [ ] Dashboard loads and renders latest real report (streamlit smoke check)
+- [ ] Demo video (60–90 s)

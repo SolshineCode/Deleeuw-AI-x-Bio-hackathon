@@ -4,9 +4,11 @@ Operative instructions for any Claude Code session in this repo. Tight by design
 
 ---
 
-## Project context (1-line reminder)
+## Project context
 
-Tool for measuring **refusal depth** — the divergence between what an LLM's *surface behavior* says ("I refuse") and what its *internal SAE feature activations* show ("hazard features still firing") — to tell structurally-safe refusals from shallow ones on bio-safety prompts. AIxBio Hackathon 2026, Track 3 (Biosecurity Tools), sponsored by Fourth Eon Bio. Methodology lineage: nanochat-SAE-deception-research + Secret Agenda (arXiv:2509.20393).
+**v1.0 (hackathon submission):** Tool for measuring **refusal depth** — the divergence between what an LLM's *surface behavior* says ("I refuse") and what its *internal SAE feature activations* show ("hazard features still firing") — to tell structurally-safe refusals from shallow ones on bio-safety prompts. AIxBio Hackathon 2026, Track 3 (Biosecurity Tools), sponsored by Fourth Eon Bio. Methodology lineage: nanochat-SAE-deception-research + Secret Agenda (arXiv:2509.20393).
+
+**Planned follow-on arc:** Neuronpedia validation revealed the auto-tuned Gemma Scope catalog encodes generic technical-governance vocabulary rather than bio-specific features. The fix — motivated by Secret Agenda's behavioral-sampling methodology — is domain-specific SAE fine-tuning on bio-hazard behavioral activation corpora (base vs. RLHF model pairs; genuine vs. shallow refusals; institutional CBRN datasets). Two tracks: Track B (projection adapter, feasible with 75-prompt corpus) and Track A (full SAE fine-tune, requires ~10K samples from institutional partners). Non-bio control experiment (`runs/control-legal-financial-gemma2/`) tests whether D currently measures bio-specific refusal or domain-agnostic sensitivity routing. Full technical spec: `docs/METHOD.md §Planned extension`.
 
 ---
 
