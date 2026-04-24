@@ -58,6 +58,23 @@ git push origin v1.0-submission
 
 Each of these gets a one-paragraph "planned" entry in the paper's §8 Future Work, not a claim in the body.
 
+## 8-Hour GPU Sprint Completions (00:18–08:18 PDT, 2026-04-24)
+
+### Bug fixes
+
+- [x] **`device_map` string→int fix** — `model_adapter.py` replaced `{"": "cuda"}` (string) with `{"": torch.cuda.current_device()}` (integer) for bitsandbytes NF4/8-bit on Windows WDDM. Added post-load RuntimeError if CPU despite CUDA request. TROUBLESHOOTING.md section + CLAUDE.md gotcha #8 added. 33-minute CPU-fallback waste prevented for all future runs.
+
+### Experiments run on GPU
+
+- [x] **Gemma 2 2B-IT format ablation (n=96, 80 tok, conditions A/B/C/D)** — `runs/gemma-2-2b-it-format-ablation-80tok/report.json`. ALL conditions: 0% refuse, 0% loops, 100% comply. Complete contrast with Gemma 4: Gemma 2 is fully format-insensitive; Gemma 4 condition B produces 58% loops. Neither model refuses at 80 tokens. Analysis: `runs/gemma-2-2b-it-format-ablation-80tok/analysis.txt`.
+- [x] **Gemma 2 SAE training — 2000 steps** — `runs/sae-training-gemma2-2000steps/sae_weights.pt`. L_recon: 56.48→0.87 (98.5% drop). L_contrastive: 0.7447→0.9753 (+0.23 — corpus diversity bottleneck confirmed). Cross-model comparison: identical L_contrastive delta to Gemma 4 500-step run.
+- [x] **Gemma 2 SAE training — 5000 steps** — `runs/sae-training-gemma2-5000steps/sae_weights.pt`. L_recon: 58.17→0.28 (99.5% drop). L_contrastive: 0.83→0.888 (+0.06 — significantly less degradation than 500/2000 steps). **Nuanced finding:** More training steps reduce L_contrastive degradation; bottleneck is corpus *diversity* (bio vocabulary is shared across tiers regardless of hazard level), not corpus size or step count alone.
+
+### Docs updated
+
+- [x] **`docs/METHOD.md` — cross-model SAE convergence table** added to §Proof-of-concept local training: G4 L17 500 steps / G2 L12 2000 steps / G2 L12 5000 steps with L_recon final, L_cont initial/final/delta columns.
+- [x] **`paper/writeup.md` §4.5** — word-neutral swap to include cross-model format ablation summary (n=72 G4 + n=96 G2, both 0% refuse; G4 cond B 58% loops; G2 0% loops). Word count: 3499/3500 maintained.
+
 ## Stretch: Colab SAE training notebook (new, planned during hackathon)
 
 - [x] `notebooks/colab_gemma4_sae_training.ipynb` — T4 SAE fine-tuning on HF dataset + W&B logging + HF checkpoint save — **COMPLETE 2026-04-24**
