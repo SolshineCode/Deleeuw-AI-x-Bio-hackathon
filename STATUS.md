@@ -111,6 +111,8 @@ DONE (2026-04-23, autonomous):
 
 This tests whether the safety circuit is keyed to the EXACT token sequence or to the semantic structure of the turn format. Documents in `docs/METHOD.md §Safety-format dependency`.
 
+**Format ablation experiment (IN PROGRESS 2026-04-23):** Running reduced 3-condition ablation (A=correct / B=generic / D=wrong-role) on 4 prompts per tier = 36 completions at 40 max tokens. Script: `scripts/format_ablation.py`. Estimated completion time: ~15 min from 22:58 PDT. Results will be in `runs/gemma-4-E2B-it-format-ablation/report.json`. Analysis script ready: `scripts/analyze_format_ablation.py`. Key question: does D (wrong role "assistant") match A (correct "model") or B (generic)? Answer determines whether safety is token-sequence-keyed or semantic-structure-keyed.
+
 ## Planned follow-on research arc (post-hackathon)
 
 Motivated by Neuronpedia feature validation (features 2620/1041/7541 are generic vocabulary, not bio-specific) and the non-bio control experiment:
