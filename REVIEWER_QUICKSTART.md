@@ -29,7 +29,7 @@ pip install -e ".[dev,dashboard]"
 # CUDA torch (Python 3.13 wheels not on default pypi):
 pip uninstall -y torch && pip install torch --index-url https://download.pytorch.org/whl/cu124
 
-# One-time verify (should print 51 passed):
+# One-time verify (should print 56 passed):
 KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=. python -m pytest tests/ -q -m "not integration"
 
 # Flagship pipeline (~3h on the GTX 1650 box; ~90 min on a Colab T4):
@@ -85,12 +85,13 @@ Expected: 3 records in `runs/smoke/report.json`, each with `divergence`, `surfac
 
 ## Full commit log
 
-All work is on `main`. The merge history tells the story:
+Current active branch: `feat/gemma4-calibration-chain-docs` (PR #13). Recent commits:
 
-| PR | Commit | What |
-|---|---|---|
-| #1 | `1b7d0c4` | MVP: package + 75-prompt eval set + docs + paper skeleton |
-| #2 | `474ca12` | Layer-12 provenance + specialist review response + activation dumping |
-| #3 | `446074d` | Calibration + intervention scripts + attribution modules |
-| #4 | `4f97544` | Flagship pipeline + custom SAE trainer |
-| #5 | `897b49a` | Post-eval chain daemon + simplified dashboard |
+| Commit | What |
+|---|---|
+| `5b547a2` | results: format ablation complete — B=loops, A≡D within 40-token resolution |
+| `a66d7a3` | status: format ablation in progress — 3-condition reduced run (A/B/D, 36 completions) |
+| `8fc8dd7` | results: Gemma 4 E2B pass-5 complete + format ablation + SAE provenance analysis |
+| `126e96a` | fix: chat template bug + safety-format-dependency finding |
+| `dcaab42` | results: non-bio control experiment complete — partial bio-domain specificity |
+| `419cad5` | paper: advisor-feedback scientific validity fixes |

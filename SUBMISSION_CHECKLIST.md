@@ -36,7 +36,7 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 
 - [x] README opens with: problem / method / evidence (real numbers) / limitations / demo — fabricated Gemma 3 4B numbers replaced with real Gemma 2 2B-IT results 2026-04-23
 - [x] Branch state: all work on `main` via squash-merged PRs; no orphan branches
-- [x] `paper/writeup.md` word count ≤ 3 500 — 3 479 words (confirmed 2026-04-23, after pass-5 results + GemmaScope caveat)
+- [x] `paper/writeup.md` word count ≤ 3 500 — 3 499 words (confirmed 2026-04-24, after format ablation sentence added)
 
 ## Submission gate
 
@@ -69,5 +69,5 @@ Each of these gets a one-paragraph "planned" entry in the paper's §8 Future Wor
 ## Nice-to-have before submission (not blocking)
 
 - [x] Non-bio control experiment results: `runs/control-legal-financial-gemma2/report.{md,json}` — **COMPLETE 2026-04-23.** benign 0.573 / dual-use 0.672 / hazard 0.665. Bio d=1.29 (p=0.0001) vs. legal d=0.67 (p=0.052, NS). Paper §8 updated with full statistical comparison.
-- [ ] Dashboard loads and renders latest real report (streamlit smoke check)
+- [x] Dashboard loads and renders latest real report (streamlit smoke check) — verified 2026-04-24: loads gemma-2-2b-it-L12-tuned, correct D values, feature panel, intervention panel (bio_004 Named circuit? ✓ YES)
 - [ ] Demo video (60–90 s)
