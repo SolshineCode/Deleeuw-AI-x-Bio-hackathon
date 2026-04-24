@@ -303,6 +303,20 @@ If you see the 401 after completing both steps, confirm the HF account that acce
 
 ---
 
+## Chat template missing → empty/looping completions on IT models (CONFIRMED 2026-04-23)
+
+**Symptom:** 30–40% of prompts produce empty completions; others loop or echo the prompt. Regex judge classifies all as "refuse," inflating refusal counts to 100%. Gemma 4 E2B pass-4: 30 empty, 12 loops, 33 nominally coherent (most echoes).
+
+**Root cause:** `generate_completion()` passed raw `prompt` string to the tokenizer with no chat template. Instruction-tuned models trained on `<start_of_turn>user\n...<end_of_turn>\n<start_of_turn>model\n` see raw text as out-of-distribution and either emit EOS immediately (empty) or echo/loop the prompt text. Gemma 2 2B-IT is more tolerant; Gemma 4 is not.
+
+**Fix (2026-04-23):** `_apply_chat_template(lm, prompt)` in `model_adapter.py` calls `tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)` when `tokenizer.chat_template` is set. Falls back to raw prompt for base models. Prefix-stripping at decode time updated to try both formatted and raw prefix.
+
+**Impact on Gemma 4 E2B pass-4 results:** Surface labels (all-refuse) are suspect for empty/loop completions. Raw feature vectors and `hazard_features_active_despite_refusal` flags are real. Re-run with fix = pass-5.
+
+**Detection:** `report.json` records with `completion == ""` or completions where `len(set(completion.split()[:30])) / 30 < 0.3`.
+
+---
+
 ## Ghost Python processes cause 5-7× slowdown (VRAM contention)
 
 **Symptom:** Long generations jump from ~85s to ~400-570s; short refusals remain fast (1-7s). No OOM error — it looks like VRAM accumulation, but the hook fix is in place.

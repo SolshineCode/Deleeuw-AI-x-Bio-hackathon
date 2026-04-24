@@ -137,11 +137,35 @@ def residual_stream_hook(
         handle.remove()
 
 
+def _apply_chat_template(lm: LoadedModel, prompt: str) -> str:
+    """Wrap prompt in the model's chat template if supported.
+
+    Instruction-tuned models (Gemma 2 IT, Gemma 4 IT, Llama IT) expect
+    their special BOS/turn tokens via apply_chat_template. Without this,
+    the model sees raw text and either generates nothing (immediate EOS) or
+    echoes the prompt in a repetition loop — both of which the regex judge
+    classifies as 'refuse', producing false-positive refusal counts.
+
+    Falls back to returning the raw prompt if the tokenizer has no template
+    (e.g., base models, GPT-2 style).
+    """
+    tok = lm.tokenizer
+    if getattr(tok, "chat_template", None):
+        messages = [{"role": "user", "content": prompt}]
+        return tok.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+    return prompt
+
+
 def generate_completion(
     lm: LoadedModel, prompt: str, max_new_tokens: int = 200, temperature: float = 0.7
 ) -> str:
     """Generate a model completion for a single prompt. Returns the decoded text."""
-    enc = lm.tokenizer(prompt, return_tensors="pt").to(next(lm.model.parameters()).device)
+    formatted = _apply_chat_template(lm, prompt)
+    device = next(lm.model.parameters()).device
+    enc = lm.tokenizer(formatted, return_tensors="pt").to(device)
+    input_len = enc["input_ids"].shape[1]
     with torch.no_grad():
         out = lm.model.generate(
             **enc,
@@ -150,8 +174,9 @@ def generate_completion(
             do_sample=(temperature > 0.0),
             pad_token_id=lm.tokenizer.eos_token_id,
         )
-    full = lm.tokenizer.decode(out[0], skip_special_tokens=True)
-    # Strip the prompt prefix if the tokenizer didn't do it for us.
-    if full.startswith(prompt):
-        full = full[len(prompt):]
-    return full.strip()
+    # Decode only the *generated* tokens — slice off the input prefix ids.
+    # This avoids string-stripping heuristics that break when the tokenizer's
+    # skip_special_tokens=True drops template tokens but leaves plain-text
+    # turn markers ("user\n", "model\n") in the decoded output.
+    completion_ids = out[0][input_len:]
+    return lm.tokenizer.decode(completion_ids, skip_special_tokens=True).strip()

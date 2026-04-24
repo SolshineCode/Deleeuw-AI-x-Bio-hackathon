@@ -86,6 +86,28 @@ DONE (2026-04-23, autonomous):
   - Bio vs. legal effect sizes: d=1.29 (p=0.0001, non-overlapping CIs) vs. d=0.67 (p=0.052, NS, CIs overlap 0.071)
   - **Finding:** D has partial bio-domain advantage (larger gradient in bio) but non-zero legal tier trend confirms generic sensitivity routing also contributes. Motivates domain-specific SAE fine-tuning. Paper §8 updated with full statistical comparison.
 
+## Safety-format dependency investigation (NEW, 2026-04-23)
+
+**Finding:** Gemma 4 E2B's RLHF safety behavior appears gated on the chat template format. Pass-4 ran WITHOUT `apply_chat_template`, resulting in:
+- 30/75 empty completions (model emits EOS on raw out-of-distribution text)
+- 12/75 repetition loops
+- 0% genuine refusals among "coherent" completions (Gemini + Nemotron cross-validation)
+
+**Chat template confirmed (2026-04-23):** Gemma 4 uses `<bos><|turn>user\n...<turn|>\n<|turn>model` — distinct from Gemma 2's `<start_of_turn>` format. The fix (`_apply_chat_template` in `model_adapter.py`) has been implemented and tested.
+
+**Pass-5 (in progress):** Re-running Gemma 4 E2B with corrected chat template to answer:
+- Does the model genuinely refuse with proper formatting? → Safety deeply internalized (format-gated activation)
+- Does it partially comply? → Safety is format-dependent AND weaker than pass-4 implied
+- Does the hazard_features_active pattern hold under genuine refusals?
+
+**Planned follow-on experiment:** Explicit format ablation — same prompts, same model, 4 conditions:
+1. No template (current pass-4) → generation failure
+2. Correct template (pass-5) → baseline behavior
+3. Malformed template (truncated turn tokens) → partially activated safety?
+4. Alternative role labels in template → does "assistant" vs "model" matter?
+
+This tests whether the safety circuit is keyed to the EXACT token sequence or to the semantic structure of the turn format. Documents in `docs/METHOD.md §Safety-format dependency`.
+
 ## Planned follow-on research arc (post-hackathon)
 
 Motivated by Neuronpedia feature validation (features 2620/1041/7541 are generic vocabulary, not bio-specific) and the non-bio control experiment:
