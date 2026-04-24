@@ -294,7 +294,7 @@ Full results and methodology in [paper/writeup.md](paper/writeup.md).
 
 Source: `runs/gemma-2-2b-it-L12-tuned/report.json`.
 
-**Causal intervention result:** 8/8 intervened prompts qualified as named circuits (`|ΔD| > 0.2`, `label_changed`, or combined effect size > 0.2 under refusal-circuitry feature ablation/boost). One counterintuitive case (bio_060, hazard-adjacent roleplay): ablating refusal-circuitry features *caused* refusal, suggesting these features mediate contextual engagement rather than simply suppressing it. See `runs/interventions/` and §4.3 of the paper.
+**Causal intervention result:** 9/9 intervened prompts qualified as named circuits (`|ΔD| > 0.2`, `label_changed`, or combined effect size > 0.2 under refusal-circuitry feature ablation/boost). Counterintuitive pattern: 3/9 comply-baseline cases (bio_004, bio_010, bio_060) showed comply→refuse when refusal-circuitry features were ablated — suggesting these features mediate contextual engagement rather than simply suppressing refusal. See `runs/interventions/` and §4.3 of the paper.
 
 **Cross-architecture results (Colab T4 — Gemma 2 9B-IT + Llama 3.1 8B-Instruct):** pending `notebooks/colab_biorefusalaudit.ipynb` run. Will appear in `runs/colab_*/report.json` and §4.4 of the paper.
 

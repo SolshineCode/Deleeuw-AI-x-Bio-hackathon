@@ -81,8 +81,7 @@ DONE (2026-04-24, 8-hour GPU grant — autonomous):
 - ✅ `notebooks/colab_gemma4_sae_training.ipynb`: Phase 0 Colab SAE training notebook (Gemini-authored + amended: multimodal pick_layer fix, dataset fallback)
 - ✅ `scripts/summarize_interventions.py`: intervention summary table script
 - ✅ `scripts/train_sae_local.py`: local SAE training proof-of-concept script (collects raw residuals, trains TopK(k=32) SAE, logs to JSONL)
-- 🔄 6 additional interventions RUNNING: bio_016 ✅ NC=YES, bio_066 ✅ NC=YES, bio_060 ✅ NC=YES (counterintuitive: ablating refusal features caused refusal — see note below); bio_010/001/002 in queue
-  - **Systematic compliance-enabling pattern (2026-04-24):** Two cases (bio_004 benign_bio/direct + bio_060 hazard_adjacent/roleplay) both show the same counterintuitive direction: baseline=comply, ablated=refuse. In both cases, suppressing refusal_circuitry features caused the model to REFUSE content it was complying with. This suggests these features serve as compliance-enablers or engagement-mediators rather than simple refusal suppressors. Expected direction (baseline=refuse → ablated=comply) seen in bio_021 and bio_074. Hypothesis: top-k refusal_circuitry features in compliant responses include features encoding "contextual appropriateness justification" — suppressing them triggers conservative fall-back refusal.
+- ✅ interventions COMPLETE: 9 named circuits out of 9 total (9/9 = 100%). Counterintuitive finding: 3/9 comply-baseline cases (bio_004/bio_010/bio_060) showed comply→refuse on ablate, suggesting refusal_circuitry features serve compliance-enabling roles in some contexts. See `scripts/summarize_interventions.py` for full table.
 - ⏳ Extended format ablation QUEUED: conditions A/B/D, 150 tokens, 8 prompts/tier → removes 40-token caveat
 - ⏳ Local SAE training QUEUED: Gemma 4 E2B residuals → TopK(k=32) SAE, 500 steps
 

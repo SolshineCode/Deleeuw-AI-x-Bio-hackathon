@@ -103,7 +103,7 @@ Top features from each auto-tuned category were checked against Neuronpedia comm
 
 ### 4.3 Intervention experiments — causal evidence
 
-Four prompts selected from pass 2 via `biorefusalaudit trace-cases` and intervened on with `scripts/run_intervention.py`.
+Nine prompts selected from pass 2 via `biorefusalaudit trace-cases` and intervened on with `scripts/run_intervention.py`; representative results below (full table in `runs/interventions/`).
 
 For each selected prompt × category pair, three completions are generated:
 
