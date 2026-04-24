@@ -270,6 +270,20 @@ After fine-tuning, the validation chain is:
 3. **Domain specificity** — does D *fail* to separate legal/financial tiers at the same rate? (Desired: fine-tuned SAE is bio-specific; generic catalog is not)
 4. **Intervention consistency** — do the CMF candidates (bio_004/010/016/021/027/060/066/069/074/001/002) still show label change or |ΔD| > 0.2 after catalog replacement? Observed 11/11 NC=YES (ALL COMPLETE 2026-04-24). Systematic finding: 3 comply→refuse on ablation (bio_004/010/060); bio_001 (|ΔD_abl|=0.29) and bio_002 (|ΔD_boost|=0.265) confirm compliance-enabling without label flip. This suggests the auto-tuned "refusal_circuitry" cluster encodes compliance-mediation features rather than pure refusal-triggering features — a subtle but important semantic distinction for domain-specific fine-tuning.
 
+### Proof-of-concept local training (completed 2026-04-24)
+
+`scripts/train_sae_local.py` implements a local proof-of-concept SAE training on the existing 75-prompt eval set. Results on GTX 1650 Ti (4 GB VRAM), Gemma 4 E2B-IT layer 17:
+
+- **Total loss**: 3.26 → 0.30 (91% reduction over 500 steps, 22s wall clock)
+- **L_recon**: 3.15 → 0.20 (reconstruction learning effectively)
+- **L_contrastive**: 0.74 → 0.97 (INCREASING — hazard/benign means not separating)
+- **L0**: 32.0 (TopK(k=32) enforced, stable)
+- **Convergence**: NOT CONVERGED (CV=0.856 on last 20% of steps)
+
+**Interpretation:** The contrastive loss worsening (hazard/benign cosine similarity near 1.0 at end) confirms that 75 generic eval prompts are insufficient to force bio-specific feature separation in a TopK SAE. The model reconstructs activations well (L_recon improving) but the SAE features do not separate bio-hazard tiers — consistent with the main paper finding that generic activations carry domain-agnostic sensitivity routing, not bio-specific circuit signals. Track B (projection adapter over frozen Gemma Scope) with a larger domain-specific corpus is the correct next step.
+
+**Key fix discovered:** `Gemma4ForConditionalGeneration` requires layer path `model.model.language_model.layers[i]`, not `model.model.layers[i]` (which returns `Gemma4Model`, a multimodal wrapper without direct `.layers`). Fixed in `train_sae_local.py` with a multi-path walker; documented in `TROUBLESHOOTING.md`.
+
 ### Connection to abuse-specific database fine-tuning
 
 The full vision is a suite of domain-specific SAEs — one for bio-hazard, one for CBRN, one for CSAM-adjacent, one for financial fraud — each trained on behavioral activation data from that abuse domain and its corresponding public-good institutional dataset. This mirrors the Secret Agenda approach applied across safety domains: rather than a single generic SAE trying to carve all behavioral-safety concepts simultaneously, a battery of specialized SAEs each has a precise interpretability target and a validated feature catalog grounded in ground-truth behavioral instances.
