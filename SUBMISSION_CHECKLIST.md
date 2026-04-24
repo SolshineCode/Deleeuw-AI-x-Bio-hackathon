@@ -23,7 +23,7 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 
 - [x] `demo/scaling_plot.png` regenerated from real reports — 18 real `runs/*/report.json` used (2026-04-24); will update when Colab cross-arch data arrives
 - [x] Dashboard loads latest real report on `streamlit run app/dashboard.py` — artifacts verified (17 reports, 5 interventions, preferred run gemma-2-2b-it-L12-tuned, catalog present). Browser smoke check complete (2026-04-24).
-- [x] At least one intervention panel renders in the dashboard — 8 intervention JSON files present at `runs/interventions/` (as of 2026-04-24; 3 more in queue)
+- [x] At least one intervention panel renders in the dashboard — 11 intervention JSON files present at `runs/interventions/` (all complete 2026-04-24; 11/11 NC=YES)
 - [ ] `REVIEWER_QUICKSTART.md` one-command path verified from a clean clone
 
 ### Tests + infrastructure
@@ -36,7 +36,7 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 
 - [x] README opens with: problem / method / evidence (real numbers) / limitations / demo — fabricated Gemma 3 4B numbers replaced with real Gemma 2 2B-IT results 2026-04-23
 - [x] Branch state: all work on `main` via squash-merged PRs; no orphan branches
-- [x] `paper/writeup.md` word count ≤ 3 500 — 3 492 words (confirmed 2026-04-24; fixed "Three"→"Four" prompts in §4.3)
+- [x] `paper/writeup.md` word count ≤ 3 500 — 3 499 words (confirmed 2026-04-24; §4.3 11/11 interventions; §5 control-complete fix)
 
 ## Submission gate
 
