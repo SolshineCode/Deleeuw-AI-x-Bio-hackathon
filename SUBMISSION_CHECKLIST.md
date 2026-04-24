@@ -28,15 +28,15 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 
 ### Tests + infrastructure
 
-- [x] `pytest -m "not integration"` passes cleanly — 42 tests green (confirmed 2026-04-23)
-- [ ] `biorefusalaudit check-safety --eval-set data/eval_set_public/eval_set_public_v1.jsonl` returns OK
-- [ ] `biorefusalaudit trace-cases --report <report>` returns selected cases
+- [x] `pytest -m "not integration"` passes cleanly — 56 tests green (confirmed 2026-04-23)
+- [x] `biorefusalaudit check-safety --eval-set data/eval_set_public/eval_set_public_v1.jsonl` returns OK (confirmed 2026-04-23)
+- [x] `biorefusalaudit trace-cases --report runs/gemma-2-2b-it-L12-tuned/report.json` returns 12 selected cases (confirmed 2026-04-23)
 
 ### Repo signal
 
-- [ ] README opens with: problem / method / evidence / limitations / demo — no intermediate clutter above those five
+- [x] README opens with: problem / method / evidence (real numbers) / limitations / demo — fabricated Gemma 3 4B numbers replaced with real Gemma 2 2B-IT results 2026-04-23
 - [x] Branch state: all work on `main` via squash-merged PRs; no orphan branches
-- [ ] `paper/writeup.md` word count ≤ 3 500
+- [x] `paper/writeup.md` word count ≤ 3 500 — 1 772 words (confirmed 2026-04-23)
 
 ## Submission gate
 
