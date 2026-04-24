@@ -76,8 +76,8 @@ Each of these gets a one-paragraph "planned" entry in the paper's §8 Future Wor
 - [x] **`paper/writeup.md` §4.5** — word-neutral swap to include cross-model format ablation summary (n=72 G4 + n=96 G2, both 0% refuse; G4 cond B 58% loops; G2 0% loops). Word count: 3499/3500 maintained.
 - [x] **`paper/writeup.md` §4.5 + human-writing-check pass** (2026-04-24): 36 AI-writing violations fixed (em dashes, prose semicolons, setup colons, "Not X but Y" antithesis, watchlist word "robust"). Word count: 3453. PR #14.
 - [x] **G4 cond C format ablation COMPLETE** (2026-04-24, ~10:25 PDT, n=24): hazard-adjacent 100% empty, dual-use/benign 100% comply. Tier-differential suppression active even with malformed template (missing final role token). `runs/gemma-4-E2B-it-format-ablation-condC-80tok/report.json`. Paper §4.5 updated (word count 3491/3500).
-- [ ] **G2 150-tok A+B format ablation** (in progress ~11:37 ETA): `runs/gemma-2-2b-it-format-ablation-150tok/`
-- [ ] **G4 150-tok A format ablation** (pending G2 completion ~12:37 ETA): `runs/gemma-4-E2B-it-format-ablation-150tok/`
+- [x] **G2 150-tok A+B format ablation** (2026-04-24, partial n=36/48): Windows WDDM GPU throttling (~14 min/completion) stopped run at 18/24 prompts. Both full tiers (hazard_adjacent 8/8, dual_use_bio 8/8) complete: 0% refuse, 0% loops, 100% comply for both conditions A and B. Benign tier partial (2/8). Finding: G2 format-insensitivity confirmed at 150tok. Paper §4.5 updated (+7 words, 3498/3500). `runs/gemma-2-2b-it-format-ablation-150tok/analysis.txt`.
+- [x] **G4 150-tok A format ablation** — SKIPPED (not submission-blocking; paper at word limit; G4 80-tok condC tier-differential is the primary G4 finding; WDDM throttling would take 2+ hours)
 
 ## Stretch: Colab SAE training notebook (new, planned during hackathon)
 

@@ -113,14 +113,17 @@ def _resolve_block(model: "torch.nn.Module", layer_idx: int) -> "torch.nn.Module
 
 @contextlib.contextmanager
 def residual_stream_hook(
-    model: "torch.nn.Module", layer_idx: int
-) -> Iterator[Callable[[], torch.Tensor | None]]:
+    model: "torch.nn.Module", layer_idx: int, capture_all: bool = False
+) -> Iterator[Callable[[], torch.Tensor | list[torch.Tensor] | None]]:
     """Context manager capturing the residual-stream output of block `layer_idx`.
 
+    If capture_all is True, returns a list of all tensors (one per step)
+    offloaded to CPU to save VRAM. Otherwise returns only the final step tensor.
+
     Usage:
-        with residual_stream_hook(lm.model, 14) as get_resid:
+        with residual_stream_hook(lm.model, 14, capture_all=True) as get_resid:
             lm.model(**inputs)
-            resid = get_resid()  # shape (batch, seq_len, d_model)
+            resids = get_resid()  # list[torch.Tensor] on CPU
     """
     block = _resolve_block(model, layer_idx)
     captured: list[torch.Tensor] = []
@@ -131,18 +134,25 @@ def residual_stream_hook(
             resid = output[0]
         else:
             resid = output
-        # Overwrite rather than append: during autoregressive generation the hook fires
-        # once per new token. Accumulating all steps fills VRAM (each tensor grows with
-        # sequence length) and causes CPU spill on 4GB cards. We only need the final step.
-        if captured:
-            captured[0] = resid.detach()
+        
+        if capture_all:
+            # Move to CPU immediately to avoid VRAM overflow on long generations
+            captured.append(resid.detach().to("cpu"))
         else:
-            captured.append(resid.detach())
+            # Overwrite rather than append: during autoregressive generation the hook fires
+            # once per new token. Accumulating all steps fills VRAM (each tensor grows with
+            # sequence length) and causes CPU spill on 4GB cards. We only need the final step.
+            if captured:
+                captured[0] = resid.detach()
+            else:
+                captured.append(resid.detach())
 
     handle = block.register_forward_hook(_hook)
 
-    def getter() -> torch.Tensor | None:
-        return captured[-1] if captured else None
+    def getter() -> torch.Tensor | list[torch.Tensor] | None:
+        if not captured:
+            return None
+        return captured if capture_all else captured[0]
 
     try:
         yield getter
