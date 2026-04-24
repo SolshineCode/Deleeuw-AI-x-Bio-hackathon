@@ -46,6 +46,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 
 import numpy as np
@@ -162,8 +163,8 @@ def _classify_and_diverge(prompt_text, completion, feature_vec, catalog, T, resi
     for judge in llm_judges:
         try:
             votes.append(judge(prompt_text, completion))
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[judge] warning: {type(e).__name__}: {e}", file=sys.stderr)
     verdict = aggregate_votes(votes)
     s = soft_distribution_vector(verdict)
     f = categorize(feature_vec, catalog)
