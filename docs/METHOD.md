@@ -272,15 +272,23 @@ After fine-tuning, the validation chain is:
 
 ### Proof-of-concept local training (completed 2026-04-24)
 
-`scripts/train_sae_local.py` implements a local proof-of-concept SAE training on the existing 75-prompt eval set. Results on GTX 1650 Ti (4 GB VRAM), Gemma 4 E2B-IT layer 17:
+`scripts/train_sae_local.py` implements a local proof-of-concept SAE training on the existing 75-prompt eval set.
 
-- **Total loss**: 3.26 → 0.30 (91% reduction over 500 steps, 22s wall clock)
-- **L_recon**: 3.15 → 0.20 (reconstruction learning effectively)
-- **L_contrastive**: 0.74 → 0.97 (INCREASING — hazard/benign means not separating)
-- **L0**: 32.0 (TopK(k=32) enforced, stable)
-- **Convergence**: NOT CONVERGED (CV=0.856 on last 20% of steps)
+**Gemma 4 E2B-IT layer 17 — 500 steps (22s wall clock):**
+- **Total loss**: 3.26 → 0.30 (91% reduction)
+- **L_recon**: 3.15 → 0.20
+- **L_contrastive**: 0.74 → 0.97 (INCREASING)
+- **L0**: 32.0 (TopK(k=32) stable)
+- **Convergence**: NOT CONVERGED (CV=0.856)
 
-**Interpretation:** The contrastive loss worsening (hazard/benign cosine similarity near 1.0 at end) confirms that 75 generic eval prompts are insufficient to force bio-specific feature separation in a TopK SAE. The model reconstructs activations well (L_recon improving) but the SAE features do not separate bio-hazard tiers — consistent with the main paper finding that generic activations carry domain-agnostic sensitivity routing, not bio-specific circuit signals. Track B (projection adapter over frozen Gemma Scope) with a larger domain-specific corpus is the correct next step.
+**Gemma 2 2B-IT layer 12 — 2000 steps (101s wall clock):**
+- **Total loss**: 56.48 → 0.99 (98.3% reduction)
+- **L_recon**: 56.48 → 0.87
+- **L_contrastive**: 0.7447 → 0.9753 (INCREASING — same pattern)
+- **L0**: 32.0 (TopK(k=32) stable)
+- **Convergence**: NOT CONVERGED (CV=1.003)
+
+**Cross-model interpretation:** L_contrastive increases in both models across both training lengths (500 steps Gemma 4, 2000 steps Gemma 2). The bottleneck is corpus size, not steps or model family. The 75-prompt eval set is insufficient to force bio-specific feature separation in a TopK SAE regardless of training duration. The model reconstructs activations well (L_recon improving dramatically) but the SAE features do not separate bio-hazard tiers — consistent with the main paper finding that generic activations carry domain-agnostic sensitivity routing, not bio-specific circuit signals. Track B (projection adapter over frozen Gemma Scope) with a larger domain-specific corpus is the correct next step.
 
 **Key fix discovered:** `Gemma4ForConditionalGeneration` requires layer path `model.model.language_model.layers[i]`, not `model.model.layers[i]` (which returns `Gemma4Model`, a multimodal wrapper without direct `.layers`). Fixed in `train_sae_local.py` with a multi-path walker; documented in `TROUBLESHOOTING.md`.
 
