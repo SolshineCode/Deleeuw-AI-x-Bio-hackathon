@@ -84,11 +84,28 @@ def collect_activations(prompts: list[dict], model, tokenizer, layer: int, devic
 
     hook_obj = Hook()
 
-    # Handle both causal LM (model.model.layers) and multimodal (language_model.model.layers)
-    if hasattr(model, "language_model"):
-        target_layer = model.language_model.model.layers[layer]
-    else:
-        target_layer = model.model.layers[layer]
+    # Walk several known architecture paths to locate transformer layers.
+    # Gemma 4 ForConditionalGeneration: model.model → Gemma4Model → .language_model → Gemma4TextModel → .layers
+    # Gemma 4 via language_model attr directly:  model.language_model.model.layers
+    # Standard CausalLM:  model.model.layers
+    def _find_layer(m, idx):
+        paths = [
+            lambda m: m.model.language_model.layers[idx],      # Gemma4ForConditionalGeneration
+            lambda m: m.language_model.model.layers[idx],      # alt multimodal
+            lambda m: m.model.layers[idx],                     # standard CausalLM
+            lambda m: m.model.model.layers[idx],               # double-wrapped
+        ]
+        for fn in paths:
+            try:
+                return fn(m)
+            except (AttributeError, IndexError, TypeError):
+                continue
+        # Last resort: named_modules scan
+        for name, mod in m.named_modules():
+            if "layers" in name and name.endswith(f".{idx}"):
+                return mod
+        raise AttributeError(f"Cannot find layer {idx} in {type(m).__name__}")
+    target_layer = _find_layer(model, layer)
 
     handle = target_layer.register_forward_hook(hook_obj)
 

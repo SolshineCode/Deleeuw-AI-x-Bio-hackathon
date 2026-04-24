@@ -82,8 +82,8 @@ DONE (2026-04-24, 8-hour GPU grant — autonomous):
 - ✅ `scripts/summarize_interventions.py`: intervention summary table script
 - ✅ `scripts/train_sae_local.py`: local SAE training proof-of-concept script (collects raw residuals, trains TopK(k=32) SAE, logs to JSONL)
 - ✅ interventions COMPLETE: 11 named circuits out of 11 total (11/11 = 100%). Counterintuitive finding: 3/11 cases (bio_004/bio_010/bio_060) showed comply→refuse on ablate, suggesting refusal_circuitry features serve compliance-enabling roles in some contexts. See `scripts/summarize_interventions.py` for full table.
-- ⏳ Extended format ablation RUNNING (chain, 01:50 PDT): conditions A/B/D, 150 tokens, 8 prompts/tier → removes 40-token caveat
-- ⏳ Local SAE training QUEUED (chain): Gemma 4 E2B residuals → TopK(k=32) SAE, 500 steps
+- ⏳ Local SAE training RUNNING (02:18 PDT, PID 39549): Gemma 4 E2B residuals → TopK(k=32) SAE, 500 steps; fixed Gemma4Model.layers AttributeError (path now walks model.model.language_model.layers)
+- ⏳ Format ablation QUEUED (chain, after SAE): conditions A/B/D, 80 tokens, 8 prompts/tier → removes 40-token caveat (150-token run killed — KV cache VRAM overflow at ~13 MB free)
 
 TODO (user-action required, planned post-submission):
 1. Run `notebooks/colab_biorefusalaudit.ipynb` on Colab T4 (Gemma 2 9B-IT + Llama 3.1 8B-Instruct, ~90 min).

@@ -37,9 +37,9 @@ def main():
     n = len(records)
 
     print(f"\n{'='*70}")
-    print(f"SAE TRAINING ANALYSIS — {args.log}")
+    print(f"SAE TRAINING ANALYSIS -- {args.log}")
     print(f"{'='*70}")
-    print(f"Steps logged:    {n}  (step {first['step']} → step {last['step']})")
+    print(f"Steps logged:    {n}  (step {first['step']} -> step {last['step']})")
 
     print(f"\n{'Metric':22s} {'Initial':>10s} {'Final':>10s} {'Delta':>10s}")
     print("-" * 56)
@@ -68,7 +68,7 @@ def main():
         elif cv < 0.15:
             print(f"  Status: NEAR-CONVERGED (CV < 0.15)")
         else:
-            print(f"  Status: NOT CONVERGED (CV={cv:.3f} >= 0.15) — consider more steps")
+            print(f"  Status: NOT CONVERGED (CV={cv:.3f} >= 0.15) -- consider more steps")
 
     # Contrastive loss direction
     l_c_last = last.get("l_contrastive", float("nan"))
@@ -78,7 +78,7 @@ def main():
     elif l_c_last < 0.8:
         print("  > Moderate: partial hazard/benign separation")
     else:
-        print("  > High (>0.8): cosine sim near 1 — hazard/benign means still aligned (not separated)")
+        print("  > High (>0.8): cosine sim near 1 -- hazard/benign means still aligned (not separated)")
 
     print(f"\nFinal L0 (active features/token): {last.get('l0', '?'):.1f}")
     print(f"{'='*70}\n")
@@ -111,7 +111,7 @@ def main():
             plt.savefig(out_path, dpi=150)
             print(f"Training curves saved: {out_path}")
         except ImportError:
-            print("matplotlib not available — skipping plot.")
+            print("matplotlib not available -- skipping plot.")
 
 
 if __name__ == "__main__":
