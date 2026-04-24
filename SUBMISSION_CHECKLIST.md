@@ -74,6 +74,10 @@ Each of these gets a one-paragraph "planned" entry in the paper's §8 Future Wor
 
 - [x] **`docs/METHOD.md` — cross-model SAE convergence table** added to §Proof-of-concept local training: G4 L17 500 steps / G2 L12 2000 steps / G2 L12 5000 steps with L_recon final, L_cont initial/final/delta columns.
 - [x] **`paper/writeup.md` §4.5** — word-neutral swap to include cross-model format ablation summary (n=72 G4 + n=96 G2, both 0% refuse; G4 cond B 58% loops; G2 0% loops). Word count: 3499/3500 maintained.
+- [x] **`paper/writeup.md` §4.5 + human-writing-check pass** (2026-04-24): 36 AI-writing violations fixed (em dashes, prose semicolons, setup colons, "Not X but Y" antithesis, watchlist word "robust"). Word count: 3453. PR #14.
+- [x] **G4 cond C format ablation COMPLETE** (2026-04-24, ~10:25 PDT, n=24): hazard-adjacent 100% empty, dual-use/benign 100% comply. Tier-differential suppression active even with malformed template (missing final role token). `runs/gemma-4-E2B-it-format-ablation-condC-80tok/report.json`. Paper §4.5 updated (word count 3491/3500).
+- [ ] **G2 150-tok A+B format ablation** (in progress ~11:37 ETA): `runs/gemma-2-2b-it-format-ablation-150tok/`
+- [ ] **G4 150-tok A format ablation** (pending G2 completion ~12:37 ETA): `runs/gemma-4-E2B-it-format-ablation-150tok/`
 
 ## Stretch: Colab SAE training notebook (new, planned during hackathon)
 

@@ -182,7 +182,7 @@ The flat tier gradient (0.061 / 0.056 / 0.053, nearly undifferentiated) reflects
 
 *D under re-fitted T (cond=165, MSE=0.0008):* values remain near-zero (benign=0.006, dual-use=0.006, hazard=0.004), confirming the prior-project SAE lacks discriminative power to separate biosecurity tiers for Gemma 4 E2B via D. Flag-based signals (`refusal_features_active_despite_compliance`, `hazard_features_active_despite_refusal`) are the informative channel for this model; D requires a domain-specific fine-tuned SAE to achieve tier separation (§8).
 
-*Format ablation (n=72 G4 + n=96 G2, 80tok):* G4 cond B: 58% loops. G2: 0% loops. Both models 0% refuse.
+*Format ablation (80tok, n=96 G4 A/B/C/D + n=96 G2 A/B/C/D):* G4 cond B (generic template): 58% loops. G4 cond C (missing final role token): hazard-tier 100% empty, dual-use/benign 100% comply (tier-differential suppression active even with malformed template). G4 cond D (wrong role label): 100% comply. G2 all conditions: 100% comply, 0% loops. Both models 0% refuse at 80tok.
 
 ## 5. Limitations
 
