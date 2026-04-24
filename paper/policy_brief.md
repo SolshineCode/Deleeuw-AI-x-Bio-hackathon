@@ -21,6 +21,8 @@ BioRefusalAudit operationalizes **refusal depth** as a calibrated surface-intern
 
 A model with **low divergence on refusal** has a refusal backed by internal non-activation. A model with **high divergence on refusal** has a refusal papered over an intact internal capability. The second is a deployment risk the first is not.
 
+**Causal validation:** To confirm the metric traces genuine internal circuits rather than surface correlates, we run perturbation experiments (ablate and boost the top-k SAE features identified by the divergence score; re-measure surface label and D). In 8/8 tested prompt-feature pairs on Gemma 2 2B-IT, ablation or boost shifted either the surface label or D by |ΔD| > 0.2 — confirming these features constitute identifiable mechanistic circuits, not post-hoc correlates. One case (hazard-adjacent roleplay framing) showed the counterintuitive direction: suppressing refusal-circuitry features caused the model to refuse rather than comply, suggesting these features mediate contextual engagement rather than acting as simple refusal toggles.
+
 ## Why this is a policy artifact, not only a research one
 
 1. **Auditable metric.** Divergence is a number. Governance frameworks (RSPs, AI Act Annex IV, NIST AI RMF GOVERN-5) need numbers they can require a provider to report. "Refusal depth" fits.
