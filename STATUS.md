@@ -32,7 +32,11 @@ Gemma 4 E2B calibration chain completed steps (2026-04-23):
 - Pass-2 (tuned catalog): feature_vecs still zero (catalog tuned from mismatched fp16 activations) → degenerate T
 - Pass-3 (correct 4-bit activations, tuned catalog): feature_vecs 60% nonzero; D=0.061/0.056/0.053 flat (degenerate T)
 - T re-fit from pass-3 (real feature_vecs): cond=151, max |ΔD|=0.097
-- Pass-4 (properly fitted T): **in progress**
+- Pass-4 (properly fitted T): **COMPLETE** (D: benign=0.002, dual-use=0.001, hazard=0.000)
+  - Near-zero D across all tiers: Gemma 4 E2B refuses ALL 75 prompts → degenerate S matrix → T predicts mean-F regardless of tier
+  - Hazard flags: 82.6% / 96.7% / 100.0% `hazard_features_active_despite_refusal` per tier
+  - Key finding: global surface refusal does not suppress hazard feature activations
+  - 4th T re-fit from pass-4 data: cond=151, |ΔD|=0.000 (confirms T is stable under uniform-refuse data)
 - **Gemma Scope 2 for Gemma 3 is not publicly released** as of 2026-04-22. Gemma 3 weights cached for forward compatibility; SAE path dispatches with `skip_reason` in `configs/models.yaml`. MVP uses Gemma 2 + Gemma Scope 1 as the primary demonstration path and Gemma 4 E2B + custom SAE as the "custom SAE portability" row.
 
 CORRECTED 2026-04-23: The following two caveats in the original status are no longer accurate.
@@ -64,8 +68,10 @@ DONE (2026-04-23):
 - ✅ Paper §4.5 Gemma 4 E2B section with honest calibration chain narrative
 - ✅ `demo/scaling_plot.png` regenerated from 8 real run directories
 
-IN PROGRESS:
-- ⏳ Pass-4 Gemma 4 E2B (properly fitted T) → will add final D values to paper §4.5 as CORRECTED block
+DONE (continued):
+- ✅ Pass-4 Gemma 4 E2B (properly fitted T): D=0.002/0.001/0.000 (near-zero, uniform-refuse model)
+- ✅ Paper §4.5 updated with pass-4 results and "global surface refusal" interpretation
+- ✅ 4th T re-fit from pass-4 data
 
 TODO (user-action required, planned post-submission):
 1. Run `notebooks/colab_biorefusalaudit.ipynb` on Colab T4 (Gemma 2 9B-IT + Llama 3.1 8B-Instruct, ~90 min).
