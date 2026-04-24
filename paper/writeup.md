@@ -191,8 +191,11 @@ Code is released under HL3-FULL; tiers 1+2 of the eval set under CC-BY-4.0; tier
 
 ## 8. Future work
 
-- Gemma Scope 2 full sweep when released (Gemma 3 270M / 1B / 4B / 12B).
-- Llama 3.1 8B via Llama Scope — already cached; cross-architecture comparison adds only GPU time.
-- Transcoder + CLT analysis (PRD S2) to move from "metric" to "circuit" for the strongest divergence flags.
-- Unlearning before/after (PRD S4) — apply the metric to RMU snapshots for direct biosecurity value.
-- Coefficient Giving RFP (due May 11) — 6-month follow-on proposal framed around the results shipped here.
+**Domain-specific SAE fine-tuning.** Neuronpedia validation of the current auto-tuned catalog reveals that the top "refusal_circuitry" and "hazard_adjacent" features encode generic technical-governance vocabulary (authority/governance, programming constructs, software phrases) rather than bio-specific meaning (§4.2). The natural corrective is to fine-tune SAEs on domain-specific activation corpora — building on the behavioral-sampling methodology of [Secret Agenda]: (i) collect residual-stream activations from Gemma 2 2B-IT across bio-hazard prompt completions where the surface label is known (comply / refuse / hedge), covering all three eval tiers; (ii) fine-tune the SAE encoder+decoder with a dual objective — reconstruction loss (preserving monosemanticity) plus a contrastive loss that separates shallow-refusal activations (hazard features active) from genuine-refusal activations (hazard features suppressed); (iii) re-run the divergence metric with the fine-tuned SAE and compare feature specificity via Neuronpedia. A lightweight variant freezes the Gemma Scope weights and learns only a projection adapter over the top-K feature subset — feasible with the existing 75-prompt corpus. Extension to *abuse-specific databases* (CBRN uplift benchmarks, existing bio-hazard red-team collections) would provide the training signal for production-grade feature catalogs. This arc — generic SAE → behavioral-domain fine-tune → catalog validation → deployment — constitutes the natural journal-length follow-on to this workshop paper.
+
+- **Non-bio domain control.** Pending: run the current divergence pipeline on a matched legal/financial eval set (30 prompts, same tier structure) to determine whether D measures bio-specific refusal circuitry or domain-agnostic sensitivity routing. If D separates legal tiers as well as bio tiers, domain-specific fine-tuning becomes the necessary corrective to achieve bio-specificity rather than a nice-to-have.
+- **Gemma Scope 2 full sweep** when released (Gemma 3 270M / 1B / 4B / 12B).
+- **Llama 3.1 8B via Llama Scope** — already cached; cross-architecture comparison adds only GPU time.
+- **Transcoder + CLT analysis** (PRD S2) to move from "metric" to "circuit" for the strongest divergence flags.
+- **Unlearning before/after** (PRD S4) — apply the metric to RMU snapshots for direct biosecurity value.
+- **Coefficient Giving RFP** (due May 11) — 6-month follow-on proposal framed around the results shipped here.
