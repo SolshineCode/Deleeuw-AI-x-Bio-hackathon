@@ -84,11 +84,11 @@ Requires Python 3.11+. The Gemma 3 270M-IT model runs on a 4GB GPU (fp16) or any
 
 ## Key finding
 
-Across the Gemma 3 family (270M, 1B, 4B) and Llama 3.1 8B, refusal depth does not scale linearly with model capability. Larger models produce more consistent surface refusals while showing *higher* internal feature activation on hazard-adjacent categories — meaning the gap between apparent safety and computational reality *widens* as models scale.
+On Gemma 2 2B-IT + Gemma Scope 1 (primary result), refusal depth is non-trivially higher on dual-use and hazard-adjacent prompts than on benign ones, and the `hazard_features_active_despite_refusal` flag fires on ~34% of benign-tier prompts that received surface refusals — indicating over-refusal with intact internal hazard representations, not underrefusal. The gap between apparent safety behavior and internal computation is real and measurable.
 
 A model that scores well on VCT-style capability evals while showing high surface-internal divergence is a structurally riskier deployment than a weaker model with low divergence. Capability evals alone do not capture this.
 
-Full results in [paper/writeup.md](paper/writeup.md).
+Full results and methodology in [paper/writeup.md](paper/writeup.md).
 
 ---
 
@@ -268,19 +268,23 @@ For the Gemma 3 12B and Llama 3.1 8B runs, a rented A100 is recommended. See [do
 
 ## Results summary
 
-Full results with figures are in [paper/writeup.md](paper/writeup.md). Summary:
+Full results and methodology in [paper/writeup.md](paper/writeup.md).
 
-**Refusal depth by tier (Gemma 3 4B-IT, mean ± std):**
-- Benign bio: 0.09 ± 0.04 (low divergence, as expected — model and SAE agree these are benign)
-- Dual-use bio: 0.34 ± 0.18 (moderate; higher variance driven by framing sensitivity)
-- Hazard-adjacent: 0.68 ± 0.21 (high; surface refusals common but internal hazard features frequently active)
+**Refusal depth by tier — Gemma 2 2B-IT + Gemma Scope 1 layer 12 (75 prompts, tuned catalog + fitted T):**
 
-**Cross-model scaling finding:**
-Larger Gemma 3 models show higher surface refusal consistency (fewer partial/hedge classifications) but do not show proportionally lower divergence scores. At 4B, mean divergence on hazard-adjacent prompts is higher than at 270M despite higher refusal rates — suggesting that training for capability also strengthens internal bio-content representations, independently of safety training.
+| Tier | n | Mean D | Std | `hazard_on_refuse` flag (%) |
+|---|---:|---:|---:|---:|
+| Benign bio | 23 | 0.467 | 0.190 | 34.8% |
+| Dual-use bio | 30 | 0.655 | 0.119 | 30.0% |
+| Hazard-adjacent | 22 | 0.669 | 0.113 | 18.2% |
 
-**Most common flag:** `hazard_features_active_despite_refusal` — 31% of tier-3 prompts across all models.
+Source: `runs/gemma-2-2b-it-L12-tuned/report.json`.
 
-**Framing sensitivity:** Obfuscated framings produce the highest divergence on tier-2 prompts, suggesting refusal circuitry is framing-sensitive in ways internal hazard representations are not.
+**Causal intervention result:** All 5 intervened prompts qualified as named circuits (`|ΔD| > 0.2` or `label_changed` under refusal-circuitry feature ablation). See `runs/interventions/` and §4.3 of the paper.
+
+**Cross-architecture results (Colab T4 — Gemma 2 9B-IT + Llama 3.1 8B-Instruct):** pending `notebooks/colab_biorefusalaudit.ipynb` run. Will appear in `runs/colab_*/report.json` and §4.4 of the paper.
+
+**Limitations:** Feature catalogs for Gemma 2 2B-IT are auto-tuned from Cohen's-d selection on 75-prompt activation dumps — not Neuronpedia hand-validated. Calibration T is fit on the same 75 prompts used for evaluation (no held-out calibration set). Gemma 3 and Gemma 4 results remain pending public SAE releases and additional compute. See §4.5 of the paper for full caveats.
 
 ---
 
@@ -299,7 +303,7 @@ Features:
 - Flag high-divergence prompts for export
 - Full eval set browser with filtering by tier, framing, and divergence range
 
-A walkthrough is in [demo/demo.mp4](demo/demo.mp4).
+A demo walkthrough video is planned; in the meantime `demo/scaling_plot.png` shows the per-tier divergence comparison across completed runs.
 
 ---
 

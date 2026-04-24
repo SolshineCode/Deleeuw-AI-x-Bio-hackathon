@@ -6,35 +6,36 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 
 ### Evidence
 
-- [ ] Tuned feature catalog committed (`data/feature_catalog/gemma-2-2b-it.json` with `catalog_version: 0.2-auto-tuned`)
-- [ ] Fitted T in `configs/calibration_gemma2_2b.yaml` with `fit_method: ridge least-squares ...` and `fit_samples > 0`
-- [ ] Pass-2 real-numbers report at `runs/gemma-2-2b-it-L12-tuned/report.{md,json}` with non-zero per-tier mean divergence on `benign_bio` (i.e., catalog is actually matching firing features)
-- [ ] At least one intervention record at `runs/interventions/*.json` where `qualifies_as_named_circuit: true`
+- [x] Tuned feature catalog committed (`data/feature_catalog/gemma-2-2b-it.json` with `catalog_version: 0.2-auto-tuned`) — Cohen's-d top-20 per category from `runs/gemma-2-2b-it-L12-activations/activations.npz`
+- [x] Fitted T in `configs/calibration_gemma2_2b.yaml` with `fit_method: ridge least-squares (lambda=0.1) on report.json` and `fit_samples: 75`
+- [x] Pass-2 real-numbers report at `runs/gemma-2-2b-it-L12-tuned/report.{md,json}` with non-zero per-tier mean divergence — benign 0.467, dual-use 0.655, hazard-adj 0.669
+- [x] At least one intervention record at `runs/interventions/*.json` where `qualifies_as_named_circuit: true` — all 5 intervened prompts qualify (bio_004/021/027/069/074)
 
 ### Paper
 
-- [ ] §4.2 per-tier table filled with real pass-2 numbers
-- [ ] §4.3 intervention table filled with at least one real row
-- [ ] Every "named circuit" claim cross-references a specific intervention JSON
-- [ ] Limitations section states catalog + T origin + what was NOT attempted
+- [x] §4.2 per-tier table filled with real pass-2 numbers — in `paper/writeup.md`
+- [x] §4.3 intervention table filled with at least one real row — 4 rows with real ΔD
+- [x] Every "named circuit" claim cross-references a specific intervention JSON — cross-refs `runs/interventions/*.json`
+- [x] Limitations section states catalog + T origin + what was NOT attempted — §4.5 caveats block
+- [ ] §4.4 cross-architecture table filled — **BLOCKING: Colab T4 run not yet executed**
 
 ### Artifacts
 
-- [ ] `demo/scaling_plot.png` regenerated from real reports (not synthetic)
-- [ ] Dashboard loads latest real report on `streamlit run app/dashboard.py`
+- [ ] `demo/scaling_plot.png` regenerated from real reports (not synthetic) — pending Colab results
+- [ ] Dashboard loads latest real report on `streamlit run app/dashboard.py` — needs smoke verification
 - [ ] At least one intervention panel renders in the dashboard
 - [ ] `REVIEWER_QUICKSTART.md` one-command path verified from a clean clone
 
 ### Tests + infrastructure
 
-- [ ] `pytest -m "not integration"` passes cleanly
+- [x] `pytest -m "not integration"` passes cleanly — 42 tests green (confirmed 2026-04-23)
 - [ ] `biorefusalaudit check-safety --eval-set data/eval_set_public/eval_set_public_v1.jsonl` returns OK
 - [ ] `biorefusalaudit trace-cases --report <report>` returns selected cases
 
 ### Repo signal
 
 - [ ] README opens with: problem / method / evidence / limitations / demo — no intermediate clutter above those five
-- [ ] Branch state: one flagship run on `main`, no orphan feature branches
+- [x] Branch state: all work on `main` via squash-merged PRs; no orphan branches
 - [ ] `paper/writeup.md` word count ≤ 3 500
 
 ## Submission gate
