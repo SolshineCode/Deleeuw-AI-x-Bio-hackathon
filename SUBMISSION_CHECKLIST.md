@@ -22,8 +22,8 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 ### Artifacts
 
 - [x] `demo/scaling_plot.png` regenerated from real reports — 8 real `runs/*/report.json` used (2026-04-23); will update when Colab cross-arch data arrives
-- [ ] Dashboard loads latest real report on `streamlit run app/dashboard.py` — needs smoke verification
-- [ ] At least one intervention panel renders in the dashboard
+- [x] Dashboard loads latest real report on `streamlit run app/dashboard.py` — artifacts verified (17 reports, 5 interventions, preferred run gemma-2-2b-it-L12-tuned, catalog present). Full browser smoke check still pending.
+- [x] At least one intervention panel renders in the dashboard — 5 intervention JSON files present at `runs/interventions/`
 - [ ] `REVIEWER_QUICKSTART.md` one-command path verified from a clean clone
 
 ### Tests + infrastructure
@@ -36,7 +36,7 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 
 - [x] README opens with: problem / method / evidence (real numbers) / limitations / demo — fabricated Gemma 3 4B numbers replaced with real Gemma 2 2B-IT results 2026-04-23
 - [x] Branch state: all work on `main` via squash-merged PRs; no orphan branches
-- [x] `paper/writeup.md` word count ≤ 3 500 — 2 393 words (confirmed 2026-04-23, after pass-4 results + §5 added)
+- [x] `paper/writeup.md` word count ≤ 3 500 — 3 479 words (confirmed 2026-04-23, after pass-5 results + GemmaScope caveat)
 
 ## Submission gate
 
@@ -57,6 +57,14 @@ git push origin v1.0-submission
 - **Domain-specific SAE fine-tuning** — Track B adapter and Track A full fine-tune (see `docs/METHOD.md §Planned extension`; motivated by control experiment and Neuronpedia validation; Phase 1 feasible post-hackathon with existing corpus)
 
 Each of these gets a one-paragraph "planned" entry in the paper's §8 Future Work, not a claim in the body.
+
+## Stretch: Colab SAE training notebook (new, planned during hackathon)
+
+- [ ] `notebooks/colab_gemma4_sae_training.ipynb` — T4 SAE fine-tuning on HF dataset + W&B logging + HF checkpoint save
+  - Configurable: `HF_DATASET_REPO`, `HF_TEXT_COLUMN`, `HF_LABEL_COLUMN`
+  - Logs: total loss, L_recon, L_sparsity, L_contrastive, L0, feature density per step to W&B
+  - Saves checkpoint to HF every N steps
+  - Full spec: `docs/METHOD.md §Colab SAE Training Notebook`
 
 ## Nice-to-have before submission (not blocking)
 

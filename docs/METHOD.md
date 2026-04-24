@@ -273,3 +273,78 @@ After fine-tuning, the validation chain is:
 ### Connection to abuse-specific database fine-tuning
 
 The full vision is a suite of domain-specific SAEs — one for bio-hazard, one for CBRN, one for CSAM-adjacent, one for financial fraud — each trained on behavioral activation data from that abuse domain and its corresponding public-good institutional dataset. This mirrors the Secret Agenda approach applied across safety domains: rather than a single generic SAE trying to carve all behavioral-safety concepts simultaneously, a battery of specialized SAEs each has a precise interpretability target and a validated feature catalog grounded in ground-truth behavioral instances.
+
+---
+
+## Colab SAE Training Notebook (planned: `notebooks/colab_gemma4_sae_training.ipynb`)
+
+### Goal
+
+A T4-compatible Colab notebook that further trains the Gemma 4 E2B community SAE on bio-safety behavioral activations, analogous to what Unsloth does for fine-tuning LLMs (memory-efficient, consumer-GPU-accessible, configurable dataset input). This is the primary implementation vehicle for Track A on free hardware.
+
+### Architecture
+
+```
+[Frozen Gemma 4 E2B-IT, NF4 4-bit]
+      |
+  residual hook at layer 17
+      |
+  activation buffer (batch of token-level vectors, d_model=1536)
+      |
+[SAE encoder] — TopK(k=32) → sparse code
+      |
+[SAE decoder] → reconstructed residual
+      |
+  Loss = L_recon (MSE) + λ * L_sparsity (L1 on pre-ReLU) + μ * L_contrastive
+```
+
+**Contrastive signal:** For each batch, samples are labeled by tier (benign_bio / dual_use_bio / hazard_adjacent). The contrastive term pulls hazard-adjacent activations toward distinct SAE features and pushes benign activations away, breaking the generic vocabulary co-occurrence that causes feature-catalog failure on Gemma 4.
+
+### HuggingFace dataset integration
+
+```python
+# Configurable at top of notebook:
+HF_DATASET_REPO = "SolshineCode/biorefusalaudit-gated"  # or any HF text dataset
+HF_DATASET_SPLIT = "train"
+HF_TEXT_COLUMN   = "prompt"
+HF_LABEL_COLUMN  = "tier"   # benign_bio / dual_use_bio / hazard_adjacent_category
+
+# Notebook generates completions from Gemma 4 E2B-IT on each prompt,
+# captures residual activations at layer 17 across ALL generated tokens
+# (multi-token capture — not just first-token snapshot).
+```
+
+### W&B logging
+
+Every N steps the notebook logs to W&B:
+- **Training metrics:** total loss, L_recon (MSE), L_sparsity, L_contrastive
+- **SAE health metrics:** mean L0 (sparsity), feature activation density histogram, fraction of alive features (>0 activation per epoch)
+- **Interpretability metrics:** top-5 max-activating token distributions for the top refusal_circuitry + bio_content features (tracks semantic drift during training)
+- **Checkpoints:** SAE state_dict pushed to HF every N steps via `huggingface_hub.upload_file`
+
+```python
+import wandb
+wandb.init(project="biorefusalaudit-sae-training", config={
+    "model": "google/gemma-4-E2B-it",
+    "layer": 17,
+    "d_model": 1536,
+    "d_sae": 6144,
+    "topk_k": 32,
+    "dataset": HF_DATASET_REPO,
+    "lambda_contrastive": 0.1,
+    "lambda_sparsity": 0.04,
+})
+```
+
+### T4 memory budget
+
+- Frozen Gemma 4 E2B-IT (NF4 4-bit): ~1.0 GB
+- SAE module (TopK, 1536→6144→1536): ~150 MB
+- Activation buffer (batch=32 × seq=50 × d_model=1536 × fp16): ~10 MB
+- Optimizer state (AdamW on SAE only): ~300 MB
+- **Total: ~1.5 GB** — well within T4's 15 GB VRAM; large activation batches feasible
+
+### Relationship to existing notebooks
+
+- `notebooks/colab_biorefusalaudit.ipynb` — **runs the audit** on Gemma 2 9B + Llama 3.1 8B (does NOT train any SAE)
+- `notebooks/colab_gemma4_sae_training.ipynb` (planned) — **trains the SAE** on Gemma 4 E2B (does NOT run the full audit; produces a fine-tuned SAE checkpoint for subsequent audit runs)

@@ -115,6 +115,21 @@ This tests whether the safety circuit is keyed to the EXACT token sequence or to
 
 Motivated by Neuronpedia feature validation (features 2620/1041/7541 are generic vocabulary, not bio-specific) and the non-bio control experiment:
 
+### Phase 0 — Colab SAE training notebook (new, hackathon-deliverable)
+
+**Goal:** T4-compatible Colab notebook that fine-tunes the Gemma 4 E2B community SAE on bio-safety behavioral activations. Key properties:
+- Frozen Gemma 4 E2B-IT (NF4 4-bit, ~1GB VRAM) + trainable SAE module (~150MB)
+- **Configurable HF dataset** — `HF_DATASET_REPO` + `HF_TEXT_COLUMN` + `HF_LABEL_COLUMN` cell at top; any HF dataset with tier labels can be used
+- Residual hook at layer 17 captures multi-token activations across full response
+- Training loop: TopK(k=32) SAE with L_recon + L_contrastive + L_sparsity
+- **W&B logging** of loss, L0 sparsity, feature activation histograms, top-feature semantic drift per step
+- Checkpoint saves to HF via `huggingface_hub.upload_file` every N steps
+- Output: fine-tuned SAE weights; run BioRefusalAudit audit with new weights to measure D improvement
+
+**Why this matters:** The near-zero D values on Gemma 4 E2B are due to the community SAE's narrow training distribution (deception-focused activations, not bio-safety text). A T4-trained SAE on bio-safety behavioral activations would unlock tier-discriminative D values and validate the full pipeline end-to-end. This is "Track A" made accessible without institutional compute.
+
+**Status:** Planned. Script: `notebooks/colab_gemma4_sae_training.ipynb`. Full technical spec: `docs/METHOD.md §Colab SAE Training Notebook`. Training data: `SolshineCode/biorefusalaudit-gated` (HL3-gated) + any HF text dataset.
+
 ### Phase 1 — Track B adapter (feasible with existing corpus)
 - Collect multi-token residual-stream activations from all `runs/*/activations.npz` (currently first-token only)
 - Train projection adapter W ∈ ℝ^{k_cat × d_sae} with contrastive loss (hazard_active vs. hazard_suppressed refusals)
