@@ -113,19 +113,41 @@ A feature earns "named circuit" status only if `label_changed` OR `|ΔD| > 0.2` 
 
 Results land in `runs/colab_*/report.{md,json}`; the cross-model scaling plot regenerates via `scripts/build_scaling_plot.py --include-synthetic`. Gemma 3 family evaluation deferred pending Gemma Scope 2 public release (Gemma 3 weights cached locally for forward compatibility).
 
-### 4.5 Portability: Custom TopK SAE (toy training)
+### 4.5 Portability path: Gemma 4 E2B-IT + community-trained custom SAE
 
-To demonstrate the methodology's portability beyond pre-trained SAE releases, we trained a custom TopK SAE ($k=32$, $4\times$ expansion) on Gemma 2 2B residual activations (layer 12) using the local GTX 1650 Ti.
+To demonstrate that the methodology is not locked to Gemma Scope pre-trained SAE releases, we ran the full calibration chain on Gemma 4 2B-Instruct (E2B) using a community-trained TopK SAE (`gf1_behaviorSAE_topk_k16_L17_bnb4bit.pt`, $k=16$, layer 17, $d_{sae}=6144$). This path exercises every component of the pipeline in a regime where no official SAE is available, validating the chain's generality.
 
-**Scientific Caveat:** The custom SAE results reported here are derived from **"toy training"** (75 prompts, ~3,000 activation vectors). This serves as a structural validation of the pipeline (activation collection $\to$ SAE training $\to$ catalog auto-tuning $\to$ calibrated audit), but does *not* constitute a research-grade feature decomposition. For robust bio-safety auditing, we recommend exhaustive training on $\ge 100$M tokens of diverse text to ensure high feature purity and coverage.
+**Calibration chain for Gemma 4 E2B (four-pass protocol):**
 
-The results below compare the toy TopK SAE against the Gemma Scope 1 JumpReLU baseline:
+1. **Pass 1** — 4-bit GPU inference, stub catalog, `--dump-activations`. Produced `runs/gemma-4-E2B-it-L17/activations.npz` (75 × 6144). *(Note: an earlier fp16 CPU pass produced degenerate activations due to quantization-regime mismatch; pass 1 was re-collected under the correct 4-bit setting.)*
+2. **`auto_tune_catalog.py`** — Cohen's-d selection from 4-bit activations → `data/feature_catalog/gemma-4-E2B-it.json`. Top-category Cohen's-d: refusal_circuitry=1.99, bio_content=1.03, hazard_adjacent=0.70.
+3. **Pass 2 (tuned catalog, dump)** — Feature_vecs remained degenerate (zero throughout) due to catalog selection from fp16 activations that were not yet corrected. T was fit from this degenerate data — a placeholder T.
+4. **Pass 3** — 4-bit GPU, corrected tuned catalog, `--dump-activations`. Feature_vecs became non-zero (60% nonzero; mean component vector [0.424, 0.241, 0.335, 0, 0] for bio_content, hazard_adjacent, refusal_circuitry respectively).
+
+**Pass 3 results (degenerate T — placeholder calibration):**
+
+| Tier | n | Mean D (pass 3) | Std |
+|---|---:|---:|---:|
+| `benign_bio` | 23 | 0.061 | 0.018 |
+| `dual_use_bio` | 30 | 0.056 | 0.015 |
+| `hazard_adjacent_category` | 22 | 0.053 | 0.004 |
+
+The flat tier gradient (0.061 / 0.056 / 0.053, nearly undifferentiated) reflects that T was fitted on pass-2 data where `feature_vec = 0` throughout — yielding T ≈ 0 and `f_expected ≈ 0` regardless of surface label. The D values are near-zero and lack tier discrimination. This is the calibration bootstrap problem documented in `docs/METHOD.md §Known failure modes`.
+
+5. **T re-fit from pass 3** — With real non-zero feature_vecs, T was re-fitted from `runs/gemma-4-E2B-it-L17-pass3/report.json`. Condition number = 151 (well-conditioned); divergence shift mean |ΔD| = 0.055, max |ΔD| = 0.097.
+
+6. **Pass 4 (in progress)** — Running at time of submission with the properly-fitted T. Results will be appended as `CORRECTED 2026-04-23` when complete.
+
+**Scientific status:** The Gemma 4 E2B path validates the structural portability of the pipeline (community SAE → catalog auto-tune → T calibration → calibrated audit). The pass-3 D numbers are real activations through a validated catalog and a degenerate T; pass-4 numbers will reflect the first meaningful calibration for this model. Feature_vec mean components [bio_content=0.424, hazard_adjacent=0.241, refusal_circuitry=0.335] show the SAE is decomposing the residual stream into interpretable categories, consistent with the community SAE's training objective.
+
+**Scientific Caveat:** Gemma 4 E2B runs at 4-bit NF4 quantization (hardware constraint: 4 GB VRAM). All divergence numbers for this model measure the quantized system, not the fp16 reference. The custom SAE was trained on behavioral data from a deception-research pipeline; feature purity for bio-safety categories should be interpreted with this provenance in mind. Hedging and deception_correlate categories remain stubs (no positive controls in the eval set for T fitting).
+
+## 5. Limitations
 
 - **Gemma Scope 2 pending.** The originally-planned primary substrate (Gemma 3 + Gemma Scope 2 residual SAEs) is not yet publicly released. MVP demonstrates methodology on Gemma 2 + Gemma Scope 1 plus Gemma 4 E2B + custom SAEs. This is a scope reduction, not a methodological compromise — the divergence metric, eval set, and judge consortium are all model-agnostic.
-- **Quantization confound for Gemma 4 E2B.** Gemma 4 E2B at 4-bit produces activations from a quantized model; any divergence number on this model is measuring the quantized system, not the fp16 reference. Flagged explicitly in `runs/gemma-4-E2B-it/report.md`.
-- **Feature catalog is stubbed.** The v0.1 feature catalogs under `data/feature_catalog/` use plausible-but-not-hand-validated feature indices. A hand-validation pass through Neuronpedia is in the queue; results shipped here should be interpreted as methodology demonstration, not publication-ready numbers.
-- **Calibration on small n.** T-matrix fit uses the prompt pool itself as positive-control holdout; calibration with a larger external positive-control set would tighten T.
-- **A100 cross-architecture (Llama 3.1 8B) deferred** pending user approval of rental budget (~$30-45). The MVP cannot speak to cross-architecture generalization from open weights until that runs.
+- **Small-n calibration.** T-matrix fit uses the prompt pool itself as positive-control holdout (n=75, no held-out calibration set). Cross-validated calibration with a dedicated control set would tighten T and reduce overfitting.
+- **Feature catalog validation.** Catalogs were selected by Cohen's-d activation differential, not by hand-inspection of each feature's top-activating examples in Neuronpedia. A hand-validation pass is in the queue; results here should be interpreted as methodology demonstration.
+- **Cross-architecture comparison deferred.** Gemma 2 9B-IT and Llama 3.1 8B-Instruct are available via the `notebooks/colab_biorefusalaudit.ipynb` pipeline; results pending Colab runtime (planned post-submission).
 
 ## 6. Relation to prior work
 

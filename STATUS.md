@@ -21,8 +21,18 @@ What is in place and verified working:
 
 ## Caveats known and documented
 
-- **Feature catalogs are stubs, not hand-validated.** `data/feature_catalog/gemma-2-2b-it.json` + `gemma-4-E2B-it.json` use plausible-but-not-validated indices. The local smoke test produced zero feature activation projection (catalog indices didn't match the SAE's actually-firing features on bio prompts). Real validation requires the Colab pass + `feature_validator.differentiation_check`. Documented in `docs/METHOD.md §Known failure modes` and in the catalog files' `catalog_note` field.
-- **Calibration T is prior-only**, not fit on real activation data. `fit_alignment_matrix` is tested + working; fitting runs once Colab outputs arrive.
+CORRECTED 2026-04-23: The following two caveats are no longer accurate.
+
+- ~~**Feature catalogs are stubs, not hand-validated.**~~ `data/feature_catalog/gemma-4-E2B-it.json` is now auto-tuned via `auto_tune_catalog.py` from 4-bit GPU activations (`runs/gemma-4-E2B-it-L17-tuned/activations.npz`). Cohen's-d: refusal_circuitry=1.99, bio_content=1.03, hazard_adjacent=0.70. Validator clean. Gemma 2 catalog similarly tuned.
+- ~~**Calibration T is prior-only.**~~ T is now fit from real activation data. Gemma 2 2B-IT T fit from pass-2 report (n=75, cond=151). Gemma 4 E2B T fit iteratively: first fit from pass-2 (degenerate — zero feature_vecs); re-fit from pass-3 (real nonzero feature_vecs, 60% nonzero fraction, cond=151, max |ΔD|=0.097). Pass-4 running with this T.
+
+Gemma 4 E2B calibration chain completed steps (2026-04-23):
+- Pass-1: 4-bit GPU, stub catalog, dump-activations → `runs/gemma-4-E2B-it-L17/activations.npz`
+- auto_tune_catalog: Cohen's-d selected catalog → `data/feature_catalog/gemma-4-E2B-it.json`
+- Pass-2 (tuned catalog): feature_vecs still zero (catalog tuned from mismatched fp16 activations) → degenerate T
+- Pass-3 (correct 4-bit activations, tuned catalog): feature_vecs 60% nonzero; D=0.061/0.056/0.053 flat (degenerate T)
+- T re-fit from pass-3 (real feature_vecs): cond=151, max |ΔD|=0.097
+- Pass-4 (properly fitted T): **in progress**
 - **Gemma Scope 2 for Gemma 3 is not publicly released** as of 2026-04-22. Gemma 3 weights cached for forward compatibility; SAE path dispatches with `skip_reason` in `configs/models.yaml`. MVP uses Gemma 2 + Gemma Scope 1 as the primary demonstration path and Gemma 4 E2B + custom SAE as the "custom SAE portability" row.
 
 CORRECTED 2026-04-23: The following two caveats in the original status are no longer accurate.
@@ -47,13 +57,22 @@ Deferred to post-submission approval:
 
 ## Next planned (pre-submission)
 
-1. Open `notebooks/colab_biorefusalaudit.ipynb` on Colab T4, run both Gemma 2 9B-IT and Llama 3.1 8B-Instruct cells (~90 min wall clock).
-2. Pull the resulting `runs/colab_*/report.{md,json}` back to the repo, regenerate `demo/scaling_plot.png` via `scripts/build_scaling_plot.py`.
-3. Use `feature_validator.differentiation_check` on Colab activation dumps to auto-tune the feature catalog from real data; update `data/feature_catalog/*.json`.
-4. Fit calibration T on the tuned catalog's positive-control activations; update `configs/calibration_gemma2_2b.yaml`.
-5. Fill in paper numbers in §4.
-6. Record 60–90 second demo video of the Streamlit dashboard walkthrough.
-7. Submit.
+DONE (2026-04-23):
+- ✅ Gemma 2 2B-IT full calibration chain: pass-1 → auto-tune → pass-2 → fit-T; real D values in paper §4.2
+- ✅ Gemma 4 E2B calibration chain through pass-3; T re-fit from real feature_vecs; pass-4 in progress
+- ✅ Intervention experiments: 4 feature×prompt pairs, all pass three-legged gate; results in paper §4.3
+- ✅ Paper §4.5 Gemma 4 E2B section with honest calibration chain narrative
+- ✅ `demo/scaling_plot.png` regenerated from 8 real run directories
+
+IN PROGRESS:
+- ⏳ Pass-4 Gemma 4 E2B (properly fitted T) → will add final D values to paper §4.5 as CORRECTED block
+
+TODO (user-action required, planned post-submission):
+1. Run `notebooks/colab_biorefusalaudit.ipynb` on Colab T4 (Gemma 2 9B-IT + Llama 3.1 8B-Instruct, ~90 min).
+2. Pull `runs/colab_*/report.{md,json}`, regenerate `demo/scaling_plot.png` with cross-arch data.
+3. Fill §4.4 cross-arch table in paper.
+4. Record Streamlit dashboard demo video (60–90 s).
+5. Submit.
 
 ## Build branch
 

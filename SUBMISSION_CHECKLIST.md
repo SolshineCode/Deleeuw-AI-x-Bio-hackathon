@@ -21,7 +21,7 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 
 ### Artifacts
 
-- [ ] `demo/scaling_plot.png` regenerated from real reports (not synthetic) — pending Colab results
+- [x] `demo/scaling_plot.png` regenerated from real reports — 8 real `runs/*/report.json` used (2026-04-23); will update when Colab cross-arch data arrives
 - [ ] Dashboard loads latest real report on `streamlit run app/dashboard.py` — needs smoke verification
 - [ ] At least one intervention panel renders in the dashboard
 - [ ] `REVIEWER_QUICKSTART.md` one-command path verified from a clean clone
@@ -36,7 +36,7 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 
 - [x] README opens with: problem / method / evidence (real numbers) / limitations / demo — fabricated Gemma 3 4B numbers replaced with real Gemma 2 2B-IT results 2026-04-23
 - [x] Branch state: all work on `main` via squash-merged PRs; no orphan branches
-- [x] `paper/writeup.md` word count ≤ 3 500 — 1 772 words (confirmed 2026-04-23)
+- [x] `paper/writeup.md` word count ≤ 3 500 — 2 113 words (confirmed 2026-04-23, after §4.5 Gemma 4 E2B section added)
 
 ## Submission gate
 

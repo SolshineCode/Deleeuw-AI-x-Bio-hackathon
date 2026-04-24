@@ -300,3 +300,32 @@ The Gemma 3 family is gated on Hugging Face and requires license acceptance befo
    Or set `HF_TOKEN` in `.env` and restart your shell / reactivate venv.
 
 If you see the 401 after completing both steps, confirm the HF account that accepted the license is the same account whose token you're using. Mismatched accounts are the common cause.
+
+---
+
+## Ghost Python processes cause 5-7× slowdown (VRAM contention)
+
+**Symptom:** Long generations jump from ~85s to ~400-570s; short refusals remain fast (1-7s). No OOM error — it looks like VRAM accumulation, but the hook fix is in place.
+
+**Root cause:** On Windows, killing a Git Bash shell (`kill <PID>` or Ctrl-C) does not kill Python subprocesses launched from it. The subprocess becomes a background orphan and continues holding VRAM. Launching a second eval run while the first is still running puts two Gemma 4 models on a 4 GB card: each gets ~2 GB, both spill to CPU constantly, and all long-generation prompts become 5-7× slower.
+
+**Diagnosis:**
+```powershell
+Get-Process python* | Select-Object Id, CPU, WorkingSet, StartTime | Format-Table
+```
+If you see two Python processes with similar start times and similar CPU accumulation, they're competing.
+
+**Fix:** Kill all old Python processes before launching a new run:
+```powershell
+# Identify old PIDs (e.g., started before 18:20):
+Get-Process python* | Format-Table Id, StartTime
+
+# Kill specific PIDs:
+Stop-Process -Id <OLD_PID_1>, <OLD_PID_2> -Force
+
+# Verify only the new run remains:
+Get-Process python* | Format-Table Id, CPU, StartTime
+```
+On Git Bash, use `powershell.exe -Command "Stop-Process -Id <PID> -Force"`.
+
+**Occurred:** 2026-04-23, pass-4 Gemma 4 E2B run. Killing 2 ghost processes (PIDs 33260, 40240 from 18:20:33) immediately restored expected throughput. Subsequent prompts completed in normal time.
