@@ -51,13 +51,15 @@ def load_model(
             bnb_4bit_quant_type="nf4",
             bnb_4bit_use_double_quant=True,
         )
-        # {"": device} forces the entire model to the target device. device_map="auto"
-        # mis-estimates VRAM for multimodal architectures (Gemma4ForConditionalGeneration)
-        # and silently routes all compute to CPU even when CUDA is available.
-        kwargs["device_map"] = {"": device} if "cuda" in device else "auto"
+        # Use integer device index (0) rather than string "cuda" — bitsandbytes on
+        # Windows WDDM silently falls back to CPU when the string form is used and
+        # VRAM is tight. Integer index forces the allocation correctly.
+        cuda_idx = torch.cuda.current_device() if torch.cuda.is_available() else None
+        kwargs["device_map"] = {"": cuda_idx} if cuda_idx is not None else "auto"
     elif quantize == "8bit":
         kwargs["quantization_config"] = BitsAndBytesConfig(load_in_8bit=True)
-        kwargs["device_map"] = {"": device} if "cuda" in device else "auto"
+        cuda_idx = torch.cuda.current_device() if torch.cuda.is_available() else None
+        kwargs["device_map"] = {"": cuda_idx} if cuda_idx is not None else "auto"
     else:
         kwargs["torch_dtype"] = torch_dtype
         # Prefer device_map="auto" on CUDA so models larger than VRAM
@@ -69,6 +71,17 @@ def load_model(
     tokenizer = AutoTokenizer.from_pretrained(name)
     model = AutoModelForCausalLM.from_pretrained(name, **kwargs)
     model.eval()
+    # Verify actual device placement — catches silent CPU fallback from bitsandbytes on WDDM
+    try:
+        actual = next(model.parameters()).device
+        print(f"[model_adapter] Loaded {name} on {actual} (requested: {device}, quantize: {quantize})", flush=True)
+        if device == "cuda" and str(actual) == "cpu":
+            raise RuntimeError(
+                f"Model loaded on CPU despite CUDA request. "
+                f"Free VRAM may be insufficient. Requested quantize={quantize}."
+            )
+    except StopIteration:
+        pass  # quantized models may have no plain parameters — skip check
     return LoadedModel(name=name, model=model, tokenizer=tokenizer, device=device, quantize=quantize)
 
 

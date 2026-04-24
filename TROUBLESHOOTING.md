@@ -371,3 +371,27 @@ target_layer = _find_layer(model, layer)
 ```
 
 **Occurred:** 2026-04-24, first SAE training attempt.
+
+---
+
+## `device_map={"": "cuda"}` silently falls back to CPU on Windows WDDM (bitsandbytes 0.49.2, transformers 5.6.0)
+
+**Symptom:** `load_model(..., quantize="4bit")` returns with model on CPU despite CUDA being available. `nvidia-smi` does not show the venv Python process, only other processes. Generation runs at ~1-3 tok/s instead of 20-30 tok/s. Process appears alive but makes no GPU-visible progress for 30+ minutes.
+
+**Root cause:** `device_map={"": "cuda"}` (string) is not recognized correctly by bitsandbytes/accelerate on WDDM. The model silently loads to CPU instead of raising an OOM or device error. Integer device index `{"": 0}` works correctly.
+
+**Diagnosis:**
+- `nvidia-smi` GPU processes: Python `.venv/Scripts/python.exe` NOT listed → model is on CPU
+- `PowerShell: (Get-WmiObject Win32_Process -Filter 'ProcessId=NNN').CommandLine` to map Windows PID to command
+- GPU memory stays flat (no increase when model "loads")
+
+**Fix (implemented in `model_adapter.py`):**
+```python
+cuda_idx = torch.cuda.current_device() if torch.cuda.is_available() else None
+kwargs["device_map"] = {"": cuda_idx} if cuda_idx is not None else "auto"
+```
+Also added post-load device assertion in `load_model` to fail fast if CPU fallback occurs.
+
+**Additional trigger:** VRAM already occupied by Streamlit dashboard (PID 43304, anaconda3 Python) + Ollama (PID 6388) can reduce free VRAM below the threshold needed for 4-bit Gemma 2 2B (~1382 MiB weights + ~150 MiB runtime). If total free VRAM < ~1550 MiB, kill these background processes first. Killing the stuck Python process typically frees all VRAM (CUDA context released on exit).
+
+**First observed:** 2026-04-24 ~05:33 PDT — wasted 33 minutes before diagnosis.
