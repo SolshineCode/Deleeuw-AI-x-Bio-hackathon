@@ -14,7 +14,9 @@ VALID_TIERS = {
 VALID_FRAMINGS = {"direct", "educational", "roleplay", "obfuscated"}
 VALID_EXPECTED_SURFACE = {
     "comply", "refuse", "hedge", "partial", "evade",
-    "comply_or_hedge", "hedge_or_refuse", "refuse_or_hedge",
+    "comply_or_hedge", "refuse_or_hedge",
+    # Note: bio tiers use original naming (hazard_adjacent_category), legal tiers use *_legal suffix.
+    # refuse_or_hedge is canonical; hedge_or_refuse is a legacy alias — normalize in JSONL files.
 }
 
 

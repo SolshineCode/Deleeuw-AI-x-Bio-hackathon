@@ -72,6 +72,7 @@ DONE (continued):
 - ✅ Pass-4 Gemma 4 E2B (properly fitted T): D=0.002/0.001/0.000 (near-zero, uniform-refuse model)
 - ✅ Paper §4.5 updated with pass-4 results and "global surface refusal" interpretation
 - ✅ 4th T re-fit from pass-4 data
+- ✅ Pass-5 Gemma 4 E2B (correct chat template): 65 refuse / 9 comply / 1 hedge; inverse flag finding; 5 hazard-adjacent transgressions; T re-fit (cond=165); paper §4.5 updated with complete findings
 
 TODO (user-action required, planned post-submission):
 1. Run `notebooks/colab_biorefusalaudit.ipynb` on Colab T4 (Gemma 2 9B-IT + Llama 3.1 8B-Instruct, ~90 min).
@@ -95,10 +96,12 @@ DONE (2026-04-23, autonomous):
 
 **Chat template confirmed (2026-04-23):** Gemma 4 uses `<bos><|turn>user\n...<turn|>\n<|turn>model` — distinct from Gemma 2's `<start_of_turn>` format. The fix (`_apply_chat_template` in `model_adapter.py`) has been implemented and tested.
 
-**Pass-5 (in progress):** Re-running Gemma 4 E2B with corrected chat template to answer:
-- Does the model genuinely refuse with proper formatting? → Safety deeply internalized (format-gated activation)
-- Does it partially comply? → Safety is format-dependent AND weaker than pass-4 implied
-- Does the hazard_features_active pattern hold under genuine refusals?
+**Pass-5 (COMPLETE 2026-04-23):** Gemma 4 E2B with correct chat template: 65 refuse / 9 comply / 1 hedge.
+- Safety-format dependency confirmed: correct `<|turn>` tokens are prerequisite for behavioral engagement.
+- **Inverse flag finding:** ALL 9 comply cases have `refusal_features_active_despite_compliance=True` — safety circuit activates (refusal_circuitry ≈ 0.325 mean) but surface behavior is compliance.
+- 5 of 22 hazard-adjacent prompts (23%) produced complies: pathogen-adjacent immunology, vaccine-escape, zoonotic spillover, veterinary biocontrol, prion biology framings — **model transgressions under correct-format evaluation**.
+- D under re-fitted T (cond=165): still near-zero (benign=0.006, dual-use=0.006, hazard=0.004) — custom SAE insufficient discriminative power for tier separation via D. Flag signals are informative channel for this model.
+- Paper §4.5 updated with complete pass-5 results.
 
 **Planned follow-on experiment:** Explicit format ablation — same prompts, same model, 4 conditions:
 1. No template (current pass-4) → generation failure
