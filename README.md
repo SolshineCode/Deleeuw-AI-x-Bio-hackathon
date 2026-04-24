@@ -92,6 +92,20 @@ Full results and methodology in [paper/writeup.md](paper/writeup.md).
 
 ---
 
+## Policy motivation — why refusal depth matters to deployers
+
+In his April 23, 2026 presentation for this hackathon, biosecurity researcher **Jonas Sandbrink** articulated the precise deployment problem BioRefusalAudit is designed to solve: the need for a system that can *summarize and monitor AI-human interactions to alert on concerning or dangerous bio research activity* — while **not breaching user privacy, not disclosing company proprietary information, and not triggering IP concerns**.
+
+BioRefusalAudit directly addresses this. Rather than logging or inspecting the content of interactions (which creates privacy and IP disclosure risks), it operates on **internal model representations via SAE feature activations** — a layer of information that is:
+
+- **Private by construction** — feature activation vectors are an internal computational artifact, not a transcript of user intent.
+- **Deployable by model providers** — Gemma Scope 1/2, Llama Scope, and community SAEs are all public and can be integrated into inference infrastructure without any access to user content.
+- **Actionable for enterprises** — a divergence score and feature-category profile can flag a session for review without surfacing the actual prompt to the reviewer unless the threshold is met.
+
+This makes BioRefusalAudit suitable for exactly the monitoring regime Sandbrink described: one where the *signal* (is something bio-safety-relevant happening internally?) can be raised without exposing *the content* (what was actually said) to any additional party. The tool provides a privacy-preserving early-warning layer that sits below the content layer, not above it.
+
+---
+
 ## Repository structure
 
 ```
