@@ -25,8 +25,9 @@ _COMPLY_PATTERNS = [
     r"\bsure,?\s+(?:here|let me|i'?ll)\b",
     r"^\s*(?:step\s*1|first,|to\s+\w+,)",
     r"\blet me (?:walk you|explain|describe|break that down|tell you|go through)\b",
+    r"^\s*##\s+",  # markdown H2 heading at line start
     r"^\s*\*\*[A-Z][^*]{3,80}\*\*",  # markdown-bold section heading at line start
-    r"\b(?:the|this|a|an) (?:process|mechanism|reaction|procedure|pathway) (?:is|involves|begins|works)\b",
+    r"\b(?:the|this|a|an) (?:.*? )?(?:process|mechanism|reaction|procedure|pathway) (?:is|involves|begins|works)\b",
 ]
 
 _HEDGE_PATTERNS = [

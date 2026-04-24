@@ -67,7 +67,7 @@ from biorefusalaudit.features.feature_contribution import (
     contributions_to_graph,
 )
 from biorefusalaudit.features.feature_profiler import FeatureCatalog, categorize
-from biorefusalaudit.judges.consortium import aggregate_votes, soft_distribution_vector
+from biorefusalaudit.judges.consortium import aggregate_votes, soft_distribution_vector, JudgeVote
 from biorefusalaudit.models.model_adapter import (
     generate_completion,
     load_model,
@@ -76,7 +76,7 @@ from biorefusalaudit.models.model_adapter import (
 )
 from biorefusalaudit.models.sae_adapter import load_sae, project_activations
 from biorefusalaudit.prompts.prompt_loader import load_jsonl
-from biorefusalaudit.runner.eval_runner import _regex_as_vote
+from biorefusalaudit.runner.eval_runner import _regex_as_vote, JudgeFn
 from biorefusalaudit.scoring.divergence import FEATURE_CATEGORIES, divergence
 
 
@@ -152,14 +152,19 @@ def _make_ablation_hook(sae, feature_ids, mode: str, boost: float):
     return _mod
 
 
-def _classify_and_diverge(prompt_text, completion, feature_vec, catalog, T, residual=None, sae=None):
+def _classify_and_diverge(prompt_text, completion, feature_vec, catalog, T, residual=None, sae=None, llm_judges: Sequence[JudgeFn] = ()):
     """Run the regex judge + soft distribution + divergence for one (prompt, completion) pair.
 
     When `residual` and `sae` are provided, also emit a mini attribution graph
     from compute_contributions over the mean residual + mean SAE encoding.
     """
-    vote = _regex_as_vote(completion)
-    verdict = aggregate_votes([vote])
+    votes: list[JudgeVote] = [_regex_as_vote(completion)]
+    for judge in llm_judges:
+        try:
+            votes.append(judge(prompt_text, completion))
+        except Exception:
+            pass
+    verdict = aggregate_votes(votes)
     s = soft_distribution_vector(verdict)
     f = categorize(feature_vec, catalog)
     d = float(divergence(s, f, T))
@@ -202,12 +207,22 @@ def main() -> int:
     ap.add_argument("--boost", default=3.0, type=float)
     ap.add_argument("--max-new-tokens", default=80, type=int)
     ap.add_argument("--temperature", default=0.7, type=float)
+    ap.add_argument("--use-llm-judges", action="store_true")
     ap.add_argument("--out", required=True, type=Path)
     args = ap.parse_args()
 
     import yaml
     cfg = yaml.safe_load(args.calibration.read_text(encoding="utf-8"))
     T = np.array(cfg["T"], dtype=np.float64)
+
+    llm_judges = ()
+    if args.use_llm_judges:
+        from biorefusalaudit.judges.llm_judges import (
+            claude_haiku_judge,
+            gemini_judge,
+            ollama_judge,
+        )
+        llm_judges = (gemini_judge, claude_haiku_judge, ollama_judge)
 
     prompts = {p.id: p for p in load_jsonl(args.eval_set)}
     if args.prompt_id not in prompts:
@@ -232,7 +247,8 @@ def main() -> int:
     )
     baseline_verdict = _classify_and_diverge(target.prompt, baseline_completion,
                                               baseline_feats, catalog, T,
-                                              residual=baseline_resid, sae=sae)
+                                              residual=baseline_resid, sae=sae,
+                                              llm_judges=llm_judges)
     print(f"[intervention] baseline: label={baseline_verdict['label']} D={baseline_verdict['divergence']:.3f}")
 
     # Ablation
@@ -244,7 +260,8 @@ def main() -> int:
     )
     ablated_verdict = _classify_and_diverge(target.prompt, ablated_completion,
                                               ablated_feats, catalog, T,
-                                              residual=ablated_resid, sae=sae)
+                                              residual=ablated_resid, sae=sae,
+                                              llm_judges=llm_judges)
     print(f"[intervention] ablated: label={ablated_verdict['label']} D={ablated_verdict['divergence']:.3f}")
 
     # Boost
@@ -256,7 +273,8 @@ def main() -> int:
     )
     boosted_verdict = _classify_and_diverge(target.prompt, boosted_completion,
                                               boosted_feats, catalog, T,
-                                              residual=boosted_resid, sae=sae)
+                                              residual=boosted_resid, sae=sae,
+                                              llm_judges=llm_judges)
     print(f"[intervention] boosted: label={boosted_verdict['label']} D={boosted_verdict['divergence']:.3f}")
 
     label_changed_ablate = baseline_verdict["label"] != ablated_verdict["label"]
