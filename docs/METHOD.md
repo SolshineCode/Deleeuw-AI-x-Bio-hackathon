@@ -226,6 +226,26 @@ Advantage: interpretable projection weights; compatible with
 existing T calibration; no retraining of SAE decoder.
 ```
 
+**Implementation tooling — Unsloth:** Both tracks benefit from Unsloth
+(https://github.com/unslothai/unsloth) for memory-efficient fine-tuning
+on consumer GPUs. On GTX 1650 Ti (4GB VRAM):
+
+- Unsloth NF4 + fused kernels reduce Gemma 2 2B VRAM from ~5GB to ~2.5GB
+- Leaves ~1.5GB headroom for SAE module + activation batch
+- Track B adapter W (~80K params) is tiny — training loop runs fast
+- Gemma 2 natively supported; Gemma 4 support added in recent releases
+
+```python
+from unsloth import FastLanguageModel
+base_model, tokenizer = FastLanguageModel.from_pretrained(
+    "google/gemma-2-2b-it", load_in_4bit=True, max_seq_length=512
+)
+FastLanguageModel.for_inference(base_model)  # freeze base model
+# Collect multi-token residual activations (patch model_adapter.py
+# to capture all response tokens, not just first-token snapshot)
+# Then train projection W with contrastive loss on tier labels
+```
+
 ### Training data sources
 
 In priority order:
