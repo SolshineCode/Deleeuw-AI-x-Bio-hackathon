@@ -9,7 +9,7 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 - [x] Tuned feature catalog committed (`data/feature_catalog/gemma-2-2b-it.json` with `catalog_version: 0.2-auto-tuned`) — Cohen's-d top-20 per category from `runs/gemma-2-2b-it-L12-activations/activations.npz`
 - [x] Fitted T in `configs/calibration_gemma2_2b.yaml` with `fit_method: ridge least-squares (lambda=0.1) on report.json` and `fit_samples: 75`
 - [x] Pass-2 real-numbers report at `runs/gemma-2-2b-it-L12-tuned/report.{md,json}` with non-zero per-tier mean divergence — benign 0.467, dual-use 0.655, hazard-adj 0.669
-- [x] At least one intervention record at `runs/interventions/*.json` where `qualifies_as_named_circuit: true` — all 5 intervened prompts qualify (bio_004/021/027/069/074)
+- [x] At least one intervention record at `runs/interventions/*.json` where `qualifies_as_named_circuit: true` — 8/8 intervened prompts qualify (bio_004/016/021/027/060/066/069/074); bio_010/001/002 in progress (queue, chain running 2026-04-24)
 
 ### Paper
 
@@ -21,16 +21,16 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 
 ### Artifacts
 
-- [x] `demo/scaling_plot.png` regenerated from real reports — 8 real `runs/*/report.json` used (2026-04-23); will update when Colab cross-arch data arrives
-- [x] Dashboard loads latest real report on `streamlit run app/dashboard.py` — artifacts verified (17 reports, 5 interventions, preferred run gemma-2-2b-it-L12-tuned, catalog present). Full browser smoke check still pending.
-- [x] At least one intervention panel renders in the dashboard — 5 intervention JSON files present at `runs/interventions/`
+- [x] `demo/scaling_plot.png` regenerated from real reports — 18 real `runs/*/report.json` used (2026-04-24); will update when Colab cross-arch data arrives
+- [x] Dashboard loads latest real report on `streamlit run app/dashboard.py` — artifacts verified (17 reports, 5 interventions, preferred run gemma-2-2b-it-L12-tuned, catalog present). Browser smoke check complete (2026-04-24).
+- [x] At least one intervention panel renders in the dashboard — 8 intervention JSON files present at `runs/interventions/` (as of 2026-04-24; 3 more in queue)
 - [ ] `REVIEWER_QUICKSTART.md` one-command path verified from a clean clone
 
 ### Tests + infrastructure
 
-- [x] `pytest -m "not integration"` passes cleanly — 56 tests green (confirmed 2026-04-23)
-- [x] `biorefusalaudit check-safety --eval-set data/eval_set_public/eval_set_public_v1.jsonl` returns OK (confirmed 2026-04-23)
-- [x] `biorefusalaudit trace-cases --report runs/gemma-2-2b-it-L12-tuned/report.json` returns 12 selected cases (confirmed 2026-04-23)
+- [x] `pytest -m "not integration"` passes cleanly — 56 tests green (re-confirmed 2026-04-24)
+- [x] `biorefusalaudit check-safety --eval-set data/eval_set_public/eval_set_public_v1.jsonl` returns OK (re-confirmed 2026-04-24)
+- [x] `biorefusalaudit trace-cases --report runs/gemma-2-2b-it-L12-tuned/report.json` returns 12 selected cases (re-confirmed 2026-04-24)
 
 ### Repo signal
 
@@ -60,10 +60,12 @@ Each of these gets a one-paragraph "planned" entry in the paper's §8 Future Wor
 
 ## Stretch: Colab SAE training notebook (new, planned during hackathon)
 
-- [ ] `notebooks/colab_gemma4_sae_training.ipynb` — T4 SAE fine-tuning on HF dataset + W&B logging + HF checkpoint save
+- [x] `notebooks/colab_gemma4_sae_training.ipynb` — T4 SAE fine-tuning on HF dataset + W&B logging + HF checkpoint save — **COMPLETE 2026-04-24**
   - Configurable: `HF_DATASET_REPO`, `HF_TEXT_COLUMN`, `HF_LABEL_COLUMN`
   - Logs: total loss, L_recon, L_sparsity, L_contrastive, L0, feature density per step to W&B
   - Saves checkpoint to HF every N steps
+  - Multimodal architecture fix in place (`pick_layer` handles both CausalLM and ImageTextToText)
+  - Public eval set fallback if gated dataset unavailable
   - Full spec: `docs/METHOD.md §Colab SAE Training Notebook`
 
 ## Nice-to-have before submission (not blocking)
