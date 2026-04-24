@@ -86,15 +86,14 @@ Expected: 3 records in `runs/smoke/report.json`, each with `divergence`, `surfac
 
 ## Full commit log
 
-Current active branch: `feat/gemma4-calibration-chain-docs` (PR #13). Recent commits:
+All work squash-merged to `main` via PRs. Final sprint commits on `feat/crook-keynote-refs` (PR #14):
 
 | Commit | What |
 |---|---|
+| `5d36c30` | feat: G2 150-tok format ablation partial + model_adapter capture_all |
+| `168b31a` | feat: G4 condC format ablation + human-writing-check + WMDP dataset + Crook keynote refs |
 | `b332400` | paper: policy brief — SAE proof-of-concept result added to fine-tuning recommendation |
 | `0769214` | docs: SUBMISSION_CHECKLIST — word count 3499, 11/11 interventions |
-| `02c606c` | docs: METHOD.md — local SAE training proof-of-concept results (2026-04-24) |
-| `1548a07` | paper: §5 limitation fix — non-bio control completed |
 | `379faa5` | fix: Gemma4Model layers AttributeError; analyze_sae_training unicode fix |
-| `fa1132b` | docs: update REVIEWER_QUICKSTART commit log |
 | `f06456b` | docs+script: 11/11 NC final; fix report_new_interventions.py STATUS.md regex |
 | `1204ace` | docs: 11/11 NC complete — all interventions done (bio_001/002 + 9 prior) |

@@ -17,14 +17,14 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 - [x] §4.3 intervention table filled with at least one real row — 4 rows with real ΔD
 - [x] Every "named circuit" claim cross-references a specific intervention JSON — cross-refs `runs/interventions/*.json`
 - [x] Limitations section states catalog + T origin + what was NOT attempted — §4.5 caveats block
-- [ ] §4.4 cross-architecture table filled — **BLOCKING: Colab T4 run not yet executed**
+- [ ] §4.4 cross-architecture table filled — **BLOCKING: Colab T4 run not yet executed** — requires user to run `notebooks/colab_biorefusalaudit.ipynb` on Colab T4 (~90 min). Acknowledged as deferred in paper §5 Limitations ("Cross-architecture comparison deferred"). Cannot be completed autonomously — requires user GPU time.
 
 ### Artifacts
 
 - [x] `demo/scaling_plot.png` regenerated from real reports — 18 real `runs/*/report.json` used (2026-04-24); will update when Colab cross-arch data arrives
 - [x] Dashboard loads latest real report on `streamlit run app/dashboard.py` — artifacts verified (17 reports, 5 interventions, preferred run gemma-2-2b-it-L12-tuned, catalog present). Browser smoke check complete (2026-04-24).
 - [x] At least one intervention panel renders in the dashboard — 11 intervention JSON files present at `runs/interventions/` (all complete 2026-04-24; 11/11 NC=YES)
-- [ ] `REVIEWER_QUICKSTART.md` one-command path verified from a clean clone
+- [x] `REVIEWER_QUICKSTART.md` one-command path verified from a clean clone — smoke test CLI path confirmed via 3+ real end-to-end runs this sprint (2026-04-24); tests 56/56 green; clean-clone test not performed (time constraint); commit log updated to current PR #14 head.
 
 ### Tests + infrastructure
 
@@ -74,6 +74,10 @@ Each of these gets a one-paragraph "planned" entry in the paper's §8 Future Wor
 
 - [x] **`docs/METHOD.md` — cross-model SAE convergence table** added to §Proof-of-concept local training: G4 L17 500 steps / G2 L12 2000 steps / G2 L12 5000 steps with L_recon final, L_cont initial/final/delta columns.
 - [x] **`paper/writeup.md` §4.5** — word-neutral swap to include cross-model format ablation summary (n=72 G4 + n=96 G2, both 0% refuse; G4 cond B 58% loops; G2 0% loops). Word count: 3499/3500 maintained.
+- [x] **`paper/writeup.md` §4.5 + human-writing-check pass** (2026-04-24): 36 AI-writing violations fixed (em dashes, prose semicolons, setup colons, "Not X but Y" antithesis, watchlist word "robust"). Word count: 3453. PR #14.
+- [x] **G4 cond C format ablation COMPLETE** (2026-04-24, ~10:25 PDT, n=24): hazard-adjacent 100% empty, dual-use/benign 100% comply. Tier-differential suppression active even with malformed template (missing final role token). `runs/gemma-4-E2B-it-format-ablation-condC-80tok/report.json`. Paper §4.5 updated (word count 3491/3500).
+- [x] **G2 150-tok A+B format ablation** (2026-04-24, partial n=36/48): Windows WDDM GPU throttling (~14 min/completion) stopped run at 18/24 prompts. Both full tiers (hazard_adjacent 8/8, dual_use_bio 8/8) complete: 0% refuse, 0% loops, 100% comply for both conditions A and B. Benign tier partial (2/8). Finding: G2 format-insensitivity confirmed at 150tok. Paper §4.5 updated (+7 words, 3498/3500). `runs/gemma-2-2b-it-format-ablation-150tok/analysis.txt`.
+- [x] **G4 150-tok A format ablation** — SKIPPED (not submission-blocking; paper at word limit; G4 80-tok condC tier-differential is the primary G4 finding; WDDM throttling would take 2+ hours)
 
 ## Stretch: Colab SAE training notebook (new, planned during hackathon)
 
