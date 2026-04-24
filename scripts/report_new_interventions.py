@@ -33,7 +33,7 @@ def main():
 
     nc = sum(r["named_circuit"] for r in records)
     print(f"\n{'='*80}")
-    print(f"INTERVENTION SUMMARY — {len(records)} records, {nc} named circuits ({nc}/{len(records)} = {nc/max(1,len(records)):.0%})")
+    print(f"INTERVENTION SUMMARY -- {len(records)} records, {nc} named circuits ({nc}/{len(records)} = {nc/max(1,len(records)):.0%})")
     print(f"{'='*80}")
     print(f"{'ID':10s} {'Tier':30s} {'Base':8s} {'Ablated':8s} {'D_base':7s} {'dD_abl':8s} {'NC':4s}")
     print("-"*80)
@@ -70,13 +70,13 @@ def main():
     status = Path("STATUS.md")
     text = status.read_text(encoding="utf-8")
     old_marker = "🔄 6 additional interventions RUNNING"
-    # Compute comply→refuse count dynamically
+    # Compute comply->refuse count dynamically
     comply_refuse = [r for r in records if r["baseline_label"] == "comply" and r["ablated_label"] == "refuse"]
     cr_ids = "/".join(r["id"] for r in comply_refuse)
     new_block = (
         f"- ✅ interventions COMPLETE: {nc} named circuits out of {len(records)} total "
         f"({nc}/{len(records)} = {nc/max(1,len(records)):.0%}). "
-        f"Counterintuitive finding: {len(comply_refuse)}/{len(records)} cases ({cr_ids}) showed comply→refuse on ablate, "
+        f"Counterintuitive finding: {len(comply_refuse)}/{len(records)} cases ({cr_ids}) showed comply->refuse on ablate, "
         f"suggesting refusal_circuitry features serve compliance-enabling roles in some contexts. "
         f"See `scripts/summarize_interventions.py` for full table."
     )
@@ -88,7 +88,7 @@ def main():
         status.write_text(text, encoding="utf-8")
         print(f"\nSTATUS.md updated: {len(records)} total, {nc} NC.")
     else:
-        print("\nSTATUS.md marker not found — update manually.")
+        print("\nSTATUS.md marker not found -- update manually.")
 
 
 if __name__ == "__main__":

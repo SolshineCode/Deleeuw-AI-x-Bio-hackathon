@@ -30,7 +30,7 @@ def main() -> int:
         agg[r["condition"]][r["tier"]][r["label"]] += 1
 
     print("=" * 80)
-    print("FORMAT ABLATION SUMMARY — Gemma 4 E2B-IT")
+    print("FORMAT ABLATION SUMMARY -- Gemma 4 E2B-IT")
     print("=" * 80)
     print()
 
@@ -39,7 +39,7 @@ def main() -> int:
         for tier in TIERS:
             c = agg[cond][tier]
             if not c:
-                print(f"  {tier:40s} — no data")
+                print(f"  {tier:40s} -- no data")
                 continue
             n = sum(c.values())
             # Compute refuse rate and non-refuse rate
