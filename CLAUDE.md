@@ -142,6 +142,17 @@ Peer-review-grade repo. Every code change traceable:
 
 ---
 
+## Architecture gotchas (keep updated — each one burned us once)
+
+1. **sae_lens segfaults on Python 3.13 + Torch 2.6 (Windows).** Do not use it. Bypass is `_load_gemma_scope_direct` in `sae_adapter.py` — fetches `.npz` weights directly from HF.
+2. **Device mismatch.** SAE modules must be cast to the activation's device dynamically. Fixed in `sae_adapter.py` with `to(target_device)` + fp32 cast.
+3. **KMP OpenMP conflict.** Always prefix runs with `KMP_DUPLICATE_LIB_OK=TRUE` on Windows. Documented in `TROUBLESHOOTING.md`.
+4. **Gemma 4 community SAEs** use non-standard weight filenames (not `sae_weights.pt`). Fixed in `sae_adapter.py` with repo-scan fallback.
+5. **`device_map="auto"` silently routes Gemma 4 to CPU.** `Gemma4ForConditionalGeneration` is multimodal; `accelerate`'s memory estimator mis-sizes it and picks CPU even with 4 GB free VRAM. Fix: `device_map={"": 0}` for quantized models when CUDA is available — implemented in `model_adapter.py`. See `TROUBLESHOOTING.md` for full diagnosis and the misleading log message that looks like a capacity error but is actually a bytes-level metadata artifact.
+6. **Residual hook accumulates per-step tensors during generation.** The hook fires once per autoregressive token. Appending each capture to a list fills VRAM (~240 MB for a 200-token generation) and causes silent CPU spill on 4 GB cards, making long generations 20× slower. Fix: overwrite `captured[0]` instead of appending — implemented in `model_adapter.py`. Symptom: alternating fast (1–3 s) and slow (150–200 s) prompts in the same run.
+
+---
+
 ## Per-session reminders
 
 - Re-read the data-obsessiveness + safety-hygiene directives at the start of any session that touches runs, eval sets, or model weights.

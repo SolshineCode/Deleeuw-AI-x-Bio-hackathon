@@ -7,8 +7,9 @@ Per specialist review: "Freeze one known-good environment and export a one-comma
 Known-good local box:
 - Windows 11, Git Bash / WSL for scripts, Python 3.13.5 via Anaconda.
 - NVIDIA GTX 1650 Ti Max-Q, 4 GB VRAM, driver 581.57, CUDA 13.0 runtime.
-- `torch 2.6.0+cu124`, `transformers 5.6.0`, `sae_lens 6.39.0`, `accelerate 1.13.0`, no `bitsandbytes` (Python 3.13 unsupported).
-- Gemma 2 2B-IT: loaded with `device_map="auto"` (partial GPU + CPU offload; full fp16 weights ≈ 5 GB don't fit 4 GB GPU).
+- `torch 2.6.0+cu124`, `transformers 5.6.0`, `sae_lens 6.39.0`, `accelerate 1.13.0`, `bitsandbytes 0.49.2`.
+- Gemma 2 2B-IT: `device_map="auto"` (partial GPU + CPU offload; fp16 ≈ 5 GB > 4 GB VRAM).
+- Gemma 4 E2B-IT: 4-bit quantized via bitsandbytes, `device_map={"": 0}` (forces all weights to cuda:0; `device_map="auto"` silently picks CPU for multimodal model classes — see `TROUBLESHOOTING.md`).
 
 HF weights & SAE caches (download on first run; ~5 GB + 280 MB):
 - `google/gemma-2-2b-it`

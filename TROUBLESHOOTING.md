@@ -195,6 +195,88 @@ If timeouts persist, fall back to `ANTHROPIC_API_KEY` (direct SDK) instead of th
 
 ---
 
+## Gemma 4 (multimodal) loads on CPU despite CUDA being available
+
+**Symptom.** You launch a 4-bit eval run on Gemma 4 E2B, bitsandbytes imports cleanly, `torch.cuda.is_available()` returns `True`, and the log says `quantize=4bit` — but `nvidia-smi` shows 0 MiB of GPU memory used and 0% GPU utilization for the entire run. Everything executes on CPU at ~1–5 tok/s instead of ~30–60 tok/s.
+
+You may also see a misleading log line during model loading:
+
+```
+Current model requires 6178 bytes of buffer for offloaded layers,
+which seems does not fit any GPU's remaining memory. Falling back to CPU.
+```
+
+6178 bytes is trivially small (not MiB — bytes). The number is not a VRAM estimate; it is a metadata artifact from `accelerate`'s device-map planner when it encounters a model class it cannot size correctly.
+
+**Root cause.** `device_map="auto"` delegates device placement to `accelerate`'s automatic memory planner. That planner calls `infer_auto_device_map()`, which walks the model's module tree and estimates per-layer VRAM usage using HF's internal size estimator. For `AutoModelForCausalLM.from_pretrained("google/gemma-4-E2B-it")` the actual loaded class is `Gemma4ForConditionalGeneration` — a multimodal architecture containing a vision encoder, a vision-language projector, and a language model. The size estimator does not know how to account for the interleaved cross-attention and vision-tower weights, reports a near-zero or nonsensical VRAM estimate, and falls back to CPU for all layers as the "safe" choice.
+
+The LM-only weights at 4-bit (approximately 1 GB for a 2B-parameter model) fit easily within a 4 GB card. The planner failure is purely a metadata/estimation bug, not a real capacity problem.
+
+**Fix.** Replace `device_map="auto"` with `device_map={"": 0}` for quantized models when CUDA is available. The `{"": 0}` syntax means "put every module in the default namespace on device 0 (cuda:0)". This bypasses the planner entirely and lets bitsandbytes handle the quantized-layer placement directly.
+
+The fix is implemented in `biorefusalaudit/models/model_adapter.py` `load_model()`:
+
+```python
+# Before (broken for Gemma4ForConditionalGeneration):
+kwargs["device_map"] = "auto"
+
+# After (forces all quantized layers to the resolved target device):
+kwargs["device_map"] = {"": device} if "cuda" in device else "auto"
+```
+
+This applies to both `quantize="4bit"` and `quantize="8bit"` paths.
+
+**Verification.** After the model finishes loading (~5–10 min for Gemma 4 E2B weight streaming), run:
+
+```powershell
+nvidia-smi --query-compute-apps=pid,used_memory --format=csv,noheader
+```
+
+You should see your Python PID with ~1000–1300 MiB used. During token generation the GPU utilization (`nvidia-smi dmon`) should spike to 30–80% per token batch. If you still see 0 MiB, the model weights have not moved to GPU — confirm bitsandbytes CUDA kernels are working:
+
+```python
+import bitsandbytes as bnb, torch
+print(bnb.__version__)                # should be >=0.43.0
+l = bnb.nn.Linear4bit(16, 16).cuda() # should not raise
+```
+
+**Affected models.** Any HF model whose `AutoModelForCausalLM` resolves to a multimodal class (`ForConditionalGeneration`, `ForImageTextToText`, etc.) will have this problem with `device_map="auto"`. Confirmed on `google/gemma-4-E2B-it` (`Gemma4ForConditionalGeneration`). Standard causal LMs (`Gemma2ForCausalLM`, `LlamaForCausalLM`) are not affected — their size estimators work correctly.
+
+**Do not** use `device_map="auto"` for quantized Gemma 4 on this machine. The chain script (`scripts/gemma4_post_eval_chain.sh`) already passes `--quantize 4bit` explicitly and the adapter enforces `{"": 0}` at load time.
+
+---
+
+## Slow generation on long outputs (VRAM accumulation in residual hook)
+
+**Symptom.** On a 4 GB GPU with a quantized model, most prompts generate quickly (1–3 s) but every few prompts takes 150–200 s. The fast prompts are ones where the model outputs a short refusal (few tokens before EOS); the slow ones are where the model reaches `--max-new-tokens`. `nvidia-smi` shows GPU memory nearly full (≈3920 MiB / 3936 MiB) and utilization oscillating between 10–30% during slow prompts — suggesting VRAM pressure is forcing per-step CPU spill.
+
+**Root cause.** The `residual_stream_hook` in `model_adapter.py` fires on every transformer forward pass. During autoregressive generation, `generate()` calls the model once per new token — so for a 200-token generation, the hook fires 200 times. The original implementation appended each capture to a list: `captured.append(resid.detach())`. Each capture has shape `(1, seq_len, d_model)` where `seq_len` grows by one per step. The accumulated list for a 200-token generation with a 512-token input holds 200 tensors totaling:
+
+```
+sum_{t=1}^{200} (512 + t) × 1536 × 4 bytes ≈ 240 MB
+```
+
+On a 4 GB GPU already holding ~1 GB of 4-bit model weights, plus CUDA kernel overhead and KV cache, this 240 MB accumulation pushed past the VRAM limit. `accelerate` / PyTorch then silently offloads KV cache or intermediate buffers to RAM, causing the generation step timing to drop from GPU-speed (~30 tok/s) to RAM-bandwidth-limited speed (~1–3 tok/s).
+
+**Fix.** Overwrite instead of append in the hook. Since `getter()` only reads the last element (`captured[-1]`), all intermediate captures are wasted. The fix keeps exactly one tensor in memory regardless of generation length:
+
+```python
+# Before (buggy — accumulates one tensor per autoregressive step):
+captured.append(resid.detach())
+
+# After (fixed — overwrites in-place, constant VRAM footprint):
+if captured:
+    captured[0] = resid.detach()
+else:
+    captured.append(resid.detach())
+```
+
+This is implemented in `biorefusalaudit/models/model_adapter.py` in the `residual_stream_hook` function. After the fix, generation time for 200-token outputs drops from ~165 s back to the expected ~6–8 s on the GTX 1650 Ti at 4-bit.
+
+**Why it didn't affect Gemma 2 2B-IT.** The Gemma 2 path runs in fp16 with `device_map="auto"` (partial GPU + CPU offload), so the residual tensors are split across devices and the GPU pressure is lower. The fp16 model also has more headroom per parameter than the bitsandbytes 4-bit layout. On Gemma 4 E2B at 4-bit the available headroom is ~15 MiB, so the accumulation manifests immediately.
+
+---
+
 ## `HF_TOKEN` gated access for Gemma 3
 
 **Symptom.** `from_pretrained("google/gemma-3-270m-it")` fails with:

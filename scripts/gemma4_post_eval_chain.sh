@@ -44,18 +44,23 @@ KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=. \
   2>&1 | tee "$SRC/auto_tune.log"
 
 echo "---- B: fit_calibration ----"
+# Note: fit_calibration.py takes --report and --config only; no --catalog argument.
 KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=. \
   .venv/Scripts/python.exe -u scripts/fit_calibration.py \
     --report "$REPORT" \
-    --catalog "$CATALOG" \
     --config "$CALIBRATION" \
   2>&1 | tee "$SRC/fit_calibration.log"
 
-echo "---- C: pass-2 eval (tuned catalog + calibrated T) ----"
+echo "---- C: pass-2 eval (tuned catalog + calibrated T, --dump-activations) ----"
+# --dump-activations writes activations.npz to TUNED_OUT so a subsequent
+# auto_tune_catalog pass can refine the catalog further using 4-bit activations
+# (the pass-1 activations come from the CPU/fp16 run and may have distribution
+# shift relative to bitsandbytes 4-bit inference).
 mkdir -p "$TUNED_OUT"
 KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=. \
   .venv/Scripts/python.exe -m biorefusalaudit.cli run \
     --model google/gemma-4-E2B-it \
+    --quantize 4bit \
     --eval-set data/eval_set_public/eval_set_public_v1.jsonl \
     --out "$TUNED_OUT" \
     --sae-source custom \
@@ -68,6 +73,7 @@ KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=. \
     --catalog "$CATALOG" \
     --calibration "$CALIBRATION" \
     --max-new-tokens 200 \
+    --dump-activations \
   2>&1 | tee "$TUNED_OUT/stderr.log"
 
 echo "[gemma4_chain] done. Results in $TUNED_OUT/report.md"
