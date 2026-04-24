@@ -60,6 +60,6 @@ Each of these gets a one-paragraph "planned" entry in the paper's §8 Future Wor
 
 ## Nice-to-have before submission (not blocking)
 
-- [ ] Non-bio control experiment results: `runs/control-legal-financial-gemma2/report.{md,json}` — in progress 2026-04-23. If complete before submission, add D values to paper §8 framing and update this checklist.
+- [x] Non-bio control experiment results: `runs/control-legal-financial-gemma2/report.{md,json}` — **COMPLETE 2026-04-23.** benign 0.573 / dual-use 0.672 / hazard 0.665. Bio d=1.29 (p=0.0001) vs. legal d=0.67 (p=0.052, NS). Paper §8 updated with full statistical comparison.
 - [ ] Dashboard loads and renders latest real report (streamlit smoke check)
 - [ ] Demo video (60–90 s)

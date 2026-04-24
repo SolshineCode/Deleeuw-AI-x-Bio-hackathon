@@ -80,8 +80,11 @@ TODO (user-action required, planned post-submission):
 4. Record Streamlit dashboard demo video (60–90 s).
 5. Submit.
 
-IN PROGRESS (autonomous, 2026-04-23):
-- Non-bio control experiment: `runs/control-legal-financial-gemma2/` — Gemma 2 2B-IT + Gemma Scope 1 on 30-prompt legal/financial eval set (`data/eval_set_control/control_legal_financial_v1.jsonl`). Tests whether D separates legal tiers (benign_legal / dual_use_legal / hazard_adjacent_legal) as well as bio tiers. If yes → D measures generic sensitivity routing, not bio-specific refusal depth. Results feed paper §8 and motivate domain-specific SAE fine-tuning.
+DONE (2026-04-23, autonomous):
+- ✅ Non-bio control experiment COMPLETE: `runs/control-legal-financial-gemma2/report.{md,json}`
+  - benign_legal D=0.573 (std=0.134) / dual_use_legal D=0.672 (std=0.060) / hazard_adjacent_legal D=0.665 (std=0.139)
+  - Bio vs. legal effect sizes: d=1.29 (p=0.0001, non-overlapping CIs) vs. d=0.67 (p=0.052, NS, CIs overlap 0.071)
+  - **Finding:** D has partial bio-domain advantage (larger gradient in bio) but non-zero legal tier trend confirms generic sensitivity routing also contributes. Motivates domain-specific SAE fine-tuning. Paper §8 updated with full statistical comparison.
 
 ## Planned follow-on research arc (post-hackathon)
 
