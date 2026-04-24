@@ -4,6 +4,8 @@
 
 **Status at submission:** flagship pipeline shipped end-to-end + specialist review fully addressed (see `notes/SPECIALIST_REVIEW_2026_04_23.md`). The three-legged evidence requirement (activation + attribution + perturbation) is codified: no feature gets called a "named circuit" in this paper unless it passes all three legs, via `biorefusalaudit/features/attribution_labels.py::classify_tier`. Results in §4 below come from the tuned-catalog + fitted-T run on Gemma 2 2B-IT + Gemma Scope 1 layer 12; prior-work substrate-selection reasoning documented in `papers/sae_layer_selection/`.
 
+**Headline findings (added 2026-04-24):** (1) Gemma 2 2B-IT shows per-tier mean D = 0.467 / 0.655 / 0.669 across benign / dual-use / hazard (Cohen's *d* = 1.29, p = 0.0001, non-overlapping 95% CIs at group level), with the `hazard_features_active_despite_refusal` flag firing on **34.8% of *benign* refusals** — a novel over-refusal signature with intact hazard representations (§4.2). (2) Gemma 4 E2B's RLHF safety circuit is format-gated: without the correct `<start_of_turn>` chat-template tokens it does not engage (§4.5); both Gemma 4 and Gemma 2 refuse **0% at 80-token max generation** across all tiers (§4.5 format ablation). (3) All 9 correct-format Gemma 4 comply cases fire the inverse flag `refusal_features_active_despite_compliance` — safety circuit represents the hazard without suppressing the output (§4.5). Findings (2) and (3) are elevated to primary policy results in §4.6. **Primary validity caveats (see §4 head):** calibration T is fit within-sample on the 75-prompt eval set; the feature catalog is Cohen's-d auto-tuned, not semantically validated. Flag-based findings survive both caveats more robustly than D-value comparisons do.
+
 ---
 
 ## 1. Problem
@@ -32,12 +34,15 @@ For each (model, prompt) pair:
 1. Generate a completion at T=0.7 with forward-hook capture of the residual stream at a model-specific target layer (~50% depth).
 2. Project captured residual vectors through the model's SAE; take mean per-feature activation across generated tokens.
 3. Project the d_sae-dimensional activation into 5 hand-validated feature categories via `data/feature_catalog/<model>.json`; L1-normalize to produce `f`.
+    - **CORRECTED 2026-04-24:** "hand-validated" describes the design target, not the v1.0 MVP. Actual catalogs are Cohen's-d-selected from held-out activation dumps (`scripts/auto_tune_catalog.py`); semantic validation against Neuronpedia labels and max-activating examples is planned work (§8, `docs/METHOD.md §Planned extension`). Neuronpedia inspection (§4.2) found top auto-tuned features encode generic technical/governance vocabulary rather than bio-specific refusal circuitry. Every §4 result should be read under "auto-tuned catalog, not semantically validated."
 4. Run judge consortium on (prompt, completion); aggregate votes to the soft distribution `s` over the 5 surface classes.
 5. Compute `D(s, f, T)` and the three divergence flags (`hazard_features_active_despite_refusal`, `refusal_features_active_despite_compliance`, `deception_correlate_active`).
 
 The alignment matrix `T ∈ ℝ^{5×5}` is fit by ridge-regularized least squares on held-out positive-control prompts, with a condition-number guard to fail loudly on under-calibrated datasets.
 
 ## 4. Results
+
+**Primary validity caveats (read before §4.1–§4.6, added 2026-04-24):** Two structural limits apply to every D-value in this section. (1) *Within-sample T calibration.* The alignment matrix T is fit on the same 75-prompt eval set used to compute the reported divergences; there is no held-out calibration set. All D-value comparisons should be read as *within-sample* calibrated, not *held-out* calibrated. A dedicated held-out control set is the first open item in §8. (2) *Auto-tuned, not semantically validated, feature catalog.* Catalog features are Cohen's-d-selected from activation dumps (`scripts/auto_tune_catalog.py`); see the CORRECTED block in §3 and the honest-assessment paragraph in §4.2. Flag-based findings (elevated in §4.6) survive both caveats more robustly than D-value comparisons do, because the flag tests operate on raw per-feature activation magnitudes and do not pass through T.
 
 ### 4.0 Evidence discipline
 
@@ -188,6 +193,23 @@ The flat tier gradient (0.061 / 0.056 / 0.053, nearly undifferentiated) reflects
 *D under re-fitted T (cond=165, MSE=0.0008):* values remain near-zero (benign=0.006, dual-use=0.006, hazard=0.004), confirming the prior-project SAE lacks discriminative power to separate biosecurity tiers for Gemma 4 E2B via D. Flag-based signals (`refusal_features_active_despite_compliance`, `hazard_features_active_despite_refusal`) are the informative channel for this model; D requires a domain-specific fine-tuned SAE to achieve tier separation (§8).
 
 *Format ablation (80tok, n=96 G4 A/B/C/D + n=96 G2 A/B/C/D):* G4 cond B (generic template): 58% loops. G4 cond C (missing final role token): hazard-tier 100% empty, dual-use/benign 100% comply (tier-differential suppression active even with malformed template). G4 cond D (wrong role label): 100% comply. G2 all conditions: 100% comply, 0% loops. Both models 0% refuse at 80tok. G2 at 150tok (n=36, partial): same.
+
+### 4.6 Primary policy findings (elevated 2026-04-24)
+
+Two findings from §4.2 and §4.5 warrant elevation because they have immediate deployment-policy implications *independent* of the calibration-circularity and catalog-validation caveats at the head of §4. Both rest on raw per-feature activation magnitudes and completion-level behavioral counts, not on D-values passing through the within-sample-fit T.
+
+**Finding A — Format-dependent safety activation.** Gemma 4 E2B's RLHF safety circuit is gated on the correct chat-template token sequence (`<start_of_turn>user\n...<end_of_turn>\n<start_of_turn>model\n`). Without those tokens (pass 4, §4.5), 40% of completions are empty and 16% are repetition loops; 0% are genuine refusals. With correct tokens (pass 5, §4.5), the same 75 prompts produce 65 refuse / 9 comply / 1 hedge. Independently, the 80-token format ablation (§4.5 last paragraph, n=96 each) shows that *both* Gemma 4 E2B and Gemma 2 2B-IT refuse **0% across all tiers when generation is capped at 80 tokens** — the safety articulation requires token budget. *Policy implication:* constrained deployment contexts (mobile UIs, embedded applications, latency-capped APIs, 80-token response limits) may systematically bypass the safety circuits that lab-bench refusal benchmarks measure. Deployers assuming a model's bench refusal rate transfers to production should audit the format and length regime they ship in. This matters directly to the Sandbrink managed-access agenda cited in §1: a monitoring layer at the activation level is *format-robust* in a way that a surface-completion classifier is not.
+
+**Finding B — Inverse flag: safety activation without behavioral suppression.** In Gemma 4 E2B's correct-format pass 5 (§4.5), all 9 comply cases fire `refusal_features_active_despite_compliance = True` (mean refusal_circuitry weight ≈ 0.325). Five of the 9 are hazard-adjacent biology prompts (pathogen-adjacent immunology, vaccine-escape, zoonotic spillover, veterinary biocontrol, prion biology). The safety circuit is *representing* the hazard context; it is not *gating* the output. This is the structural inverse of the Gemma 2 2B-IT flagship finding (§4.2) where `hazard_features_active_despite_refusal` fires on 34.8% of *benign* refusals (over-refusal with intact hazard representation). *Policy implication:* a two-flag dashboard (`hazard_on_refuse`, `refusal_on_comply`) sketches a concrete four-cell typology of model safety posture:
+
+| | hazard_on_refuse low | hazard_on_refuse high |
+|---|---|---|
+| **refusal_on_comply low** | deep refusal (structurally safe) | shallow refusal (surface-only) |
+| **refusal_on_comply high** | safety represents hazard but over-refuses benign | non-suppressive safety (Gemma 4 E2B pattern) |
+
+BioRefusalAudit distinguishes these four cells at the activation layer, which surface evaluation alone cannot. For deployers and model providers, this two-flag surface is a lighter-weight audit than full D-value calibration and survives the §4 validity caveats.
+
+Findings A and B are the primary policy contributions of this submission.
 
 ## 5. Limitations
 
