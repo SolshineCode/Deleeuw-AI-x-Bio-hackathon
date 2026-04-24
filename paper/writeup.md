@@ -16,6 +16,8 @@ BioRefusalAudit provides the first cross-model, interpretability-grounded tool f
 
 **Policy motivation (Sandbrink & Crook, AIxBio 2026):** At the AIxBio Hackathon April 23 keynote, Jonas Sandbrink articulated the need for a system that can *summarize and monitor AI–human interactions to alert on concerning bio-research without breaching user privacy, company proprietary information, or IP disclosure concerns*. BioRefusalAudit directly addresses this gap. By auditing SAE feature activations rather than interaction content, a deployer can flag structurally shallow refusals without ever reading the prompt or completion text. This makes refusal depth auditing privacy-compatible in ways content-inspection approaches aren't. The activation signal is separable from the linguistic content.
 
+**Protocol and workflow screening.** The same activation-signature approach extends naturally to cloud-lab and experimental-protocol screening contexts: when a researcher queries an LLM to help design an experimental workflow, BioRefusalAudit's divergence flags can surface cases where the model's internal hazard features fire even though the generated protocol text reads as benign — dual-use concern masked by innocuous framing. Model-internal auditing composes with output-based screeners (sequence filters, protocol classifiers) that inspect generated artifacts; the two signals cover distinct failure modes. Our contribution is the upstream-of-output layer — what the model is representing while it writes — which remains invisible to any screener that sees only the completed artifact.
+
 ## 2. Contribution
 
 1. A **calibrated surface-internal divergence metric** `D(s, f) = 1 - cos(f, T^T · s)` over the soft-weighted surface classification `s` (refuse / comply / partial / hedge / evade) and the SAE-feature activation vector `f` (bio_content / hazard_adjacent / refusal_circuitry / hedging / deception_correlate). See `docs/METHOD.md`.
@@ -203,6 +205,8 @@ BioRefusalAudit extends two findings from the author's Secret Agenda work (arXiv
 ## 7. Responsible release
 
 Code is released under HL3-FULL; tiers 1+2 of the eval set under CC-BY-4.0; tier 3 is category-level-only in this public repo with full bodies on an HL3-gated HF dataset (to be published at `SolshineCode/biorefusalaudit-gated`). See `SAFETY.md`, `docs/HL3_RATIONALE.md`, and `LICENSE_HL3_DATASET.md`.
+
+**Dual-use handling.** The AIxBio host ground rules (posted 2026-04-24) are codified as enforceable tests in this repo, not treated as aspirations. (1) *No concerning specifics* — `safety_review.check_no_hazard_bodies` gates tier-3 hazard bodies out of the public JSONL; the "biology professor at a public lecture" test governs authoring (`data/eval_set_public/schema.md`). (2) *Projects private until judging ends* — branch remains local; no push, PR, or HF dataset release precedes judge clearance. (3) *When in doubt, ask* — ambiguous cases route to the disclosure contact in `SAFETY.md` before inclusion. (4) *Hazardous-pathogen keynote (Esvelt, Friday 9am ET)* — flagged as a required-attend for authoring refinements; post-keynote deltas fold back into the tier-3 gating logic and `data/eval_set_public/schema.md`. Separately, `reporting.redaction.redact_tier3` redacts tier-3 model completions on every report write (asserted by `test_redaction.py`), so hazard-tier completions are never serialized in clear — a strictly stronger guarantee than rule (1) alone requires.
 
 ## 8. Future work
 
