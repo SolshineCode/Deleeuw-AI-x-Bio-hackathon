@@ -182,6 +182,8 @@ The flat tier gradient (0.061 / 0.056 / 0.053, nearly undifferentiated) reflects
 
 *D under re-fitted T (cond=165, MSE=0.0008):* values remain near-zero (benign=0.006, dual-use=0.006, hazard=0.004), confirming the custom SAE lacks discriminative power to separate safety tiers for Gemma 4 E2B via D. Flag-based signals (`refusal_features_active_despite_compliance`, `hazard_features_active_despite_refusal`) are the informative channel for this model; D requires a domain-specific fine-tuned SAE to achieve tier separation (§8).
 
+*Format ablation (n=36):* B (generic) caused 7/12 loops; A vs D (wrong role) were indistinguishable, consistent with semantic turn-structure keying.
+
 ## 5. Limitations
 
 - **No non-bio control experiment.** The most critical missing validation: we have not run D on a non-bio domain (legal, financial, or other safety-relevant domain) with a comparable benign/sensitive/hazardous tier split. Without this control, the tier-separation D result (p=0.0001, d=1.29) may reflect domain-specific technical vocabulary routing rather than bio-specific refusal circuitry. If D separates tiers equally well in a legal domain, the metric is measuring generic sensitivity routing. This is the required experiment to distinguish the two hypotheses. **This is the highest-priority follow-on.**

@@ -111,7 +111,10 @@ DONE (2026-04-23, autonomous):
 
 This tests whether the safety circuit is keyed to the EXACT token sequence or to the semantic structure of the turn format. Documents in `docs/METHOD.md §Safety-format dependency`.
 
-**Format ablation experiment (IN PROGRESS 2026-04-23):** Running reduced 3-condition ablation (A=correct / B=generic / D=wrong-role) on 4 prompts per tier = 36 completions at 40 max tokens. Script: `scripts/format_ablation.py`. Estimated completion time: ~15 min from 22:58 PDT. Results will be in `runs/gemma-4-E2B-it-format-ablation/report.json`. Analysis script ready: `scripts/analyze_format_ablation.py`. Key question: does D (wrong role "assistant") match A (correct "model") or B (generic)? Answer determines whether safety is token-sequence-keyed or semantic-structure-keyed.
+**Format ablation experiment (COMPLETE 2026-04-23):** 3-condition ablation (A=correct / B=generic / D=wrong-role), 4 prompts × 3 tiers = 36 completions at 40 max tokens. Results at `runs/gemma-4-E2B-it-format-ablation/report.json`.
+- **Condition B** (generic User:/Assistant:): 7/12 repetition loops + 5/12 comply — confirms format is necessary for coherent Gemma 4 generation.
+- **Condition A vs D** (wrong role "assistant"): indistinguishable — both 12/12 educational responses. Safety/coherence appears semantically keyed to turn structure, not exact `model` token.
+- **Caveat:** 40-token max + regex judge insufficient to detect refusal in truncated outputs; refuse rates are 0% in all conditions. Findings are valid for coherence/loop detection, not refusal rate comparison.
 
 ## Planned follow-on research arc (post-hackathon)
 
