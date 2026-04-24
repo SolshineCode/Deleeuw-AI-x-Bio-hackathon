@@ -74,6 +74,17 @@ DONE (continued):
 - ✅ 4th T re-fit from pass-4 data
 - ✅ Pass-5 Gemma 4 E2B (correct chat template): 65 refuse / 9 comply / 1 hedge; inverse flag finding; 5 hazard-adjacent transgressions; T re-fit (cond=165); paper §4.5 updated with complete findings
 
+DONE (2026-04-24, 8-hour GPU grant — autonomous):
+- ✅ Dashboard smoke check COMPLETE: correct D values, feature panel, Named circuit ✓ intervention panel (bio_004)
+- ✅ REVIEWER_QUICKSTART.md: fixed test count 51→56, updated commit table
+- ✅ SUBMISSION_CHECKLIST.md: dashboard item ticked, word count updated 3479→3499
+- ✅ `notebooks/colab_gemma4_sae_training.ipynb`: Phase 0 Colab SAE training notebook (Gemini-authored + amended: multimodal pick_layer fix, dataset fallback)
+- ✅ `scripts/summarize_interventions.py`: intervention summary table script
+- ✅ `scripts/train_sae_local.py`: local SAE training proof-of-concept script (collects raw residuals, trains TopK(k=32) SAE, logs to JSONL)
+- 🔄 6 additional interventions RUNNING (bio_016 done: NC=YES; bio_066/060/010/001/002 in queue)
+- ⏳ Extended format ablation QUEUED: conditions A/B/D, 150 tokens, 8 prompts/tier → removes 40-token caveat
+- ⏳ Local SAE training QUEUED: Gemma 4 E2B residuals → TopK(k=32) SAE, 500 steps
+
 TODO (user-action required, planned post-submission):
 1. Run `notebooks/colab_biorefusalaudit.ipynb` on Colab T4 (Gemma 2 9B-IT + Llama 3.1 8B-Instruct, ~90 min).
 2. Pull `runs/colab_*/report.{md,json}`, regenerate `demo/scaling_plot.png` with cross-arch data.
