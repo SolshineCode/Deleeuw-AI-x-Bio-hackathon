@@ -51,10 +51,13 @@ def load_model(
             bnb_4bit_quant_type="nf4",
             bnb_4bit_use_double_quant=True,
         )
-        kwargs["device_map"] = "auto"
+        # {"": 0} forces the entire model to cuda:0. device_map="auto"
+        # mis-estimates VRAM for multimodal architectures (Gemma4ForConditionalGeneration)
+        # and silently routes all compute to CPU even when CUDA is available.
+        kwargs["device_map"] = {"": 0} if torch.cuda.is_available() else "auto"
     elif quantize == "8bit":
         kwargs["quantization_config"] = BitsAndBytesConfig(load_in_8bit=True)
-        kwargs["device_map"] = "auto"
+        kwargs["device_map"] = {"": 0} if torch.cuda.is_available() else "auto"
     else:
         kwargs["torch_dtype"] = torch_dtype
         # Prefer device_map="auto" on CUDA so models larger than VRAM
@@ -115,7 +118,13 @@ def residual_stream_hook(
             resid = output[0]
         else:
             resid = output
-        captured.append(resid.detach())
+        # Overwrite rather than append: during autoregressive generation the hook fires
+        # once per new token. Accumulating all steps fills VRAM (each tensor grows with
+        # sequence length) and causes CPU spill on 4GB cards. We only need the final step.
+        if captured:
+            captured[0] = resid.detach()
+        else:
+            captured.append(resid.detach())
 
     handle = block.register_forward_hook(_hook)
 
