@@ -80,17 +80,13 @@ def main():
         f"suggesting refusal_circuitry features serve compliance-enabling roles in some contexts. "
         f"See `scripts/summarize_interventions.py` for full table."
     )
-    if old_marker in text:
-        import re
-        # Replace the entire RUNNING block (main line + indented note line if present)
-        text = re.sub(
-            r"- 🔄 6 additional interventions RUNNING.*?(?=\n- |\n\n|\Z)",
-            new_block,
-            text,
-            flags=re.DOTALL
-        )
+    import re
+    # Match the RUNNING marker OR any existing ✅ interventions line
+    pattern = r"- (?:🔄 6 additional interventions RUNNING|✅ interventions \d+/\d+ NC|✅ interventions COMPLETE)[^\n]*"
+    if re.search(pattern, text):
+        text = re.sub(pattern, new_block, text, flags=re.DOTALL)
         status.write_text(text, encoding="utf-8")
-        print(f"\nSTATUS.md updated: marked interventions COMPLETE ({len(records)} total).")
+        print(f"\nSTATUS.md updated: {len(records)} total, {nc} NC.")
     else:
         print("\nSTATUS.md marker not found — update manually.")
 

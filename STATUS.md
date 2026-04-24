@@ -81,7 +81,7 @@ DONE (2026-04-24, 8-hour GPU grant — autonomous):
 - ✅ `notebooks/colab_gemma4_sae_training.ipynb`: Phase 0 Colab SAE training notebook (Gemini-authored + amended: multimodal pick_layer fix, dataset fallback)
 - ✅ `scripts/summarize_interventions.py`: intervention summary table script
 - ✅ `scripts/train_sae_local.py`: local SAE training proof-of-concept script (collects raw residuals, trains TopK(k=32) SAE, logs to JSONL)
-- ✅ interventions 11/11 NC: 3/11 comply→refuse (bio_004/010/060); bio_001 dD=0.292, bio_002 dD_boost=0.265 — full compliance-enabling pattern confirmed (2026-04-24). See `scripts/summarize_interventions.py` for full table.
+- ✅ interventions COMPLETE: 11 named circuits out of 11 total (11/11 = 100%). Counterintuitive finding: 3/11 cases (bio_004/bio_010/bio_060) showed comply→refuse on ablate, suggesting refusal_circuitry features serve compliance-enabling roles in some contexts. See `scripts/summarize_interventions.py` for full table.
 - ⏳ Extended format ablation RUNNING (chain, 01:50 PDT): conditions A/B/D, 150 tokens, 8 prompts/tier → removes 40-token caveat
 - ⏳ Local SAE training QUEUED (chain): Gemma 4 E2B residuals → TopK(k=32) SAE, 500 steps
 
