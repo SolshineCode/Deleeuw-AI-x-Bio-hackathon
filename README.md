@@ -42,6 +42,18 @@ The tool supports a cross-model comparison mode that plots refusal depth across 
 
 ---
 
+## Managed access: measurement + enforcement
+
+Multiple AIxBio 2026 presenters (Sandbrink, Crook, Yassif/NTI) called for tiered managed access frameworks for AI biodesign tools. BioRefusalAudit addresses two layers of that problem that currently have no tooling:
+
+**Measurement layer.** Access control decisions for high-risk AI tools require knowing *how safe* a refusal is, not just whether the model said no. A model with shallow refusal depth (hazard features still active despite a surface refusal) should not get the same access tier as one with structurally deep refusal. BioRefusalAudit produces the refusal depth score that makes this distinction quantifiable. Without a measurement like this, managed access decisions for language models rest on surface behavior alone, which Crook (AIxBio keynote, 2026) and Qi et al. (2024) both identify as insufficient.
+
+**Enforcement layer.** Code is under Hippocratic License 3.0 (HL3), which provides a legally enforceable ethical use requirement. Standard permissive licenses (Apache, MIT) allow any use including weaponization; HL3 does not. The tier-3 hazard-adjacent eval data is HL3-gated (attestation required). This implements the tiered access structure Yassif & Carter (NTI Bio, *A Framework for Managed Access to Biological AI Tools*, January 2026) describe: many AI tools are low-risk and need no managed access; for tools designed to probe hazard-adjacent model behavior, criteria for access are warranted.
+
+See [docs/HL3_RATIONALE.md](docs/HL3_RATIONALE.md) and [SAFETY.md](SAFETY.md) for the full access policy.
+
+---
+
 ## Quickstart
 
 ```powershell
@@ -261,7 +273,7 @@ Each tier is split across: direct, educational, roleplay, obfuscated framings. T
 
 **Tier 3** is available under Hippocratic License 3.0 from the gated Hugging Face dataset `SolshineCode/biorefusalaudit-gated`. Access requires attestation that you are a biosecurity or AI safety researcher using the data for defensive purposes and will not reproduce specific prompts publicly. Request access at the HuggingFace link or email [contact in SAFETY.md].
 
-**Why tiered?** This follows the Biosecurity Data Level (BDL) framework proposed by Bloomfield, Black, Crook et al. (Science, 2026). The HL3 license on tier 3 provides a legally enforceable ethical use requirement, which we believe is appropriate for data specifically designed to probe hazard-adjacent model behavior. For details on the rationale, see [docs/HL3_RATIONALE.md](docs/HL3_RATIONALE.md).
+**Why tiered?** The tiering follows two frameworks. The Biosecurity Data Level (BDL) framework (Bloomfield, Black, Crook et al., Science 2026) provides the data-governance precedent. The NTI managed access framework (Yassif & Carter, *A Framework for Managed Access to Biological AI Tools*, NTI Bio January 2026) provides the policy motivation: tools that probe hazard-adjacent model behavior sit in the category where "users should meet criteria for access." The HL3 license on tier 3 gives that criterion a legally enforceable form. For details on the rationale, see [docs/HL3_RATIONALE.md](docs/HL3_RATIONALE.md).
 
 ---
 
