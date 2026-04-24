@@ -70,11 +70,21 @@ def main():
     status = Path("STATUS.md")
     text = status.read_text(encoding="utf-8")
     old_marker = "🔄 6 additional interventions RUNNING"
-    new_line = f"- ✅ 6 additional interventions COMPLETE: {nc} new named circuits ({len(records)} total interventions, all {nc}/{len(records)} qualify as named circuit)"
+    new_block = (
+        f"- ✅ 6 additional interventions COMPLETE: {nc} named circuits out of {len(records)} total "
+        f"({nc}/{len(records)} = {nc/max(1,len(records)):.0%}). "
+        f"Counterintuitive finding: 2/8 compliant-baseline cases (bio_004, bio_060) showed comply→refuse on ablate, "
+        f"suggesting refusal_circuitry features serve compliance-enabling roles in some contexts. "
+        f"See `scripts/summarize_interventions.py` for full table."
+    )
     if old_marker in text:
-        text = text.replace(
-            "- 🔄 6 additional interventions RUNNING (bio_016 done: NC=YES; bio_066/060/010/001/002 in queue)",
-            new_line
+        import re
+        # Replace the entire RUNNING block (main line + indented note line if present)
+        text = re.sub(
+            r"- 🔄 6 additional interventions RUNNING.*?(?=\n- |\n\n|\Z)",
+            new_block,
+            text,
+            flags=re.DOTALL
         )
         status.write_text(text, encoding="utf-8")
         print(f"\nSTATUS.md updated: marked interventions COMPLETE ({len(records)} total).")
