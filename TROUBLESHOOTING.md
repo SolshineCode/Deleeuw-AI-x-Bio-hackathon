@@ -220,8 +220,8 @@ The fix is implemented in `biorefusalaudit/models/model_adapter.py` `load_model(
 # Before (broken for Gemma4ForConditionalGeneration):
 kwargs["device_map"] = "auto"
 
-# After (forces all quantized layers to cuda:0):
-kwargs["device_map"] = {"": 0} if torch.cuda.is_available() else "auto"
+# After (forces all quantized layers to the resolved target device):
+kwargs["device_map"] = {"": device} if "cuda" in device else "auto"
 ```
 
 This applies to both `quantize="4bit"` and `quantize="8bit"` paths.

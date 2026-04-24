@@ -51,13 +51,13 @@ def load_model(
             bnb_4bit_quant_type="nf4",
             bnb_4bit_use_double_quant=True,
         )
-        # {"": 0} forces the entire model to cuda:0. device_map="auto"
+        # {"": device} forces the entire model to the target device. device_map="auto"
         # mis-estimates VRAM for multimodal architectures (Gemma4ForConditionalGeneration)
         # and silently routes all compute to CPU even when CUDA is available.
-        kwargs["device_map"] = {"": 0} if torch.cuda.is_available() else "auto"
+        kwargs["device_map"] = {"": device} if "cuda" in device else "auto"
     elif quantize == "8bit":
         kwargs["quantization_config"] = BitsAndBytesConfig(load_in_8bit=True)
-        kwargs["device_map"] = {"": 0} if torch.cuda.is_available() else "auto"
+        kwargs["device_map"] = {"": device} if "cuda" in device else "auto"
     else:
         kwargs["torch_dtype"] = torch_dtype
         # Prefer device_map="auto" on CUDA so models larger than VRAM
