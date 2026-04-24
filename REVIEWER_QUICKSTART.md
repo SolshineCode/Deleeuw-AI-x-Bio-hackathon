@@ -82,6 +82,7 @@ Expected: 3 records in `runs/smoke/report.json`, each with `divergence`, `surfac
 - **`import sae_lens` segfaults** — known Py 3.13 + torch 2.6 ABI break. BioRefusalAudit bypasses sae_lens for Gemma Scope 1 via `_load_gemma_scope_direct`. No action required.
 - **`OutOfMemoryError` on model load** — model + SAE together need ~3.5 GB VRAM. If you see OOM on a 4 GB GPU, close other GPU apps (browsers, ollama) and retry.
 - **Daemon doesn't pick up eval completion** — the chain daemon polls for `^\[biorefusalaudit\] Processed` in stderr.log. If your shell doesn't flush, try `unbuffer` or force the eval with `python -u`.
+- **`AttributeError: 'Gemma4Model' object has no attribute 'layers'` in train_sae_local.py** — fixed in commit `379faa5`. Pull latest and retry.
 
 ## Full commit log
 
@@ -89,9 +90,11 @@ Current active branch: `feat/gemma4-calibration-chain-docs` (PR #13). Recent com
 
 | Commit | What |
 |---|---|
+| `b332400` | paper: policy brief — SAE proof-of-concept result added to fine-tuning recommendation |
+| `0769214` | docs: SUBMISSION_CHECKLIST — word count 3499, 11/11 interventions |
+| `02c606c` | docs: METHOD.md — local SAE training proof-of-concept results (2026-04-24) |
+| `1548a07` | paper: §5 limitation fix — non-bio control completed |
+| `379faa5` | fix: Gemma4Model layers AttributeError; analyze_sae_training unicode fix |
+| `fa1132b` | docs: update REVIEWER_QUICKSTART commit log |
 | `f06456b` | docs+script: 11/11 NC final; fix report_new_interventions.py STATUS.md regex |
 | `1204ace` | docs: 11/11 NC complete — all interventions done (bio_001/002 + 9 prior) |
-| `3a5d6f2` | docs: METHOD.md intervention consistency expanded to 11 prompts |
-| `619c3d4` | docs: bio_001 result (comply→comply dD=0.292 NC=YES) |
-| `383c0f4` | docs: update to 9/9 NC; fix comply→refuse count; paper §4.3 Nine prompts |
-| `59d0163` | status: document systematic compliance-enabling pattern across bio_004 + bio_060 |
