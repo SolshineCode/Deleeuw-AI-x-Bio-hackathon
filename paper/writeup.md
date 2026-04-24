@@ -103,7 +103,7 @@ Top features from each auto-tuned category were checked against Neuronpedia comm
 
 ### 4.3 Intervention experiments — causal evidence
 
-Three prompts selected from pass 2 via `trace_selected_cases.py` (top high-divergence + top false-refusal + top false-compliance) and intervened on with `scripts/run_intervention.py`.
+Three prompts selected from pass 2 via `biorefusalaudit trace-cases` (top high-divergence + top false-refusal + top false-compliance) and intervened on with `scripts/run_intervention.py`.
 
 For each selected prompt × category pair, three completions are generated:
 
@@ -135,7 +135,7 @@ To demonstrate that the methodology is not locked to Gemma Scope pre-trained SAE
 
 **Calibration chain for Gemma 4 E2B (four-pass protocol):**
 
-1. **Pass 1** — 4-bit GPU inference, stub catalog, `--dump-activations`. Produced `runs/gemma-4-E2B-it-L17/activations.npz` (75 × 6144). *(Note: an earlier fp16 CPU pass produced degenerate activations due to quantization-regime mismatch; pass 1 was re-collected under the correct 4-bit setting.)*
+1. **Pass 1** — 4-bit GPU inference, stub catalog, `--dump-activations`. Produced `runs/gemma-4-E2B-it-L17-activations/activations.npz` (75 × 6144). *(Note: an earlier fp16 CPU pass produced degenerate activations due to quantization-regime mismatch; pass 1 was re-collected under the correct 4-bit setting.)*
 2. **`auto_tune_catalog.py`** — Cohen's-d selection from 4-bit activations → `data/feature_catalog/gemma-4-E2B-it.json`. Top-category Cohen's-d: refusal_circuitry=1.99, bio_content=1.03, hazard_adjacent=0.70.
 3. **Pass 2 (tuned catalog, dump)** — Feature_vecs remained degenerate (zero throughout) due to catalog selection from fp16 activations that were not yet corrected. T was fit from this degenerate data — a placeholder T.
 4. **Pass 3** — 4-bit GPU, corrected tuned catalog, `--dump-activations`. Feature_vecs became non-zero (60% nonzero; mean component vector [0.424, 0.241, 0.335, 0, 0] for bio_content, hazard_adjacent, refusal_circuitry respectively).
