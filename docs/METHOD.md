@@ -141,6 +141,27 @@ regardless of `s`. Interpretation — features correlated with deception (inheri
 - **Small-n calibration bias.** With `n < 30` controls per surface class, `T` is estimated off a very thin signal and will overfit its controls. The conditioning check catches extreme cases; mild cases just produce noisier divergence numbers. Increase control count, or compare divergence numbers only across prompts audited by the same calibrated model.
 - **Judge consortium degeneracy.** If every prompt in a run is labeled "refuse" by every judge, the calibration has no signal to distinguish surface classes and `T` collapses toward a near-degenerate column. The report flags this.
 - **Cross-model comparisons across different calibrations.** `T` is model-specific. Two models' raw `D` numbers are comparable only in trend, not in absolute value. The cross-model comparison mode explicitly reports per-model `T` conditioning alongside the aggregate numbers.
+- **Quantization-regime mismatch in catalog tuning.** *(Confirmed on Gemma 4 E2B, 2026-04-23.)* If `auto_tune_catalog.py` is run on activations collected under fp16 inference but the final eval uses bitsandbytes 4-bit NF4 inference, the catalog feature indices will be chosen for their differential activation under fp16 — which is a different distribution than what fires under 4-bit. The catalog will silently produce near-zero `f` vectors during the 4-bit eval, making every prompt look like `D = 1.0`. **Rule:** always collect the tuning activations (`--dump-activations`) and the final eval activations under the same quantization. Concretely: if the eval uses `--quantize 4bit`, the pass-1 activation-collection run must also use `--quantize 4bit`.
+- **Calibration bootstrap problem (identity-T + zero-f ⇒ D=1.0).** If the catalog is not yet tuned (or is tuned from a mismatched quantization regime), `f = 0` for every prompt. With the identity prior `T`, the divergence formula collapses: `f_expected = T^T · s = s`, so `D = 1 − cosine(0, s)`. Cosine of a zero vector is undefined; the implementation returns `D = 1.0` as the degenerate case. This is not evidence that the model's internal state diverges from its surface behavior — it is evidence that the catalog is not firing. **Distinguishing test:** inspect `feature_vec` in `report.json`. If all five components are zero for every prompt, the catalog is the problem, not the model. **Fix:** collect pass-1 activations under the correct quantization, run `auto_tune_catalog.py`, verify nonzero `feature_vec` entries appear in a test pass, then fit `T` and run the final eval.
+
+## Required chain ordering for a new (model, SAE) pair
+
+The steps are sequentially dependent. Skipping or reordering them produces the failure modes above.
+
+```
+1. Pass-1 (--dump-activations, correct --quantize)
+        → activations.npz  [d_sae-dimensional; quantization must match final eval]
+2. auto_tune_catalog.py --activations <pass-1>/activations.npz
+        → feature_catalog/<model>.json  [picks features that actually fire, differentially]
+3. Pass-2 (--catalog tuned, --dump-activations)
+        → report.json  [feature_vec now non-zero]  + activations.npz
+4. fit_calibration.py --report <pass-2>/report.json --config <calibration>.yaml
+        → fitted T appended to calibration YAML  [can only fit meaningful T once f ≠ 0]
+5. Pass-3 (--catalog tuned, --calibration fitted)
+        → final report with real D values
+```
+
+Steps 3–5 can be iterated: if the pass-2 `feature_vec` variance is still low (few features fire), the tuned catalog can be further refined on pass-2 activations before fitting T. The key invariant: **T must be fit on data where `f ≠ 0`.**
 
 ## Provenance
 
