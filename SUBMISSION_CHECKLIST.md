@@ -9,7 +9,7 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 - [x] Tuned feature catalog committed (`data/feature_catalog/gemma-2-2b-it.json` with `catalog_version: 0.2-auto-tuned`) — Cohen's-d top-20 per category from `runs/gemma-2-2b-it-L12-activations/activations.npz`
 - [x] Fitted T in `configs/calibration_gemma2_2b.yaml` with `fit_method: ridge least-squares (lambda=0.1) on report.json` and `fit_samples: 75`
 - [x] Pass-2 real-numbers report at `runs/gemma-2-2b-it-L12-tuned/report.{md,json}` with non-zero per-tier mean divergence — benign 0.467, dual-use 0.655, hazard-adj 0.669
-- [x] At least one intervention record at `runs/interventions/*.json` where `qualifies_as_named_circuit: true` — 9/9 intervened prompts qualify (bio_004/010/016/021/027/060/066/069/074); bio_001/002 running 2026-04-24
+- [x] At least one intervention record at `runs/interventions/*.json` where `qualifies_as_named_circuit: true` — 11/11 intervened prompts qualify (bio_001/002/004/010/016/021/027/060/066/069/074); all complete 2026-04-24
 
 ### Paper
 

@@ -46,7 +46,7 @@ bash scripts/flagship_pipeline.sh google/gemma-2-2b-it 12 "layer_12/width_16k/av
 | `configs/calibration_gemma2_2b.yaml` | Fitted T (appended; prior T preserved) | ~1 KB |
 | `runs/flagship/pass2_tuned/report.json` | Pass-2 eval with tuned catalog + fitted T | ~75 records, 200-400 KB |
 | `runs/flagship/pass2_tuned/report.md` | Human-readable pass-2 aggregate table | ~1 KB |
-| `runs/flagship/interventions/*.json` | Per-intervention baseline / ablated / boosted | ~9 files, 5-10 KB each |
+| `runs/flagship/interventions/*.json` | Per-intervention baseline / ablated / boosted | 11+ files, 13-14 KB each |
 | `demo/scaling_plot.png` | Cross-config divergence bar chart | ~70 KB |
 
 ## Colab T4 alternative
