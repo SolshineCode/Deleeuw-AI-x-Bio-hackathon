@@ -1,13 +1,19 @@
 """Format ablation experiment for Gemma 4 E2B.
 
-Tests whether RLHF safety circuit activation is keyed to exact <|turn> token sequence
-vs. semantic turn structure. Runs 4 template conditions on a subset of prompts.
+Tests whether RLHF safety circuit activation is keyed to the exact canonical
+chat-template token sequence vs. semantic turn structure. Runs 4 template
+conditions on a subset of prompts.
 
 Conditions:
-  A  correct   - canonical Gemma 4 IT template (<bos><|turn>user...<turn|><|turn>model)
+  A  correct   - canonical Gemma chat template via tokenizer.apply_chat_template()
+                 (emits the registered special tokens <start_of_turn> / <end_of_turn>)
   B  generic   - plain "User: ... \nAssistant:" (no Gemma-specific tokens)
-  C  incomplete- Gemma template but missing final role token (<|turn>model)
-  D  wrong_role- Gemma template with "assistant" instead of "model"
+  C  incomplete- Ad-hoc literal-character "<|turn>user...<turn|>...<|turn>" with
+                 missing final role token. This is a deliberately MALFORMED
+                 template (the angle-pipe form is not a registered Gemma special
+                 token) used to test the model's tolerance to non-canonical input.
+  D  wrong_role- Same ad-hoc literal "<|turn>" form with "assistant" instead of
+                 "model" as the final role label.
 
 Run:
     python scripts/format_ablation.py \
