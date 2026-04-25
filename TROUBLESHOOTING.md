@@ -417,6 +417,43 @@ Also added post-load device assertion in `load_model` to fail fast if CPU fallba
 
 ---
 
+## Judge consortium silently returns uniform prior, causing "refuse" artifact via dict-order argmax
+
+**Symptom:** `surface_label = "refuse"` on records that contain clear comply-text completions (e.g., a biology answer about photosynthesis). `surface_soft` is exactly `{"refuse": 0.2, "comply": 0.2, "partial": 0.2, "hedge": 0.2, "evade": 0.2}` — five equal weights. `judge_votes` is a single float (e.g., `0.8`), not a per-judge dict.
+
+**Root cause:** When all LLM judges fail (API timeout, missing key, rate-limit, network error), the consortium falls back to the uniform prior `[0.2, 0.2, 0.2, 0.2, 0.2]`. The argmax of five equal values in a Python dict picks the first key by insertion order. The five labels are declared as `["refuse", "comply", "partial", "hedge", "evade"]`; "refuse" is first, so every degenerate record gets `surface_label = "refuse"` by dict-ordering, not by model behavior.
+
+**Scale of impact (discovered 2026-04-25):** In `runs/gemma-2-2b-it-L12-tuned/` — the flagship G2 result reported in §4.2 of the paper — 29 of 75 records (39%) have degenerate soft scores. All 46 real judgments returned "comply". The actual completions for all 29 degenerate records are biology answers; none contain a refusal. This means the reported "29 refusals" do not exist: they are judge failures dressed as refusals by an argmax coincidence.
+
+**Downstream consequence in the paper:** The `hazard_features_active_despite_refusal` flag fires on 21/29 degenerate records and 0/46 real records. The §4.2 statistic "34.8% of benign refusals fire hazard_features_active_despite_refusal" is computed over these degenerate records. It does not measure over-refusal with intact hazard representations; it measures "biology completions where the judge failed AND biology/hazard SAE features are active." The feature-activation component is real; the "refusal" label is not. The D-value tier separation (d=1.29) may be less affected because D depends on activation vectors, not surface labels, but the calibration matrix T was fit on data that includes degenerate records and needs re-verification.
+
+**Detection:** After any eval run, run:
+```python
+import json
+from pathlib import Path
+from collections import Counter
+d = json.loads(Path("runs/<your-run>/report.json").read_text())
+uniform = {"refuse": 0.2, "comply": 0.2, "partial": 0.2, "hedge": 0.2, "evade": 0.2}
+degen = sum(1 for r in d["records"] if r.get("surface_soft") == uniform)
+print(f"Degenerate records: {degen}/{len(d['records'])}")
+```
+If `degen > 0`, LLM judges failed for those records. Any finding that depends on `surface_label == "refuse"` on degenerate records is invalid.
+
+**Fix:**
+1. Short-term: use `--no-llm-judges` to run regex-only judges. Regex is deterministic and never falls back to the uniform prior.
+2. Medium-term: add an explicit `WARN` log and a flag (`judge_fallback_to_prior: true`) to every record where the consortium falls back. Never silently use the prior. `surface_label` should be `None` or `"unknown"` on degenerate records, not the argmax of a uniform distribution.
+3. Calibration: re-fit T after any rerun that changes surface-label distributions. The T from the degenerate run should be treated as provisional.
+
+**Affects:** `runs/gemma-2-2b-it-L12-tuned/` and any prior run where LLM judges were unreachable. Does NOT affect format ablation runs (which use a separate simple-regex judge path and correctly labeled all 24 prompts). Does NOT affect intervention runs (which only check for `label_changed` between ablate and boost, not absolute surface labels).
+
+**Corrected run:** `runs/gemma-2-2b-it-200tok-rejudge/` — full 75-prompt G2 at 200 tokens with `--no-llm-judges`. Results replace the degenerate surface labels.
+
+**Code location:** `biorefusalaudit/judges/consortium.py` — the fallback-to-prior logic and the argmax that should return `"unknown"` on ties.
+
+**First observed:** 2026-04-25 ~16:00 PDT.
+
+---
+
 ## LLM judge unreliable at chunk-level classification (decontextualized windows)
 
 **Finding (2026-04-25):** Gemini 2.5 Flash produces unreliable classifications when asked to label 200-word chunks from `cais/wmdp-bio-forget-corpus` as H (hazard_content), D (domain_adjacent), or M (generic_methods). Label accuracy against human judgment: ~60%. More critically, the *reasons* are hallucinated: chunk [2] ("20% excitation power and 40% MST power... MO. Control software") was labelled H with the stated reason "Details superspreading events and sustained transmission chains." The chunk contains no mention of superspreading.
