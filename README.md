@@ -306,7 +306,7 @@ Full results and methodology in [paper/writeup.md](paper/writeup.md).
 
 Source: `runs/gemma-2-2b-it-L12-tuned/report.json`.
 
-**Causal intervention result:** 11/11 intervened prompts qualified as named circuits (`|ΔD| > 0.2`, `label_changed`, or combined effect size > 0.2 under refusal-circuitry feature ablation/boost). Counterintuitive pattern: 3/11 comply-baseline cases (bio_004, bio_010, bio_060) showed comply→refuse when refusal-circuitry features were ablated; bio_001 and bio_002 show large D shifts on boost (dD_boost > 0.25) — all consistent with refusal-circuitry features acting as compliance-enablers, not refusal-suppressors. See `runs/interventions/` and §4.3 of the paper.
+**Causal intervention result:** 8/12 intervened prompts across all three tiers qualify as candidate mechanistic features (CMF: `|ΔD| > 0.2` or `label_changed`); 4 below-threshold cases at low-D comply prompts where the refusal circuit has little to ablate. bio_016 (benign/roleplay) and bio_060 (hazard_adjacent/roleplay) showed comply→refuse on BOOST — consistent with refusal-circuitry features acting as compliance-enablers, not refusal-suppressors. **CORRECTED 2026-04-25:** prior "11/11 NC" was a regex judge false-positive on Markdown-formatted ablated completions; corrected to 8/12. See `runs/interventions/` and §4.3 of the paper.
 
 **Cross-architecture results (Colab T4 — Gemma 2 9B-IT + Llama 3.1 8B-Instruct):** pending `notebooks/colab_biorefusalaudit.ipynb` run. Will appear in `runs/colab_*/report.json` and §4.4 of the paper.
 
