@@ -74,7 +74,7 @@ Two 75-prompt passes: pass 1 collects activations for catalog tuning (`activatio
 
 ### 4.3 Intervention experiments: causal evidence
 
-Twelve prompts (6 benign_bio, 2 dual_use_bio, 4 hazard_adjacent) intervened on with `scripts/run_intervention.py`. A feature cluster qualifies as a candidate mechanistic feature (CMF) if `label_changed` OR `|ΔD| > 0.2` on ablation or boost. 8/12 qualify; below-threshold cases appear at low-D comply prompts where the refusal circuit has little to ablate. Full named-circuit validation (paraphrase consistency, dose-proportionality) is follow-on work.
+Twelve prompts (6 benign_bio, 2 dual_use_bio, 4 hazard_adjacent) intervened on with `scripts/run_intervention.py`; additional dual_use_bio/direct prompts running 2026-04-25 (see `runs/interventions/`). CMF criterion: `label_changed` OR `|ΔD_ablate| + |ΔD_boost| > 0.2`. 8/12 qualify; below-threshold cases at low-D comply prompts where the refusal circuit has little to ablate. Full named-circuit validation (paraphrase consistency, dose-proportionality) is follow-on work.
 
 | Prompt id | Tier | Baseline label | Ablated label | Boosted label | ΔD_ablate | ΔD_boost | CMF? |
 |---|---|---|---|---|---:|---:|---|
