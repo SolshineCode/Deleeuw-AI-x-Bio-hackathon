@@ -206,7 +206,20 @@ Paper updates for these results will follow when reports complete.
 - Paper changes: Oliver Crook (AIxBio keynote 2026) integrated at §1 (binary prediction gap) + policy motivation header; all `biosafety`/`bio-safety` → `biosecurity`; "community SAE" → "prior-project deception-SAE"; §4.5 caveat reframed as predicted outcome under Secret Agenda's cross-domain non-generalizability finding; §6 names both AAAI 2026 findings explicitly
 - Word count: 3500/3500
 
+## GPU session 2026-04-25 (00:17–08:17 PDT)
+
+Branch: `feat/paper-trim-3500`
+
+- ✅ Held-out calibration (60-prompt v3): benign=0.435, dual-use=0.720, hazard=0.711. Calibration MSE=0.0103, cond=457.
+- ✅ NEW FINDING: Held-out T inverts tier ordering on v1 (d=-0.967). Calibration is framing-distribution-sensitive. Within-sample T better-calibrated for v1 results. Documented in §5 CORRECTED block.
+- ✅ Calibration config restored: within-sample T active; held-out T stored as T_held_out_2026-04-25.
+- ✅ WMDP corpus: bio_forget_corpus NOT publicly available on HuggingFace (confirmed). bio-retain-corpus available (5000 docs). Format confound: L_cont 0.567→0.060 reflects long-doc vs short-prompt format mismatch, not bio-hazard separation. Confirms §8 institutional data bottleneck.
+- ✅ Interventions expanded: 7→12 (6 benign_bio, 2 dual_use_bio, 4 hazard_adjacent); 8/12 CMF qualified. bio_025-032 batch running as of 07:03.
+- ✅ Paper §4.3 updated with full 12-row intervention table; word count 3407/3500.
+- ✅ Session summary: `notes/SESSION_SUMMARY_2026-04-25.md`
+
 ## Build branch
 
-- Active branch: `feat/crook-keynote-refs` (PR #14 open, awaiting Gemini review + merge approval)
+- Active branch: `feat/paper-trim-3500` (local, not yet pushed)
+- PR #14 (`feat/crook-keynote-refs`) open, awaiting Gemini review + merge approval + Caleb sign-off.
 - Previous sprint branches squash-merged to main.
