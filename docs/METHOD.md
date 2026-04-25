@@ -209,9 +209,22 @@ from bio-hazard prompt-completion pairs across the full tier range.
 
 Scale target: ~10,000 activation vectors from:
   - BioRefusalAudit bio eval set (75 prompts × ~50 tokens)
+  - cais/wmdp-bio-forget-corpus (gated; 24,453 peer-reviewed biology
+    documents, DOI-traceable, Center for AI Safety / Li et al. 2024) —
+    chunked to ~200-word segments via scripts/prepare_bio_forget_corpus.py
+    (see §Format confound note below)
   - CBRN uplift red-team datasets (if access obtained)
   - Before/after jailbreak attempt pairs
   - Base model vs. RLHF model completions on same prompts
+```
+
+**Format confound note for `cais/wmdp-bio-forget-corpus`:** Source documents are full academic papers (median ~4,000 words). Eval prompts are ~30 words. Computing SAE activations directly on full documents produces vectors dominated by document-structure and citation-style features rather than bio-hazard content, breaking the contrastive signal. Mitigation: `scripts/prepare_bio_forget_corpus.py` chunks each document into 200-word overlapping windows (20-word overlap) before activation collection. This narrows the format gap; a residual format confound remains between chunked academic prose and conversational prompts. Full elimination requires prompt-style paraphrasing of hazardous content, which is out of scope for v1.0.
+
+```bash
+# Generate ~10K hazard-tier chunks (run once, output gitignored)
+python scripts/prepare_bio_forget_corpus.py \
+    --out data/bio_forget_chunked \
+    --chunk-size 200 --overlap 20 --max-chunks 10000
 ```
 
 **Track B — Projection adapter** (feasible now with 75-prompt corpus):
