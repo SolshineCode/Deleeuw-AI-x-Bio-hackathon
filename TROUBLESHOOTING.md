@@ -395,3 +395,22 @@ Also added post-load device assertion in `load_model` to fail fast if CPU fallba
 **Additional trigger:** VRAM already occupied by Streamlit dashboard (PID 43304, anaconda3 Python) + Ollama (PID 6388) can reduce free VRAM below the threshold needed for 4-bit Gemma 2 2B (~1382 MiB weights + ~150 MiB runtime). If total free VRAM < ~1550 MiB, kill these background processes first. Killing the stuck Python process typically frees all VRAM (CUDA context released on exit).
 
 **First observed:** 2026-04-24 ~05:33 PDT — wasted 33 minutes before diagnosis.
+
+---
+
+## collect_activations OOM for large WMDP corpus (5022 prompts, 4 GB VRAM)
+
+**Symptom:** `scripts/train_sae_local.py --eval-set data/wmdp/wmdp_bio_combined_5022.jsonl` loads model successfully but gets killed (exit code 137 / Linux SIGKILL) after model loading completes and before any training batches complete.
+
+**Root cause:** Each of the 5022 WMDP bio-retain corpus texts can be 1000+ tokens (long academic documents). Even with `max_length=512` truncation, the 5022 × 512 × residual activation tensors and SAE gradient buffers overflow 4 GB VRAM.
+
+**Diagnosis:**
+- Loaded 5022 prompts → process killed immediately after model load
+- `nvidia-smi` shows GPU memory at 100% during brief window before kill
+- Exit code 137 (SIGKILL from OOM killer) in bash output
+
+**Fix:** Reduce corpus size. Use `--max-per-tier 200` in `prepare_wmdp_data.py` to create a 222-prompt balanced corpus for local training. The 200-benign / 22-hazard balance is still severely imbalanced (confirms institutional data bottleneck), but fits in 4 GB VRAM.
+
+**Note:** The imbalance itself makes contrastive convergence impossible — 200 benign WMDP academic docs vs 22 short eval prompts means the SAE learns text-format features (long vs short), not bio-hazard features. The correct fix requires the bio_forget_corpus from WMDP (not publicly available), not just a larger sample of bio_retain_corpus. See `notes/GPU_SESSION_2026-04-25.md` WMDP-222 finding.
+
+**First observed:** 2026-04-25 ~03:10 PDT.
