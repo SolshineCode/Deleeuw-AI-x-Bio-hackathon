@@ -36,7 +36,7 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 
 - [x] README opens with: problem / method / evidence (real numbers) / limitations / demo — fabricated Gemma 3 4B numbers replaced with real Gemma 2 2B-IT results 2026-04-23
 - [x] Branch state: all work on `main` via squash-merged PRs; no orphan branches
-- [x] `paper/writeup.md` word count ≤ 3 500 — 3 424 words (confirmed 2026-04-25; §4.3 12 interventions, §5/§1 framing-sensitivity caveat, §8 held-out finding update)
+- [x] `paper/writeup.md` word count ≤ 3 500 — 3 466 words (confirmed 2026-04-25; §4.3 12 interventions, §5/§1 framing-sensitivity caveat, §8 WMDP + held-out findings)
 
 ## Submission gate
 
