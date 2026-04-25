@@ -16,12 +16,12 @@ BioRefusalAudit operationalizes **refusal depth** as a calibrated surface-intern
 
 - A 75-prompt stratified eval set (benign / dual-use / hazard-adjacent × four framings)
 - A multi-judge consortium for surface classification
-- A divergence score per (model, prompt) grounded in hand-validated SAE features
+- A divergence score per (model, prompt) grounded in auto-tuned SAE feature categories (Cohen's d selected; semantic validation via Neuronpedia is planned)
 - Cross-model and cross-framing aggregation
 
 A model with **low divergence on refusal** has a refusal backed by internal non-activation. A model with **high divergence on refusal** has a refusal papered over an intact internal capability. The second is a deployment risk the first is not.
 
-**Causal validation:** To confirm the metric traces genuine internal circuits rather than surface correlates, we run perturbation experiments (ablate and boost the top-k SAE features identified by the divergence score; re-measure surface label and D). In 11/11 tested prompt-feature pairs on Gemma 2 2B-IT, ablation or boost shifted either the surface label or D by |ΔD| > 0.2 — confirming these features constitute identifiable mechanistic circuits, not post-hoc correlates. Three cases (bio_004 benign/direct, bio_010 benign/educational, bio_060 hazard-adjacent/roleplay) showed the counterintuitive direction: suppressing refusal-circuitry features caused the model to *refuse* content it was previously complying with, suggesting these features mediate contextual engagement (compliance-enabling) rather than acting as simple refusal toggles. One benign case (bio_001) showed comply→comply with |ΔD|=0.29, consistent with the same compliance-enabling role: the features actively reduce divergence even when the surface label remains compliant.
+**Causal validation:** To confirm the metric traces genuine internal circuits rather than surface correlates, we run perturbation experiments (ablate and boost the top-k SAE features identified by the divergence score; re-measure surface label and D). In 8/12 tested prompt-feature pairs across all three tiers on Gemma 2 2B-IT, ablation or boost shifted either the surface label or |ΔD| > 0.2 — confirming these features constitute candidate mechanistic features (CMF), not post-hoc correlates. Below-threshold cases occur at low-D comply prompts where the refusal circuit has little to ablate. Two cases (bio_016 benign/roleplay, bio_060 hazard-adjacent/roleplay) showed the counterintuitive direction: boosting refusal-circuitry features caused the model to *refuse* content it was previously complying with — confirming these features mediate genuine safety-relevant computation.
 
 ## Why this is a policy artifact, not only a research one
 
