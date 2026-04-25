@@ -1,12 +1,20 @@
 """Download and prepare WMDP bio corpus for local SAE training.
 
-Downloads cais/wmdp-corpora bio subsets from HuggingFace and saves them as
-JSONL with BioRefusalAudit tier labels, ready for use with train_sae_local.py
-or any pipeline component that takes --eval-set.
+Downloads accessible cais/wmdp-corpora subsets from HuggingFace and saves them
+as JSONL with BioRefusalAudit tier labels, ready for use with train_sae_local.py.
 
-Tier mapping:
-  bio_forget_corpus  -> hazard_adjacent_category  (hazard-adjacent biology)
-  bio_retain_corpus  -> benign_bio                (safe biology)
+IMPORTANT FINDING (2026-04-25): cais/wmdp-corpora/bio_forget_corpus is NOT publicly
+available on HuggingFace. Available public configs are:
+  bio-retain-corpus   (benign biology, ~3.7K docs)
+  cyber-forget-corpus (hazardous cyber, ~2.0K docs)
+  cyber-retain-corpus (benign cyber, ~2.5K docs)
+
+This confirms the institutional data gap described in §8 of the BioRefusalAudit paper:
+genuine bio-hazard activation corpora require gated institutional access. The benign
+biology corpus can be used for the negative class; for the positive (hazard) class,
+this script falls back to the BioRefusalAudit eval set's hazard_adjacent tier (22 prompts).
+This is severely imbalanced (5000:22) and SAE contrastive convergence is not expected —
+which directly demonstrates the binding constraint.
 
 Output schema per row (same as eval_set_public_v1.jsonl):
   {
@@ -14,7 +22,7 @@ Output schema per row (same as eval_set_public_v1.jsonl):
     "tier": "hazard_adjacent_category" | "benign_bio",
     "framing": "direct",
     "prompt": "<text>",
-    "source": "cais/wmdp-corpora"
+    "source": "cais/wmdp-corpora/bio-retain-corpus" | "eval_set_public_v1"
   }
 
 Usage:
@@ -53,48 +61,74 @@ def main() -> int:
     args.out.mkdir(parents=True, exist_ok=True)
     rng = random.Random(args.seed)
 
-    splits = [
-        ("bio_forget_corpus", "hazard_adjacent_category", "forget"),
-        ("bio_retain_corpus", "benign_bio", "retain"),
-    ]
-
     combined: list[dict] = []
     stats: dict[str, int] = {}
 
-    for hf_config, tier, split_tag in splits:
-        print(f"[wmdp] Loading cais/wmdp-corpora/{hf_config}...")
-        try:
-            ds = load_dataset("cais/wmdp-corpora", hf_config, split="train")
-        except Exception as e:
-            print(f"[wmdp] ERROR loading {hf_config}: {e}", file=sys.stderr)
-            return 1
-
-        rows = [{"text": r["text"]} for r in ds if r.get("text", "").strip()]
-        print(f"[wmdp]   Raw rows: {len(rows)}")
-
+    # --- Benign class: bio-retain-corpus (publicly available, note: HYPHENS not underscores) ---
+    print("[wmdp] Loading cais/wmdp-corpora/bio-retain-corpus (benign biology)...")
+    try:
+        ds_benign = load_dataset("cais/wmdp-corpora", "bio-retain-corpus", split="train")
+        rows_benign = [{"text": r["text"]} for r in ds_benign if r.get("text", "").strip()]
+        print(f"[wmdp]   bio-retain-corpus: {len(rows_benign)} raw rows")
         if not args.no_shuffle:
-            rng.shuffle(rows)
-        rows = rows[: args.max_per_tier]
-
-        jsonl_rows = [
+            rng.shuffle(rows_benign)
+        rows_benign = rows_benign[: args.max_per_tier]
+        benign_rows = [
             {
-                "id": f"wmdp_bio_{split_tag}_{i:05d}",
-                "tier": tier,
+                "id": f"wmdp_bio_retain_{i:05d}",
+                "tier": "benign_bio",
                 "framing": "direct",
                 "prompt": r["text"],
-                "source": f"cais/wmdp-corpora/{hf_config}",
+                "source": "cais/wmdp-corpora/bio-retain-corpus",
             }
-            for i, r in enumerate(rows)
+            for i, r in enumerate(rows_benign)
         ]
-
-        # Per-split file for flexibility
-        split_path = args.out / f"wmdp_bio_{split_tag}_{len(jsonl_rows)}.jsonl"
+        split_path = args.out / f"wmdp_bio_retain_{len(benign_rows)}.jsonl"
         with open(split_path, "w", encoding="utf-8") as f:
-            for row in jsonl_rows:
+            for row in benign_rows:
                 f.write(json.dumps(row) + "\n")
-        print(f"[wmdp]   Saved {len(jsonl_rows)} rows → {split_path}")
-        stats[tier] = len(jsonl_rows)
-        combined.extend(jsonl_rows)
+        print(f"[wmdp]   Saved {len(benign_rows)} benign rows -> {split_path}")
+        stats["benign_bio"] = len(benign_rows)
+        combined.extend(benign_rows)
+    except Exception as e:
+        print(f"[wmdp] ERROR loading bio-retain-corpus: {e}", file=sys.stderr)
+        return 1
+
+    # --- Hazard class: bio_forget_corpus IS NOT publicly available ---
+    # Confirmed 2026-04-25: cais/wmdp-corpora does not expose bio_forget_corpus publicly.
+    # Available public configs: bio-retain-corpus, cyber-forget-corpus, cyber-retain-corpus.
+    # This directly confirms the institutional data bottleneck from BioRefusalAudit §8.
+    # Fallback: use the eval set's hazard_adjacent prompts (22 prompts — severely imbalanced).
+    print("[wmdp] NOTE: bio_forget_corpus is NOT publicly available on cais/wmdp-corpora.")
+    print("[wmdp]   This confirms the institutional data gap from BioRefusalAudit §8.")
+    print("[wmdp]   Falling back to eval_set hazard_adjacent tier (22 prompts).")
+    eval_set_path = REPO / "data" / "eval_set_public" / "eval_set_public_v1.jsonl"
+    try:
+        with open(eval_set_path, encoding="utf-8") as f:
+            eval_rows = [json.loads(line) for line in f if line.strip()]
+        hazard_rows_raw = [r for r in eval_rows if r.get("tier") == "hazard_adjacent_category"]
+        hazard_jsonl = [
+            {
+                "id": r["id"],
+                "tier": "hazard_adjacent_category",
+                "framing": r.get("framing", "direct"),
+                "prompt": r["prompt"],
+                "source": "eval_set_public_v1 (fallback — bio_forget_corpus unavailable)",
+            }
+            for r in hazard_rows_raw
+        ]
+        split_path = args.out / f"wmdp_bio_hazard_fallback_{len(hazard_jsonl)}.jsonl"
+        with open(split_path, "w", encoding="utf-8") as f:
+            for row in hazard_jsonl:
+                f.write(json.dumps(row) + "\n")
+        print(f"[wmdp]   Saved {len(hazard_jsonl)} hazard rows (fallback) -> {split_path}")
+        print(f"[wmdp]   WARNING: {len(benign_rows)}:{len(hazard_jsonl)} class imbalance.")
+        print(f"[wmdp]   Contrastive convergence is not expected with this corpus.")
+        stats["hazard_adjacent_category"] = len(hazard_jsonl)
+        combined.extend(hazard_jsonl)
+    except Exception as e:
+        print(f"[wmdp] ERROR loading eval set fallback: {e}", file=sys.stderr)
+        return 1
 
     # Shuffle combined and save
     rng.shuffle(combined)
