@@ -38,3 +38,6 @@ hf_cache/
 
 # Downloaded corpora — regenerable via prepare_wmdp_data.py
 data/wmdp/
+
+# Local Claude Code session artifacts
+.claude/
