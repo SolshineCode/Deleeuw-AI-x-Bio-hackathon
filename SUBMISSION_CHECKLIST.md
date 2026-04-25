@@ -9,12 +9,12 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 - [x] Tuned feature catalog committed (`data/feature_catalog/gemma-2-2b-it.json` with `catalog_version: 0.2-auto-tuned`) — Cohen's-d top-20 per category from `runs/gemma-2-2b-it-L12-activations/activations.npz`
 - [x] Fitted T in `configs/calibration_gemma2_2b.yaml` with `fit_method: ridge least-squares (lambda=0.1) on report.json` and `fit_samples: 75`
 - [x] Pass-2 real-numbers report at `runs/gemma-2-2b-it-L12-tuned/report.{md,json}` with non-zero per-tier mean divergence — benign 0.467, dual-use 0.655, hazard-adj 0.669
-- [x] At least one intervention record at `runs/interventions/*.json` where `qualifies_as_named_circuit: true` — 8/12 intervened prompts qualify (12 total: 6 benign_bio, 2 dual_use_bio, 4 hazard_adjacent; 4 below-threshold at low-D comply prompts); updated 2026-04-25
+- [x] At least one intervention record at `runs/interventions/*.json` where `qualifies_as_named_circuit: true` — 15/19 intervened prompts qualify (19 total: 6 benign_bio, 9 dual_use_bio, 4 hazard_adjacent; 4 below-threshold; batch completed 2026-04-25)
 
 ### Paper
 
 - [x] §4.2 per-tier table filled with real pass-2 numbers — in `paper/writeup.md`
-- [x] §4.3 intervention table filled with at least one real row — 12 rows with real ΔD (updated 2026-04-25)
+- [x] §4.3 intervention table filled with at least one real row — 12 representative rows with real ΔD; full 19-prompt results at `runs/interventions/` (batch completed 2026-04-25)
 - [x] Every "named circuit" claim cross-references a specific intervention JSON — cross-refs `runs/interventions/*.json`
 - [x] Limitations section states catalog + T origin + what was NOT attempted — §4.5 caveats block
 - [ ] §4.4 cross-architecture table filled — **BLOCKING: Colab T4 run not yet executed** — requires user to run `notebooks/colab_biorefusalaudit.ipynb` on Colab T4 (~90 min). Acknowledged as deferred in paper §5 Limitations ("Cross-architecture comparison deferred"). Cannot be completed autonomously — requires user GPU time.
@@ -23,7 +23,7 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 
 - [x] `demo/scaling_plot.png` regenerated from real reports — 18 real `runs/*/report.json` used (2026-04-24); will update when Colab cross-arch data arrives
 - [x] Dashboard loads latest real report on `streamlit run app/dashboard.py` — artifacts verified (17 reports, 5 interventions, preferred run gemma-2-2b-it-L12-tuned, catalog present). Browser smoke check complete (2026-04-24).
-- [x] At least one intervention panel renders in the dashboard — 12+ intervention JSON files at `runs/interventions/` (12 complete 2026-04-25; 8/12 NC=YES; 4 below-threshold)
+- [x] At least one intervention panel renders in the dashboard — 19 intervention JSON files at `runs/interventions/` (19 complete 2026-04-25; 15/19 NC=YES; 4 below-threshold)
 - [x] `REVIEWER_QUICKSTART.md` one-command path verified from a clean clone — smoke test CLI path confirmed via 3+ real end-to-end runs this sprint (2026-04-24); tests 56/56 green; clean-clone test not performed (time constraint); commit log updated to current PR #14 head.
 
 ### Tests + infrastructure
@@ -36,7 +36,7 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 
 - [x] README opens with: problem / method / evidence (real numbers) / limitations / demo — fabricated Gemma 3 4B numbers replaced with real Gemma 2 2B-IT results 2026-04-23
 - [x] Branch state: all work on `main` via squash-merged PRs; no orphan branches
-- [x] `paper/writeup.md` word count ≤ 3 500 — 3 466 words (confirmed 2026-04-25; §4.3 12 interventions, §5/§1 framing-sensitivity caveat, §8 WMDP + held-out findings)
+- [x] `paper/writeup.md` word count ≤ 3 500 — 3 471 words (confirmed 2026-04-25; §4.3 19-prompt batch complete 15/19 NC, §5/§1 framing-sensitivity caveat, §8 WMDP + held-out findings)
 
 ## Submission gate
 
