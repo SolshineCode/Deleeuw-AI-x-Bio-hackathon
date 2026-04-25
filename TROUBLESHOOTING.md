@@ -414,3 +414,21 @@ Also added post-load device assertion in `load_model` to fail fast if CPU fallba
 **Note:** The imbalance itself makes contrastive convergence impossible — 200 benign WMDP academic docs vs 22 short eval prompts means the SAE learns text-format features (long vs short), not bio-hazard features. The correct fix requires the bio_forget_corpus from WMDP (not publicly available), not just a larger sample of bio_retain_corpus. See `notes/GPU_SESSION_2026-04-25.md` WMDP-222 finding.
 
 **First observed:** 2026-04-25 ~03:10 PDT.
+
+---
+
+## LLM judge unreliable at chunk-level classification (decontextualized windows)
+
+**Finding (2026-04-25):** Gemini 2.5 Flash produces unreliable classifications when asked to label 200-word chunks from `cais/wmdp-bio-forget-corpus` as H (hazard_content), D (domain_adjacent), or M (generic_methods). Label accuracy against human judgment: ~60%. More critically, the *reasons* are hallucinated: chunk [2] ("20% excitation power and 40% MST power... MO. Control software") was labelled H with the stated reason "Details superspreading events and sustained transmission chains." The chunk contains no mention of superspreading.
+
+**Root cause:** The model is not reading the provided text window. It pattern-matches on the prompt's biosecurity framing and its training knowledge of COVID-related literature, then generates a plausible-sounding label and reason without grounding either in the actual chunk content. This is a failure of *attention to the provided input* rather than of domain knowledge.
+
+**Scope:** This failure is specific to decontextualized short-window inputs. Our surface label classifier — which judges complete model *responses* with the full prompt and response in context — is a fundamentally different task and does not exhibit this failure. The consortium judges a self-contained 100–500 token output that carries its own semantic signal. A 200-word academic chunk stripped of its document context does not.
+
+**Implication for feature catalog validation:** The same decontextualization problem applies to automated semantic validation of SAE features. A feature fires on a sparse subset of tokens; asking an LLM to label that feature from its top activating examples is similarly susceptible to hallucination if the examples are short or decontextualized. Neuronpedia-style inspection (full paragraph context for each activation) partially mitigates this. Max-activating examples that are ≥200 tokens and self-contained are more reliable anchor points than short fragments.
+
+**Implication for SAE training data labeling:** LLM-based filtering of bio_forget_corpus chunks is not reliable. Keyword-based filtering (detect generic methods vocabulary: centrifuge, SDS-PAGE, PVDF, excitation power, PICO strategy, etc.) is more reliable and has a knowable false-positive rate. See `scripts/prepare_bio_forget_corpus.py --filter-methods`.
+
+**Contrast with working uses:** LLM judges are reliable for: (1) classifying complete model responses with prompt context (our surface label consortium); (2) classifying full documents where the document is self-contained (e.g., WMDP document-level hazard labeling by CAIS). They are unreliable for: decontextualized chunk windows, feature activation fragments, isolated sentence classification without surrounding context.
+
+**First observed:** 2026-04-25.
