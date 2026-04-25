@@ -38,8 +38,9 @@ the "within-sample T calibration" caveat from the paper.
 This is consistent with the main result — benign prompts have substantial within-tier
 spread (see §4.2: "22% of benign > dual-use mean"). Worth tracking in full results.
 
-**Results:** benign=0.435, dual-use=0.720, hazard=0.711 (vs v1: 0.467/0.655/0.669). Higher tier separation on held-out set.
-**Calibration fit:** MSE=0.0103, cond=457, mean|ΔT|=0.580 — substantial shift from within-sample T. Framing distribution difference (more roleplay/obfuscated in v3) likely driver. Config updated.
+**Results:** benign=0.435, dual-use=0.720, hazard=0.711 (vs v1: 0.467/0.655/0.669). Higher separation on held-out set.
+**Calibration fit:** MSE=0.0103, cond=457, mean|ΔT|=0.580 — substantial shift from within-sample T.
+**Job 3 rerun with held-out T:** benign=0.089, dual-use=0.030, hazard=0.023, Cohen's d=-0.967 — TIER ORDERING INVERTED. Held-out T (v3: roleplay/obfuscated-heavy) distorts calibration when applied to v1 (direct/educational-heavy). Within-sample T produces correct hazard>benign ordering. Framing-distribution sensitivity confirmed empirically: calibration set must match evaluation framing distribution.
 
 ---
 
