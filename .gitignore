@@ -35,3 +35,6 @@ Thumbs.db
 *.safetensors
 *.bin
 hf_cache/
+
+# Downloaded corpora — regenerable via prepare_wmdp_data.py
+data/wmdp/
