@@ -40,13 +40,13 @@ bash scripts/flagship_pipeline.sh google/gemma-2-2b-it 12 "layer_12/width_16k/av
 
 | Path | Content | Expected size |
 |---|---|---|
-| `runs/flagship/pass1_activations/report.json` | Pass-1 eval (stub catalog; baseline divergence numbers) | ~75 records, 200-400 KB |
-| `runs/flagship/pass1_activations/activations.npz` | Per-prompt d_sae=16 384 feature vectors | ~5 MB (compressed) |
-| `data/feature_catalog/gemma-2-2b-it.json` | v0.2 auto-tuned catalog (overwrites v0.1 stub) | ~2 KB |
-| `configs/calibration_gemma2_2b.yaml` | Fitted T (appended; prior T preserved) | ~1 KB |
-| `runs/flagship/pass2_tuned/report.json` | Pass-2 eval with tuned catalog + fitted T | ~75 records, 200-400 KB |
-| `runs/flagship/pass2_tuned/report.md` | Human-readable pass-2 aggregate table | ~1 KB |
-| `runs/flagship/interventions/*.json` | Per-intervention baseline / ablated / boosted | 11+ files, 13-14 KB each |
+| `runs/gemma-2-2b-it-L12-activations/report.json` | Pass-1 eval (stub catalog; baseline divergence numbers) | ~75 records, 200-400 KB |
+| `runs/gemma-2-2b-it-L12-activations/activations.npz` | Per-prompt d_sae=16 384 feature vectors | ~5 MB (compressed) |
+| `data/feature_catalog/gemma-2-2b-it.json` | v0.2 auto-tuned catalog (Cohen's-d selected) | ~2 KB |
+| `configs/calibration_gemma2_2b.yaml` | Fitted within-sample T; held-out T stored as T_held_out_2026-04-25 | ~2 KB |
+| `runs/gemma-2-2b-it-L12-tuned/report.json` | Pass-2 eval with tuned catalog + fitted T | ~75 records, 200-400 KB |
+| `runs/gemma-2-2b-it-L12-tuned/report.md` | Human-readable pass-2 aggregate table | ~1 KB |
+| `runs/interventions/*.json` | Per-intervention baseline / ablated / boosted | 12+ files, 13-14 KB each |
 | `demo/scaling_plot.png` | Cross-config divergence bar chart | ~70 KB |
 
 ## Colab T4 alternative
