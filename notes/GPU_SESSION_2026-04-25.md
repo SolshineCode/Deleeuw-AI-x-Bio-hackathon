@@ -129,7 +129,9 @@ quantitative results (Cohen's d = 1.29, p = 0.0001) should be robust.
 | sae-training-local | 500 | 75-prompt eval | ? | ? | ? | ? |
 | sae-training-gemma2-2000steps | 2000 | 75-prompt eval | see analysis.txt | | | |
 | sae-training-gemma2-5000steps | 5000 | 75-prompt eval | see analysis.txt | | 0.498 | |
-| sae-training-wmdp-5000steps (PLANNED) | 5000 | WMDP bio (~10K) | TBD | TBD | TBD | TBD |
+| sae-training-wmdp-222-5000steps | 5000 | WMDP-222 (200 benign+22 hazard) | 0.066 | 0.567 | 0.060 | -0.507 |
+
+**WMDP-222 finding (2026-04-25):** L_contrastive dropped 0.567->0.060 — apparent excellent separation but likely a FORMAT CONFOUND. WMDP benign texts are long academic documents; hazard class is 22 short eval prompts. SAE learns text-format features, not bio-hazard features. Confirms §8 argument: valid WMDP contrastive training requires gated bio_forget_corpus (matched-format paired docs). Initial L_cont 0.567 < 0.83 (75-prompt) because format mismatch makes classes trivially separable at residual stream level before any training.
 
 The 75-prompt corpus is too small for contrastive convergence (see §8 / policy_brief.md).
 WMDP gives ~10K balanced pairs — this is the key improvement.
