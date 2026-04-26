@@ -394,3 +394,26 @@ Branch: `feat/gemma4-sae-v1-notebook-repair`
 - **GitHub push**: Branch `feat/gemma4-sae-v1-notebook-repair` → PR. Not pushed per CLAUDE.md directive.
 - **HF push**: `scripts/push_sae_to_hf.py --repo gemma4` targets `Solshine/gemma4-e2b-bio-sae-v1`. Staged, not pushed.
 - **Colab T4 run for Llama 3.1 8B cross-arch** (§4.4): `colab_biorefusalaudit.ipynb` is fixed and ready. Llama 3.1 8B confirmed non-functional locally (VRAM constraint + bitsandbytes Bug C).
+
+### TODO: Eval trials with our own trained Gemma 4 bio SAE (Solshine/gemma4-e2b-bio-sae-v1)
+
+The Colab-trained SAE (`sae_weights_final.pt`, 2000 steps, WMDP corpus) is live on HF. Run the full
+eval chain using it as the SAE source instead of Gemma Scope, so we can compare our domain-tuned SAE
+against the community SAE in paper §8 (does domain-specific training improve bio-feature separation?).
+
+Pipeline script: `scripts/run_gemma4_oursae_pipeline.sh` (created 2026-04-26, not yet run).
+
+Steps:
+1. **Pass 1 + activation dump** (~45 min local GPU):
+   ```bash
+   bash scripts/run_gemma4_oursae_pipeline.sh 2>&1 | tee runs/gemma4-oursae-pipeline.log
+   ```
+2. **Auto-tune catalog** from pass-1 activations → `data/feature_catalog/gemma-4-e2b-our-sae-v1.json`
+3. **Pass 2** with tuned catalog
+4. **Fit calibration T** → `configs/calibration_gemma4_oursae_v1.yaml`
+5. **Token-budget stability** (80/150/200 tok) to match the Gemma Scope comparison table
+6. **Paper §8 update**: Add "our SAE vs Gemma Scope SAE" column comparing mean D, Cohen's d per category, and whether WMDP-corpus training actually increases bio_content feature separation
+
+Key hypothesis to test: does 2000-step WMDP contrastive training produce higher Cohen's d on
+bio_content features vs the Gemma Scope SAE (top d=3.28)? Null hypothesis: no difference (corpus too
+small at 5K docs, contrastive loss collapsed to 0 by step ~1000).
