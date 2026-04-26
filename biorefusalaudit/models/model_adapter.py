@@ -30,22 +30,30 @@ class LoadedModel:
     quantize: str | None  # None | "4bit" | "8bit"
 
 
-def _patch_params4bit_for_transformers5() -> None:
-    """Compatibility shim for transformers 5.6 + bitsandbytes 0.49.2.
+def _patch_bnb_for_accelerate_offload() -> None:
+    """Compatibility shims for bitsandbytes 0.49.2 + transformers 5.6 + accelerate 1.13.
 
-    transformers 5.6 sets _is_hf_initialized=True on parameters during
-    init_empty_weights and later passes **old_value.__dict__ to Params4bit.__new__
-    inside Bnb4bitQuantize.convert. bitsandbytes 0.49.2's Params4bit.__new__
-    has no **kwargs to absorb it, causing TypeError when device_map="auto"
-    triggers this code path (CPU-offload models).
+    Two separate bugs surface when loading a 4-bit model with device_map="auto" + max_memory
+    (the CPU-offload path needed for models larger than local VRAM):
 
-    Patching Params4bit.__new__ to accept and drop unknown HF kwargs is
-    the minimal fix that doesn't require touching venv files.
+    Bug 1 — TypeError: Params4bit.__new__() got an unexpected keyword argument '_is_hf_initialized'
+      transformers 5.6 sets _is_hf_initialized=True on parameters during init_empty_weights,
+      then spreads **old_value.__dict__ into Params4bit.__new__ in Bnb4bitQuantize.convert.
+      Fix: wrap Params4bit.__new__ to accept and discard unknown kwargs.
+
+    Bug 2 — RuntimeError: Tensor.item() cannot be called on meta tensors
+      accelerate 1.13 calls len(module.state_dict()) in attach_execution_device_hook to
+      detect whether a module has parameters. For Linear4bit, _save_to_state_dict calls
+      quant_state.as_dict(packed=True) which calls self.offset.item() — but offset is a
+      meta tensor during device dispatch. Fix: skip quant_state serialization when weight
+      is on the meta device (the state_dict check only needs a non-empty dict, not full data).
     """
     try:
         import bitsandbytes.nn.modules as _bnb
         if getattr(_bnb.Params4bit, "_hf5_compat_patched", False):
             return
+
+        # --- Patch 1: Params4bit.__new__ ---
         _orig_new = _bnb.Params4bit.__new__
 
         def _compat_new(
@@ -75,6 +83,21 @@ def _patch_params4bit_for_transformers5() -> None:
             )
 
         _bnb.Params4bit.__new__ = staticmethod(_compat_new)
+
+        # --- Patch 2: Linear4bit._save_to_state_dict ---
+        _orig_save = _bnb.Linear4bit._save_to_state_dict
+
+        def _compat_save(self, destination, prefix, keep_vars):
+            if getattr(self.weight, "device", None) is not None and self.weight.device.type == "meta":
+                # During accelerate device dispatch, weights haven't moved off meta yet.
+                # The state_dict() call here is just a has-params check; skip quant_state
+                # serialization that would call .item() on meta tensors.
+                import torch.nn as _nn
+                _nn.Module._save_to_state_dict(self, destination, prefix, keep_vars)
+                return
+            return _orig_save(self, destination, prefix, keep_vars)
+
+        _bnb.Linear4bit._save_to_state_dict = _compat_save
         _bnb.Params4bit._hf5_compat_patched = True
     except (ImportError, AttributeError):
         pass
@@ -99,7 +122,7 @@ def load_model(
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
     if quantize == "4bit":
-        _patch_params4bit_for_transformers5()
+        _patch_bnb_for_accelerate_offload()
 
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
