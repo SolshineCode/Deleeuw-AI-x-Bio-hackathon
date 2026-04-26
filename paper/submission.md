@@ -102,6 +102,8 @@ Zero overlap. 0.647-point separation. D = 0.249 on a refusal means internal SAE 
 
 **Figure 1** (see `demo/scaling_plot.png`): Per-tier mean D comparison across Gemma 2 2B-IT (Gemma Scope 1, 80-tok) and Gemma 4 E2B-IT (author SAE, 150-tok). The Gemma 4 label-split (comply vs. refuse) shows the metric cleanly discriminates posture classes. The Gemma 2 tier separation shows tier-level ordering within the eval set.
 
+**Cross-architecture behavioral comparison (NullSAE, 80-tok, n=75 each; Table 4.4 in full writeup).** We ran behavioral-label-only comparisons on three additional architectures to test whether Gemma 2's hedge posture generalizes. It does not. Llama 3.2 1B, Qwen 2.5 1.5B, and Phi-3-mini-4k all show zero hedging across 75 prompts — binary comply/refuse only. Llama shows a 61-point benign-to-hazard refuse gradient (30% benign, 91% hazard), indicating real tier sensitivity despite over-refusal on benign content. Qwen and Phi-3 are nearly identical despite a 2.5x parameter difference: 83–87% refuse on benign biology, 95% on hazard-adjacent, a 12-point gradient that indicates a non-discriminating high-refusal prior rather than genuine hazard detection. The surface evaluation consequence: a binary classifier applied to Gemma 2 will misclassify 100% of hazard-adjacent prompts (all hedged, none refused), while the same classifier applied to Qwen or Phi-3 will correctly flag 95% but generate an 83–87% false-positive rate on benign biology. Neither outcome is what evaluators want.
+
 ---
 
 ## 5. Discussion and Limitations
