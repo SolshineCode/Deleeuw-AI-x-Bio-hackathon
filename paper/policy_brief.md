@@ -2,13 +2,13 @@
 
 **Caleb DeLeeuw**, one-page policy brief for CLTR / AISI / UK AI Safety Institute audiences. Companion to the AIxBio Hackathon 2026 technical submission.
 
-## The gap
+## The deployment problem
 
-Current deployment decisions for biology-adjacent models rely on **capability evaluations** (VCT, WMDP-Bio, ABC-Bench). These answer one question: *will this model produce hazardous output when asked?*
+A biosecurity officer deciding whether to deploy an AI tool for pathogen research teams faces a question standard evaluation cannot answer: if the model refuses a sensitive query, is that refusal backed by genuine internal suppression of hazard representations — or is the capability intact behind a policy layer one prompt away from compliance?
 
-They do not answer the question that matters for a governance decision: *if this model refuses, is its refusal robust?*
+Sandbrink (AIxBio keynote, 2026) calls for systems that monitor AI-bio interactions without reading interaction content. BioRefusalAudit provides this: auditing SAE activations rather than prompt or completion text lets a deployer flag models whose refusals are structurally shallow while preserving user privacy. Dual-use concern masked by innocuous framing is invisible to output-only screeners; the divergence signal surfaces it upstream. This composes with output-based screeners covering distinct failure modes.
 
-A model that refuses a direct request but activates hazard-relevant internal representations is one prompt-engineering step away from compliance. Capability evaluations report it as "safe." Deployment decisions on that basis underweight the most easily reversed form of alignment.
+Current deployment decisions rely on **capability evaluations** (VCT, WMDP-Bio, ABC-Bench). These answer one question: *will this model produce hazardous output when asked?* They do not answer the question that matters for a governance decision: *if this model refuses, is its refusal robust?* A model with a shallow refusal over intact hazard representations is one prompt-engineering step from compliance. Capability evaluations report it as "safe." Deployment decisions on that basis underweight the most easily reversed form of alignment.
 
 ## The measurement
 

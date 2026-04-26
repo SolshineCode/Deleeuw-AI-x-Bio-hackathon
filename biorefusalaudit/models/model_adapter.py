@@ -30,14 +30,99 @@ class LoadedModel:
     quantize: str | None  # None | "4bit" | "8bit"
 
 
+def _patch_bnb_for_accelerate_offload() -> None:
+    """Compatibility shims for bitsandbytes 0.49.2 + transformers 5.6 + accelerate 1.13.
+
+    Two separate bugs surface when loading a 4-bit model with device_map="auto" + max_memory
+    (the CPU-offload path needed for models larger than local VRAM):
+
+    Bug 1 — TypeError: Params4bit.__new__() got an unexpected keyword argument '_is_hf_initialized'
+      transformers 5.6 sets _is_hf_initialized=True on parameters during init_empty_weights,
+      then spreads **old_value.__dict__ into Params4bit.__new__ in Bnb4bitQuantize.convert.
+      Fix: wrap Params4bit.__new__ to accept and discard unknown kwargs.
+
+    Bug 2 — RuntimeError: Tensor.item() cannot be called on meta tensors
+      accelerate 1.13 calls len(module.state_dict()) in attach_execution_device_hook to
+      detect whether a module has parameters. For Linear4bit, _save_to_state_dict calls
+      quant_state.as_dict(packed=True) which calls self.offset.item() — but offset is a
+      meta tensor during device dispatch. Fix: skip quant_state serialization when weight
+      is on the meta device (the state_dict check only needs a non-empty dict, not full data).
+    """
+    try:
+        import bitsandbytes.nn.modules as _bnb
+        if getattr(_bnb.Params4bit, "_hf5_compat_patched", False):
+            return
+
+        # --- Patch 1: Params4bit.__new__ ---
+        _orig_new = _bnb.Params4bit.__new__
+
+        def _compat_new(
+            cls,
+            data=None,
+            requires_grad=False,
+            quant_state=None,
+            blocksize=None,
+            compress_statistics=True,
+            quant_type="fp4",
+            quant_storage=torch.uint8,
+            module=None,
+            bnb_quantized=False,
+            **_ignored_hf_kwargs,
+        ):
+            return _orig_new(
+                cls,
+                data=data,
+                requires_grad=requires_grad,
+                quant_state=quant_state,
+                blocksize=blocksize,
+                compress_statistics=compress_statistics,
+                quant_type=quant_type,
+                quant_storage=quant_storage,
+                module=module,
+                bnb_quantized=bnb_quantized,
+            )
+
+        _bnb.Params4bit.__new__ = staticmethod(_compat_new)
+
+        # --- Patch 2: Linear4bit._save_to_state_dict ---
+        _orig_save = _bnb.Linear4bit._save_to_state_dict
+
+        def _compat_save(self, destination, prefix, keep_vars):
+            if getattr(self.weight, "device", None) is not None and self.weight.device.type == "meta":
+                # During accelerate device dispatch, weights haven't moved off meta yet.
+                # The state_dict() call here is just a has-params check; skip quant_state
+                # serialization that would call .item() on meta tensors.
+                import torch.nn as _nn
+                _nn.Module._save_to_state_dict(self, destination, prefix, keep_vars)
+                return
+            return _orig_save(self, destination, prefix, keep_vars)
+
+        _bnb.Linear4bit._save_to_state_dict = _compat_save
+        _bnb.Params4bit._hf5_compat_patched = True
+    except (ImportError, AttributeError):
+        pass
+
+
 def load_model(
     name: str,
     quantize: str | None = None,
     device: str | None = None,
     dtype: str = "float16",
+    max_memory: dict | None = None,
 ) -> LoadedModel:
-    """Load an HF model + tokenizer. Quantize via bitsandbytes if requested."""
+    """Load an HF model + tokenizer. Quantize via bitsandbytes if requested.
+
+    max_memory: optional dict for accelerate device_map="auto", e.g.
+      {0: "3GiB", "cpu": "48GiB"} — use for models larger than local VRAM.
+      When provided, device_map is forced to "auto" regardless of quantize mode.
+      Example: Llama 3.1 8B 4-bit on 4 GB GPU:
+        load_model("meta-llama/Llama-3.1-8B-Instruct", quantize="4bit",
+                   max_memory={0: "3GiB", "cpu": "48GiB"})
+    """
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+
+    if quantize == "4bit":
+        _patch_bnb_for_accelerate_offload()
 
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -50,23 +135,38 @@ def load_model(
             bnb_4bit_compute_dtype=torch.float16,
             bnb_4bit_quant_type="nf4",
             bnb_4bit_use_double_quant=True,
+            llm_int8_enable_fp32_cpu_offload=max_memory is not None,
         )
-        # Use integer device index (0) rather than string "cuda" — bitsandbytes on
-        # Windows WDDM silently falls back to CPU when the string form is used and
-        # VRAM is tight. Integer index forces the allocation correctly.
-        cuda_idx = torch.cuda.current_device() if torch.cuda.is_available() else None
-        kwargs["device_map"] = {"": cuda_idx} if cuda_idx is not None else "auto"
+        if max_memory is not None:
+            # Caller explicitly wants GPU+CPU split (e.g. model > VRAM).
+            # llm_int8_enable_fp32_cpu_offload=True allows non-quantized layers
+            # (e.g. lm_head) to live on CPU in fp32 while quantized layers stay on GPU.
+            kwargs["device_map"] = "auto"
+            kwargs["max_memory"] = max_memory
+        else:
+            # Use integer device index (0) rather than string "cuda" — bitsandbytes on
+            # Windows WDDM silently falls back to CPU when the string form is used and
+            # VRAM is tight. Integer index forces the allocation correctly.
+            cuda_idx = torch.cuda.current_device() if torch.cuda.is_available() else None
+            kwargs["device_map"] = {"": cuda_idx} if cuda_idx is not None else "auto"
     elif quantize == "8bit":
         kwargs["quantization_config"] = BitsAndBytesConfig(load_in_8bit=True)
-        cuda_idx = torch.cuda.current_device() if torch.cuda.is_available() else None
-        kwargs["device_map"] = {"": cuda_idx} if cuda_idx is not None else "auto"
+        if max_memory is not None:
+            kwargs["device_map"] = "auto"
+            kwargs["max_memory"] = max_memory
+        else:
+            cuda_idx = torch.cuda.current_device() if torch.cuda.is_available() else None
+            kwargs["device_map"] = {"": cuda_idx} if cuda_idx is not None else "auto"
     else:
         kwargs["torch_dtype"] = torch_dtype
-        # Prefer device_map="auto" on CUDA so models larger than VRAM
-        # (e.g., Gemma 2 2B fp16 = 5.2GB on a 4GB GTX 1650) auto-offload
-        # to CPU for the overflow instead of OOM-ing. Keeps GPU busy at
-        # ~90% utilization on the on-device layers.
-        kwargs["device_map"] = "auto" if device == "cuda" else device
+        if max_memory is not None:
+            kwargs["device_map"] = "auto"
+            kwargs["max_memory"] = max_memory
+        else:
+            # Prefer device_map="auto" on CUDA so models larger than VRAM
+            # (e.g., Gemma 2 2B fp16 = 5.2GB on a 4GB GTX 1650) auto-offload
+            # to CPU for the overflow instead of OOM-ing.
+            kwargs["device_map"] = "auto" if device == "cuda" else device
 
     tokenizer = AutoTokenizer.from_pretrained(name)
     model = AutoModelForCausalLM.from_pretrained(name, **kwargs)
@@ -186,7 +286,17 @@ def generate_completion(
 ) -> str:
     """Generate a model completion for a single prompt. Returns the decoded text."""
     formatted = _apply_chat_template(lm, prompt)
-    device = next(lm.model.parameters()).device
+    # For CPU-offloaded models (device_map="auto" + max_memory), accelerate stores
+    # parameters as meta-device placeholders in the nn.Module. next(model.parameters())
+    # then returns a meta tensor and .to(meta) moves inputs to meta, which causes
+    # all subsequent activations to be meta tensors (no data) — hook.last becomes meta,
+    # project_activations fails with "Cannot copy out of meta tensor; no data!".
+    # Fix: use lm.device (the requested execution device) when parameters are on meta.
+    try:
+        param_dev = next(lm.model.parameters()).device
+        device = param_dev if param_dev.type != "meta" else torch.device(lm.device)
+    except StopIteration:
+        device = torch.device(lm.device)
     enc = lm.tokenizer(formatted, return_tensors="pt").to(device)
     input_len = enc["input_ids"].shape[1]
     with torch.no_grad():

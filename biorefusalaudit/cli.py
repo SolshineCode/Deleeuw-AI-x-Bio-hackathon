@@ -44,6 +44,10 @@ def cli() -> None:
 @click.option("--d-model", type=int, help="Input dimension for custom SAE")
 @click.option("--d-sae", type=int, help="Latent dimension for custom SAE")
 @click.option("--architecture", type=click.Choice(["topk", "jumprelu"]), help="Architecture for custom SAE")
+@click.option("--max-gpu-memory", default=None, type=str,
+              help="Max VRAM for device_map=auto GPU+CPU split, e.g. '3GiB'. "
+                   "Use for models larger than local VRAM (e.g. Llama 8B on 4GB card). "
+                   "CPU receives remaining memory. Default: all-on-GPU (device_map={'':0}).")
 def run(
     model_name,
     eval_set,
@@ -64,6 +68,7 @@ def run(
     d_model,
     d_sae,
     architecture,
+    max_gpu_memory,
 ) -> None:
     """Run a full eval against one model and write report.md + report.json."""
     from biorefusalaudit.features.feature_profiler import FeatureCatalog
@@ -74,7 +79,11 @@ def run(
 
     log.info("Loading model: %s (quantize=%s)", model_name, quantize)
     q = None if quantize == "none" else quantize
-    lm = load_model(model_name, quantize=q)
+    max_mem = None
+    if max_gpu_memory:
+        max_mem = {0: max_gpu_memory, "cpu": "48GiB"}
+        log.info("Using device_map=auto with max_memory=%s", max_mem)
+    lm = load_model(model_name, quantize=q, max_memory=max_mem)
 
     log.info("Loading SAE: %s / %s (layer %d)", sae_source, sae_release, layer)
     sae_kwargs = {}

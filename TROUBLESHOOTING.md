@@ -374,6 +374,85 @@ target_layer = _find_layer(model, layer)
 
 ---
 
+## `TypeError: Params4bit.__new__() got an unexpected keyword argument '_is_hf_initialized'` (transformers 5.6 + bitsandbytes 0.49.2, CPU-offload path)
+
+**Symptom:** `load_model(..., quantize="4bit", max_memory={...})` raises:
+
+```
+TypeError: Params4bit.__new__() got an unexpected keyword argument '_is_hf_initialized'
+```
+
+during `AutoModelForCausalLM.from_pretrained`. Only occurs when `max_memory` is passed (triggering `device_map="auto"` for CPU offload). Models loaded without `max_memory` (e.g., Gemma 2 2B, Gemma 4 E2B using `device_map={"": 0}`) are NOT affected.
+
+**Root cause:** `device_map="auto"` causes transformers to load the model with `init_empty_weights()`. During that context, `core_model_loading.py` sets `_is_hf_initialized = True` on each parameter. When real weights are dispatched, `transformers/integrations/bitsandbytes.py:Bnb4bitQuantize.convert` calls `bnb.nn.Params4bit(value, **old_value.__dict__)`, spreading the dict which now includes `_is_hf_initialized=True`. bitsandbytes 0.49.2's `Params4bit.__new__` has no `**kwargs` to absorb it → TypeError.
+
+**Fix (implemented in `model_adapter.py`):** `_patch_params4bit_for_transformers5()` monkey-patches `Params4bit.__new__` to accept and discard unknown kwargs. Applied automatically when `load_model` is called with `quantize="4bit"`. Idempotent (guarded by `_hf5_compat_patched` flag). Does not modify venv files.
+
+**First observed:** 2026-04-25, Llama 3.1 8B-Instruct 4-bit with `max_memory={0: "3GiB", "cpu": "48GiB"}`.
+
+---
+
+## `RuntimeError: Tensor.item() cannot be called on meta tensors` during dispatch (bitsandbytes 0.49.2, accelerate 1.13)
+
+**Symptom.** After all 291/291 weight shards load successfully, `from_pretrained` crashes with:
+
+```
+RuntimeError: Tensor.item() cannot be called on meta tensors
+```
+
+Full call chain: `accelerate_dispatch` → `dispatch_model` → `attach_align_device_hook_on_blocks` → `attach_execution_device_hook` → `len(module.state_dict()) > 0` → `Linear4bit._save_to_state_dict` → `quant_state.as_dict(packed=True)` → `self.offset.item()`.
+
+**Root cause.** `accelerate 1.13` calls `len(module.state_dict())` to check whether a module has parameters before attaching execution device hooks. For `Linear4bit`, `_save_to_state_dict` tries to serialize the full quantization state including `quant_state.as_dict()`, which calls `.item()` on `self.offset`. But during the dispatch phase, layers destined for CPU are still on the meta device — `self.offset` is a meta tensor and `.item()` raises.
+
+Only occurs with `device_map="auto"` + `max_memory` (the CPU-offload path). Models loaded with `device_map={"": 0}` (all on GPU, no dispatch needed) are not affected.
+
+**Fix (implemented in `model_adapter.py`).** `_patch_bnb_for_accelerate_offload()` monkey-patches `Linear4bit._save_to_state_dict` to skip quant_state serialization when `self.weight.device.type == "meta"`. The accelerate check only needs a non-empty dict; returning just the raw meta weight tensor is sufficient. Idempotent.
+
+**Combined with Bug 1** (`Params4bit.__new__()` / `_is_hf_initialized`): both bugs surface together on the `device_map="auto"` + `max_memory` path and are patched by the same `_patch_bnb_for_accelerate_offload()` call.
+
+**First observed.** 2026-04-25, Llama 3.1 8B-Instruct 4-bit with `max_memory={0: "3GiB", "cpu": "48GiB"}`.
+
+---
+
+## `Cannot copy out of meta tensor; no data!` — ALL prompts fail when using CPU-offloaded model
+
+**Symptom.** Every eval prompt fails with the message:
+```
+[biorefusalaudit] [N/75] bio_NNN failed: Cannot copy out of meta tensor; no data!
+```
+0/75 prompts succeed. Model loaded successfully (`[model_adapter] Loaded ... on cuda:0`).
+
+**Root cause.** `generate_completion` (model_adapter.py) resolves the input device with:
+```python
+device = next(lm.model.parameters()).device
+```
+For CPU-offloaded models loaded with `device_map="auto"` + `max_memory`, accelerate stores all
+model parameters as **meta-device placeholders** in the `nn.Module`. `next(...parameters()).device`
+therefore returns `device(type='meta')`. The tokenizer input tensor is moved to meta
+(`enc.to(device)` → meta), all forward-pass activations are computed on meta (accelerate performs
+a "dry run"), and the residual-stream hook captures a meta tensor. `project_activations` then
+calls `activations.to(torch.float32)` which raises `RuntimeError: Cannot copy out of meta
+tensor; no data!`.
+
+**Affects:** any model loaded with `device_map="auto"` + `max_memory` (CPU-offload path).
+Gemma 2 2B / Gemma 4 E2B loaded with `device_map={"": 0}` (all-GPU) are not affected —
+their parameters are on CUDA, not meta.
+
+**Fix (implemented in `model_adapter.py` `generate_completion`, 2026-04-25):**
+```python
+try:
+    param_dev = next(lm.model.parameters()).device
+    device = param_dev if param_dev.type != "meta" else torch.device(lm.device)
+except StopIteration:
+    device = torch.device(lm.device)
+```
+`lm.device` is set to `"cuda"` by `load_model` when CUDA is available, so it correctly points
+to the GPU execution device even when the model's nn.Module parameters are on meta.
+
+**First observed:** 2026-04-25, Llama 3.1 8B-Instruct 4-bit with `max_memory={0: "3GiB", "cpu": "48GiB"}`.
+
+---
+
 ## `device_map={"": "cuda"}` silently falls back to CPU on Windows WDDM (bitsandbytes 0.49.2, transformers 5.6.0)
 
 **Symptom:** `load_model(..., quantize="4bit")` returns with model on CPU despite CUDA being available. `nvidia-smi` does not show the venv Python process, only other processes. Generation runs at ~1-3 tok/s instead of 20-30 tok/s. Process appears alive but makes no GPU-visible progress for 30+ minutes.
