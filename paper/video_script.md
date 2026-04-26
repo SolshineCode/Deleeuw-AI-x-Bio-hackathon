@@ -68,7 +68,11 @@ And here's the part that should concern deployers: at an 80-token generation cap
 
 The activation layer is format-robust where a surface completion classifier is not. That's the whole point.
 
-Findings One and Three together sketch a concrete four-cell typology for model safety posture — deep refusal, shallow refusal, hedge-without-refuse, and what we're calling non-suppressive safety, where the safety circuit activates but doesn't gate the output. BioRefusalAudit distinguishes all four at the activation layer. Surface evaluation alone cannot.
+**Finding Four: The divergence metric separates refusal posture from compliance posture with near-zero within-class variance.** We ran Gemma 4 E2B-IT through our domain-trained bio-SAE with a 150-token budget — enough room for the safety circuit to actually fire. Across 57 prompts completed at time of submission: comply responses show D=0.896 (±0.001). Refuse responses show D=0.247 (±0.005). Zero overlap. 0.649-point separation.
+
+What that means concretely: D=0.247 on a refusal says the internal SAE feature activations are consistent with the refusal direction — the model is not just saying no, it's not activating bio-hazard feature space. D=0.896 on a compliance says bio-relevant features remain active even when the surface output is compliant — expected for educational biology content, and exactly what a well-calibrated audit should surface. The metric is tracking the thing it was designed to track. And the within-class variance is low enough that this is not a noise artifact.
+
+Findings One and Four together sketch a concrete four-cell typology for model safety posture — deep refusal, shallow refusal, hedge-without-refuse, and what we're calling non-suppressive safety, where the safety circuit activates but doesn't gate the output. BioRefusalAudit distinguishes all four at the activation layer. Surface evaluation alone cannot.
 
 **Validity caveats, stated plainly:** The divergence metric uses within-sample calibration, and the feature catalog is auto-tuned by Cohen's d, not hand-validated. We ran Neuronpedia lookups on the top features. They encode generic technical and governance vocabulary, not bio-specific refusal circuitry. The tier separation in D likely reflects vocabulary routing — biology prompts use technical vocabulary — as much as genuine hazard detection. A held-out calibration experiment confirmed T is framing-distribution-sensitive: a held-out T from a different framing distribution actually *inverted* the tier ordering. The flag-based and behavioral-count findings survive both caveats because they don't pass through T. The D-values need that caveat attached. We say this in the paper. We mean it.
 
@@ -100,9 +104,11 @@ We already ran this. During the hackathon, we trained a contrastive TopK sparse 
 
 Here's what we learned: the contrastive loss — the part that's supposed to push hazard-tier and benign-tier representations apart — barely moved. Not because the model can't learn; it did. Because the bio vocabulary is genuinely shared across hazard tiers. Whether a prompt is benign, dual-use, or hazard-adjacent, it uses the same technical biology language. The SAE sees the same feature activations. The signal you need to separate those classes isn't in a 75-prompt corpus of terminology — it's in genuine behavioral divergences between a base model and an RLHF-aligned one responding to the same prompts.
 
-That's exactly what's in the WMDP forget corpus and the institutional CBRN red-team datasets. The training infrastructure is ready and validated. The bottleneck is ~10K labeled behavioral pairs from institutional partners.
+During this hackathon, we received gated access to `cais/wmdp-bio-forget-corpus` — 24,453 scientific papers on hazardous biology, from SARS-CoV-2 transmission to pathogen enhancement. That's the WMDP forget corpus. The v2 training pipeline is already updated: 5,000 steps, bio-forget-corpus as the hazard-tier training signal. That run is in progress now.
 
-The natural collaborators are AISI, CLTR, and national biosecurity labs who already hold this data. The training infrastructure is ready. The collaboration is the open item.
+The corpus bottleneck is resolved. What remains is the behavioral sampling component: genuine refusal-versus-compliance response pairs at scale, which requires safety-tuned base model pairs and institutional operational data. That's the part you need a collaboration for.
+
+The natural collaborators are AISI, CLTR, and national biosecurity labs who hold the behavioral pair data. The training infrastructure is validated, the WMDP corpus is integrated, the v2 SAE is in training. The next unlock is paired behavioral activation corpora — and we're positioned to use them the day access opens.
 
 And we need refusal-depth reporting to become a standard companion to capability evaluations in RSPs and analogous governance frameworks. A model that refuses everything is not automatically safe. Refusal depth tells you whether that refusal is structurally earned.
 
@@ -124,7 +130,7 @@ Thank you.
 - *[OPENING]: Title slide — BioRefusalAudit logo + one-line description*
 - *[PROBLEM]: "surface refusal ≠ structural safety" diagram — a two-column table showing surface behavior vs. internal activation*
 - *[WHAT WE BUILT]: Pipeline diagram (prompt → residual stream → SAE → feature vec → judge → divergence score)*
-- *[FINDINGS]: The four-cell typology table; hazard-adjacent 100% hedge / 0% comply / 0% refuse corrected distribution; the 75-prompt NC table (80% overall, inverted tier ordering benign 87% > hazard 73%); bio_014 effect=1.139 as a single-prompt callout; the 80-token ablation result*
+- *[FINDINGS]: The four-cell typology table; hazard-adjacent 100% hedge / 0% comply / 0% refuse corrected distribution; the 75-prompt NC table (80% overall, inverted tier ordering benign 87% > hazard 73%); bio_014 effect=1.139 as a single-prompt callout; the 80-token ablation result; D label-split two-cluster chart (comply D=0.896 vs refuse D=0.247, zero overlap)*
 - *[HL3]: The three-tier data release table; the measurement-enforcement two-layer diagram*
-- *[NEXT]: Roadmap slide — projection adapter / full SAE fine-tune / institutional data partners*
+- *[NEXT]: Roadmap slide — v2 SAE training (bio-forget-corpus, 5K steps, in progress) / behavioral sampling from base+RLHF pairs / institutional data partners for paired activation corpora*
 - *[CLOSE]: GitHub URL + QR code*

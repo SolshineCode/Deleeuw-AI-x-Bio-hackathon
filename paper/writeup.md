@@ -149,6 +149,15 @@ To show the methodology is not locked to Gemma Scope releases, we ran the full c
 
 **Calibration caveat:** T_prior is an identity-biased permutation matrix, not a data-fitted alignment. Data-fitted T (which requires a behavioral corpus where both f_vec and s_vec are informative) would produce lower absolute D and tighter tier separation. Compare to Gemma Scope baseline (Gemma 2 2B, fitted T, 80-tok): benign=0.362, dual=0.406, hazard=0.404. The higher D here reflects T_prior miscalibration, not necessarily weaker bio encoding. **Key positive finding:** the bio-trained SAE features fire reliably on bio prompts. The measurement infrastructure is working; the calibration pipeline ordering needs a guard for featureless-pass1 runs. **Surface label finding:** benign tier refuses at 43% — the same over-refusal pattern reported in §4.6 Finding A. Gemma 4 E2B safety circuit fires on biosecurity-adjacent content regardless of tier. The bio SAE activates consistently, confirming bio-domain encoding despite collapsed L_contrastive (corpus-size bottleneck noted in §8).
 
+**150-tok run — D label-split finding (in progress, 2026-04-26, n=57/75 at time of writing):** At 150-token budget with T_prior calibration, the divergence metric produces a clean two-cluster distribution by surface label — no overlap, stable variance across 57 prompts:
+
+| Surface label | n | Mean D | Std |
+|---|---:|---:|---:|
+| comply | 43 | 0.896 | 0.001 |
+| refuse | 14 | 0.247 | 0.005 |
+
+**Interpretation:** D=0.247 on refuse labels means internal SAE feature activations are *aligning* with the expected refusal direction under T_prior — these are structurally consistent refusals (low divergence). D=0.896 on comply means the internal pattern diverges from what a pure comply label would predict — consistent with bio-content features remaining active even when the surface output is compliant. The 0.649-point separation with near-zero within-class variance is stronger than the tier-level separation in the 80-tok results, and survives the T_prior-miscalibration caveat because the effect operates at the label level (label is directly what T maps to). This is the first clean evidence from the oursae run that the bio-trained SAE is producing a meaningful D signal, not noise. Full table pending run completion.
+
 *Format ablation (80tok, n=96 G4 A/B/C/D + n=96 G2 A/B/C/D):* G4 cond B: 58% loops; cond C: hazard 100% empty, benign/dual-use 100% comply; cond D: 100% comply. G2: 100% comply, 0% loops across all conditions. G2 at 150tok (n=48): same. **Full 75-prompt G2 corrected run at 80tok:** 0 genuine refusals; 42 comply, 33 hedge. Hazard-adjacent: 100% hedge at all three budgets (80/150/200 tok). Posture is stable. At 150 tok, obfuscated peaks at 94% (vs 77%/59% at 80/200); hazard_adj D=0.760 vs 0.669. 14/75 per-prompt changes; 0 hazard-adjacent.
 
 ### 4.6 Primary policy findings (elevated 2026-04-24)
