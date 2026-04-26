@@ -91,8 +91,16 @@ class JumpReLUSAE(nn.Module):
 def load_sae_from_state_dict(
     path: str | Path, architecture: str, d_model: int, d_sae: int, k: int | None = None
 ) -> nn.Module:
-    """Load a custom SAE from a .pt or .safetensors file."""
-    state = torch.load(str(path), map_location="cpu")
+    """Load a custom SAE from a .pt or .safetensors file.
+
+    Handles two weight layouts:
+    - nn.Parameter format: keys W_enc (d_model, d_sae), b_enc, W_dec (d_sae, d_model), b_dec
+    - nn.Linear format:   keys W_enc.weight (d_sae, d_model), W_enc.bias,
+                               W_dec.weight (d_model, d_sae), W_dec.bias
+      nn.Linear stores weight as (out, in), i.e. transposed relative to the matmul
+      convention used by nn.Parameter SAEs. Colab-trained checkpoints use this layout.
+    """
+    state = torch.load(str(path), map_location="cpu", weights_only=True)
     if architecture == "topk":
         if k is None:
             raise ValueError("topk architecture requires k")
@@ -103,14 +111,24 @@ def load_sae_from_state_dict(
     else:
         raise ValueError(f"unsupported architecture: {architecture}")
 
-    missing_keys = []
-    for key in ("W_enc", "W_dec", "b_enc", "b_dec"):
-        if key in state:
-            getattr(sae, key).data.copy_(state[key])
-        else:
-            missing_keys.append(key)
-    if missing_keys:
-        raise ValueError(f"state dict missing keys: {missing_keys}")
+    if "W_enc.weight" in state:
+        # nn.Linear layout — transpose weights to match nn.Parameter convention.
+        # W_enc.weight: (d_sae, d_model) → adapter W_enc: (d_model, d_sae)
+        # W_dec.weight: (d_model, d_sae) → adapter W_dec: (d_sae, d_model)
+        sae.W_enc.data.copy_(state["W_enc.weight"].T.float())
+        sae.b_enc.data.copy_(state["W_enc.bias"].float())
+        sae.W_dec.data.copy_(state["W_dec.weight"].T.float())
+        sae.b_dec.data.copy_(state["W_dec.bias"].float())
+    else:
+        missing_keys = []
+        for key in ("W_enc", "W_dec", "b_enc", "b_dec"):
+            if key in state:
+                getattr(sae, key).data.copy_(state[key])
+            else:
+                missing_keys.append(key)
+        if missing_keys:
+            raise ValueError(f"state dict missing keys: {missing_keys}")
+
     sae.eval()
     return sae
 
