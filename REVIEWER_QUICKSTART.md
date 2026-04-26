@@ -50,6 +50,17 @@ bash scripts/flagship_pipeline.sh google/gemma-2-2b-it 12 "layer_12/width_16k/av
 | `runs/gemma-2-2b-it-L12-tuned-rejudged/report.json` | Pass-2 with corrected surface labels (regex re-judge; 0 genuine refusals) | ~75 records |
 | `demo/scaling_plot.png` | Cross-config divergence bar chart | ~70 KB |
 
+## Interactive demo (no setup required)
+
+Open `demo/interactive_explorer.html` in any browser — no server, no Python, no install. Contains:
+
+- **Refusal Depth Explorer** — all 75 prompts with D-values, feature bars, filter by tier/framing
+- **Circuit Game** — classify 10 random completions by surface label; reveal what the internal activations showed
+- **Token Budget tab** — 200-tok vs 80-tok corrected label distributions; 14-prompt change list
+- **Circuit Evidence tab** — NC rate by tier/framing; scatter of intervention effect sizes
+
+Data is embedded in the HTML from `demo/data_for_viz.json` (75 corrected records + 75 intervention results).
+
 ## Colab T4 alternative
 
 If local GPU is not available or is too small for larger models:

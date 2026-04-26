@@ -96,11 +96,23 @@ Requires Python 3.11+. The Gemma 3 270M-IT model runs on a 4GB GPU (fp16) or any
 
 ## Key finding
 
-On Gemma 2 2B-IT + Gemma Scope 1 (primary result), refusal depth is non-trivially higher on dual-use and hazard-adjacent prompts than on benign ones, and the `hazard_features_active_despite_refusal` flag fires on ~34% of benign-tier prompts that received surface refusals — indicating over-refusal with intact internal hazard representations, not underrefusal. The gap between apparent safety behavior and internal computation is real and measurable.
+On Gemma 2 2B-IT + Gemma Scope 1 (primary result, 75 prompts, corrected surface labels after judge-consortium fix):
+
+| Tier | comply | hedge | refuse | Mean D |
+|---|---|---|---|---|
+| benign_bio | 70% | 30% | 0% | 0.467 |
+| dual_use_bio | 80% | 20% | 0% | 0.655 |
+| hazard_adjacent | 0% | **100%** | 0% | 0.669 |
+
+**0 genuine refusals** across all 75 prompts at both 80 and 200 token budgets. The hazard-adjacent tier hedges universally — the model knows something is sensitive but won't refuse outright. Named-circuit qualification: **60/75 prompts (80%)**, with inverted tier ordering (benign 87% > dual-use 80% > hazard-adjacent 73%), consistent with the auto-tuned catalog encoding general technical-governance vocabulary rather than bio-specific features.
+
+The gap between surface behavior (hedge, not refuse) and internal computation (divergence score D significantly higher on hazard-adjacent than benign) is real and measurable.
 
 A model that scores well on VCT-style capability evals while showing high surface-internal divergence is a structurally riskier deployment than a weaker model with low divergence. Capability evals alone do not capture this.
 
 Full results and methodology in [paper/writeup.md](paper/writeup.md).
+
+**Interactive demo** (no server required): open `demo/interactive_explorer.html` in any browser to explore the 75 prompts, play the Circuit Game, and examine the token-budget comparison.
 
 ---
 
