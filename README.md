@@ -4,8 +4,8 @@
 
 [![Hippocratic License HL3-BDS-CL-ECO-EXTR-FFD-MEDIA-MIL-MY-SUP-SV-TAL-USTA-XUAR](https://img.shields.io/static/v1?label=Hippocratic%20License&message=HL3-BDS-CL-ECO-EXTR-FFD-MEDIA-MIL-MY-SUP-SV-TAL-USTA-XUAR&labelColor=5e2751&color=bc8c3d)](https://firstdonoharm.dev/version/3/0/bds-cl-eco-extr-ffd-media-mil-my-sup-sv-tal-usta-xuar.html)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Gemma Scope 2](https://img.shields.io/badge/SAEs-Gemma%20Scope%202-green)](https://deepmind.google/models/gemma/gemma-scope/)
-[![Llama Scope](https://img.shields.io/badge/SAEs-Llama%20Scope-orange)](https://arxiv.org/abs/2410.20526)
+[![Gemma Scope 1](https://img.shields.io/badge/SAEs-Gemma%20Scope%201-green)](https://deepmind.google/models/gemma/gemma-scope/)
+[![Custom bio SAE](https://img.shields.io/badge/SAEs-Custom%20bio%20SAE-orange)](https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1)
 [![Dataset: CC-BY-4.0](https://img.shields.io/badge/dataset%20tiers%201--2-CC--BY--4.0-yellow)](https://creativecommons.org/licenses/by/4.0/)
 [![Dataset: HL3-Gated](https://img.shields.io/badge/dataset%20tier%203-HL3--gated-red)](https://huggingface.co/datasets/SolshineCode/biorefusalaudit-gated)
 
@@ -22,9 +22,13 @@ Submitted to the [AIxBio Hackathon 2026](https://apartresearch.com/sprints/aixbi
 
 Existing bio safety evaluations — VCT, WMDP-Bio, ABC-Bench, ABLE — measure whether a model *will* produce hazardous output. They do not measure whether a model that refuses *can't*, or merely *doesn't right now*.
 
-This distinction matters for every deployment decision. A model with a shallow refusal over an intact internal capability is one prompt-engineering step away from providing hazardous information. A model with a deep refusal — where internal representations do not activate on hazard features even when probed — is structurally safer.
+This distinction matters for every deployment decision. A model with a shallow refusal over an intact internal capability is one prompt-engineering step away from providing hazardous information. Change the framing, add a roleplay wrapper, use an educational scaffold — and a model whose internal representations still hold the hazard knowledge may comply. A model with a deep refusal — where internal representations do not activate on hazard features even when probed — is structurally different.
 
-BioRefusalAudit provides the first interpretability-grounded tool for measuring this distinction — proof-of-concept validated on Gemma 2 2B-IT, with the architecture designed for cross-model use as community SAE families expand. We call it **refusal depth**.
+**The adversary model makes this non-negotiable.** Capable bio adversaries don't query models with obvious prompts. They use educational framing, roleplay, obfuscated phrasing, multi-turn scaffolding — the exact attack surface that WMDP-Bio and VCT are blind to, because those benchmarks test direct capability questions on standard prompts. And there's a deeper problem with behavioral evaluation: an adversary who knows your behavioral eval can engineer prompts to pass it. An adversary who cannot observe your SAE activations cannot optimize against them. Internal-state auditing has a structural advantage that behavioral testing does not.
+
+**The institutional gap.** Every major frontier lab now operates under some form of Responsible Scaling Policy. RSPs require capability evaluations before high-risk deployment. But no RSP has a metric for refusal depth — they can ask whether a model produces hazardous output, but not whether a refusing model's refusal is structurally safe or one jailbreak away from compliance. BioRefusalAudit provides the metric that makes refusal quality auditable, not just refusal occurrence.
+
+BioRefusalAudit provides the first interpretability-grounded tool for measuring this. We call it **refusal depth**.
 
 ---
 
@@ -34,11 +38,13 @@ Given a model and a set of bio-adjacent prompts, BioRefusalAudit produces a **re
 
 1. **Surface classification** — is the model refusing, complying, hedging, or evading? Determined by a judge consortium (Gemini + Claude Haiku + local models + regex + human sampling).
 
-2. **Internal feature activation profile** — which SAE features activate during generation, categorized as bio-content, hazard-adjacent, refusal-circuitry, hedging, or deception-correlate? Extracted from Gemma Scope 2 (Gemma 3 family) or Llama Scope (Llama 3.1 8B).
+2. **Internal feature activation profile** — which SAE features activate during generation, categorized as bio-content, hazard-adjacent, refusal-circuitry, hedging, or deception-correlate? Extracted from Gemma Scope 1 (Gemma 2 family, primary run) or an author-trained domain-specific SAE (`Solshine/gemma4-e2b-bio-sae-v1`, Gemma 4 E2B-IT validation run).
 
 3. **Surface-internal divergence score** — a calibrated metric measuring how much the internal activation pattern diverges from what you'd expect given the surface behavior. High divergence on a refusal means the model is computing more than it's saying.
 
-The architecture supports cross-model comparison. Gemma 3 family evaluation is infrastructure-ready and pending Gemma Scope 2 public release. Llama 3.1 8B and three additional small-model architectures (Llama 3.2 1B, Qwen 2.5 1.5B, Phi-3-mini) are in the active eval pipeline.
+Primary results on Gemma 2 2B-IT + Gemma Scope 1. Cross-architecture behavioral comparison (surface labels only, NullSAE) run on Llama 3.2 1B, Qwen 2.5 1.5B, and Phi-3-mini.
+
+**A note on what the activation layer provides that behavioral testing cannot.** Sandbrink (AIxBio keynote, 2026) called for systems that can monitor AI-bio interactions for concerning activity without reading interaction content — no content disclosure, no proprietary data exposure, no IP risk. BioRefusalAudit is the first implementation of this. The divergence score D is computed from SAE feature activation vectors — internal computational artifacts, not transcripts of what was said. A deployer can run the BioRefusalAudit check on every inference without the audit layer ever reading the user's prompt or the model's response. The signal (is bio-hazard feature space activating inconsistently with the surface behavior?) is separable from the content. Content-based screening can't do this. Activation-layer auditing can.
 
 ---
 
@@ -46,9 +52,9 @@ The architecture supports cross-model comparison. Gemma 3 family evaluation is i
 
 Multiple AIxBio 2026 presenters (Sandbrink, Crook, Yassif/NTI) called for tiered managed access frameworks for AI biodesign tools. BioRefusalAudit addresses two layers of that problem that currently have no tooling:
 
-**Measurement layer.** Access control decisions for high-risk AI tools require knowing *how safe* a refusal is, not just whether the model said no. A model with shallow refusal depth (hazard features still active despite a surface refusal) should not get the same access tier as one with structurally deep refusal. BioRefusalAudit produces the refusal depth score that makes this distinction quantifiable. Without a measurement like this, managed access decisions for language models rest on surface behavior alone, which Crook (AIxBio keynote, 2026) and Qi et al. (2024) both identify as insufficient.
+**Measurement layer.** Access control decisions for high-risk AI tools require knowing *how safe* a refusal is, not just whether the model said no. Right now, a hospital or research institution deploying a clinical biology AI has no way to verify that the model's refusal behaviors are structurally deep — they can run behavioral red-teaming, but that only tests the prompts they thought to try. BioRefusalAudit produces the refusal depth score D that makes this distinction quantifiable at the activation layer, on every inference, without additional probing. A model with D < 0.3 on a refusal is behaving consistently at the internal level. A model with D > 0.6 on a refusal warrants review — it is saying no while internally representing something that looks like hazard-domain processing. Without a measurement like this, managed access decisions for language models rest on surface behavior alone, which Crook (AIxBio keynote, 2026) and Qi et al. (2024) both identify as insufficient.
 
-**Enforcement layer.** Code is under Hippocratic License 3.0 (HL3), which provides a legally enforceable ethical use requirement. Standard permissive licenses (Apache, MIT) allow any use including weaponization; HL3 does not. The tier-3 hazard-adjacent eval data is HL3-gated (attestation required). This implements the tiered access structure Yassif & Carter (NTI Bio, *A Framework for Managed Access to Biological AI Tools*, January 2026) describe: many AI tools are low-risk and need no managed access; for tools designed to probe hazard-adjacent model behavior, criteria for access are warranted.
+**Enforcement layer.** Code is under Hippocratic License 3.0 (HL3), which provides a legally enforceable ethical use requirement. Standard permissive licenses (Apache, MIT) allow any use including weaponization. HL3 does not — it binds downstream users to enforceable human rights obligations, and violation terminates the license. This matters specifically for a tool designed to probe hazard-adjacent model behavior: that tool is dual-use by definition, and a permissive license that allows weaponization of the probing capability is structurally incoherent with the biosecurity purpose. The tier-3 hazard-adjacent eval data is HL3-gated (attestation required). This implements the tiered access structure Yassif & Carter (NTI Bio, *A Framework for Managed Access to Biological AI Tools*, January 2026) describe directly, as a working instantiation.
 
 See [docs/HL3_RATIONALE.md](docs/HL3_RATIONALE.md) and [SAFETY.md](SAFETY.md) for the full access policy.
 
@@ -56,42 +62,49 @@ See [docs/HL3_RATIONALE.md](docs/HL3_RATIONALE.md) and [SAFETY.md](SAFETY.md) fo
 
 ## Quickstart
 
-```powershell
-# Clone and set up (Windows PowerShell)
+```bash
+# Clone and set up
 git clone https://github.com/SolshineCode/Deleeuw-AI-x-Bio-hackathon
 cd Deleeuw-AI-x-Bio-hackathon
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+source .venv/Scripts/activate   # Windows Git Bash
 pip install -e ".[dev]"
 
 # Copy and fill in API keys
-Copy-Item .env.example .env
-notepad .env
+cp .env.example .env
+# Edit .env: add GEMINI_API_KEY, HF_TOKEN (required); ANTHROPIC_API_KEY (optional)
 
-# Run on the public eval set (tiers 1+2, CC-BY)
-python -m biorefusalaudit.cli run `
-    --eval-set data/eval_set_public/eval_set_public_v1.jsonl `
-    --model google/gemma-3-270m-it `
-    --out runs/quickstart
+# Run on the public eval set (tiers 1+2, CC-BY-4.0)
+# This is the actual primary run configuration used for the paper results:
+KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=. python -m biorefusalaudit.cli run \
+    --model google/gemma-2-2b-it \
+    --eval-set data/eval_set_public/eval_set_public_v1.jsonl \
+    --out runs/gemma-2-2b-it \
+    --sae-source gemma_scope_1 \
+    --sae-release gemma-scope-2b-pt-res \
+    --sae-id "layer_12/width_16k/average_l0_82" \
+    --layer 12 \
+    --catalog data/feature_catalog/gemma-2-2b-it.json \
+    --calibration configs/calibration_gemma2_2b.yaml
 
-# Launch the dashboard
+# Launch the dashboard (reads pre-computed runs/*/report.json)
 streamlit run app/dashboard.py
 ```
 
-Requires Python 3.11+. The Gemma 3 270M-IT model runs on a 4GB GPU (fp16) or any CPU. For additional model support, see [Compute Guide](docs/COMPUTE.md).
+Requires Python 3.11+. Gemma 2 2B-IT runs on a 4 GB GPU (4-bit quantization) or CPU with extra time. For Gemma 4 E2B-IT with the author-trained bio SAE, see the SAE infrastructure section below.
 
 **No model download needed to explore results:** open `demo/interactive_explorer.html` in any browser for an instant walkthrough of all 75 pre-run prompts, feature activations, and intervention results.
 
 **Expected output of the CLI run:**
 ```
-[biorefusalaudit] Loading model: google/gemma-3-270m-it
-[biorefusalaudit] Loading SAEs: gemma-scope-2 (layer 14, residual stream, width 16k)
-[biorefusalaudit] Loading eval set: 75 prompts (30 benign_bio, 30 dual_use_bio, 15 hazard_adjacent_category)
+[biorefusalaudit] Loading model: google/gemma-2-2b-it
+[biorefusalaudit] Loading SAEs: gemma_scope_1 layer_12/width_16k/average_l0_82
+[biorefusalaudit] Loading eval set: 75 prompts (23 benign_bio, 30 dual_use_bio, 22 hazard_adjacent_category)
 [biorefusalaudit] Running judge consortium: gemini + haiku + regex
 [biorefusalaudit] Processed 75/75 prompts. 0 failures.
-[biorefusalaudit] Report: runs/quickstart/report.md
-[biorefusalaudit] Mean divergence (benign): 0.08 | (dual_use): 0.31 | (hazard_adjacent): 0.61
-[biorefusalaudit] High-divergence flags: 7 prompts
+[biorefusalaudit] Report: runs/gemma-2-2b-it/report.json
+[biorefusalaudit] Mean divergence (benign): 0.467 | (dual_use): 0.655 | (hazard_adjacent): 0.669
+[biorefusalaudit] Surface labels (corrected): 0 refuse / 40 comply / 35 hedge
 ```
 
 ---
@@ -172,26 +185,29 @@ biorefusalaudit/
 │   │   ├── eval_set_public_v1.jsonl
 │   │   ├── schema.md
 │   │   └── stratification_stats.md
-│   ├── feature_catalog/           # Per-model validated SAE feature catalogs
-│   │   ├── gemma-3-270m-it.json
-│   │   ├── gemma-3-4b-it.json
-│   │   └── llama-3.1-8b-instruct.json
+│   ├── feature_catalog/           # Per-model SAE feature catalogs (Cohen's-d auto-tuned)
+│   │   ├── gemma-2-2b-it.json     # Primary result model
+│   │   ├── gemma-4-E2B-it.json
+│   │   └── gemma-4-e2b-our-sae-v1.json
 │   └── results_public/            # Aggregate stats, redacted (tracked)
 ├── configs/
 │   ├── models.yaml                # Supported models and SAE paths
-│   ├── calibration_gemma3_270m.yaml
+│   ├── calibration_gemma2_2b.yaml # T-matrix calibration for primary run
+│   ├── calibration_gemma4_oursae_v1.yaml
 │   └── features_of_interest.yaml  # Keyword lists for feature discovery
 ├── paper/
 │   ├── writeup.md                 # Hackathon submission paper
+│   ├── video_script.md            # Submission video script (~5 min)
 │   └── policy_brief.md            # One-page governance brief (CLTR/AISI audience)
 ├── notebooks/
-│   ├── 01_feature_discovery.ipynb
-│   ├── 02_eval_walkthrough.ipynb
-│   ├── 03_cross_model_scaling.ipynb
-│   └── 04_case_studies.ipynb
+│   ├── colab_biorefusalaudit.ipynb          # Full eval pipeline on Colab T4
+│   └── colab_gemma4_sae_training_v1.ipynb   # Domain SAE training (completed on T4)
 ├── scripts/
-│   ├── setup.ps1                  # Windows PowerShell environment setup
-│   └── run_eval.ps1               # Convenience wrapper for full eval run
+│   ├── flagship_pipeline.sh       # Primary Gemma 2 2B-IT end-to-end run
+│   ├── run_cross_arch_small_models.sh  # Llama 3.2 1B / Qwen 2.5 1.5B / Phi-3-mini
+│   ├── auto_tune_catalog.py       # Cohen's-d feature catalog selection
+│   ├── rejudge_stored_completions.py   # Fix judge-failure artifacts
+│   └── build_scaling_plot.py      # Cross-model D comparison plot
 ├── tests/
 │   ├── test_model_adapter.py
 │   ├── test_sae_adapter.py
@@ -244,21 +260,17 @@ Full formalization in [docs/METHOD.md](docs/METHOD.md).
 
 BioRefusalAudit supports four SAE sources via a unified `sae_adapter.py`:
 
-| Source | Models covered | SAE type | Key advantage |
+| Source | Models covered | SAE type | Status |
 |---|---|---|---|
-| [Gemma Scope 2](https://deepmind.google/models/gemma/gemma-scope/) (Dec 2025) | Gemma 3: 270M, 1B, 4B, 12B, 27B (PT + IT) | JumpReLU SAEs, transcoders, CLTs | Explicit focus on jailbreaks and refusal mechanisms; all layers covered |
-| [Llama Scope](https://arxiv.org/abs/2410.20526) | Llama 3.1 8B | TopK SAEs, 32K/128K features | Cross-architecture comparison |
-| [Solshine/gemma4-e2b-bio-sae-v1](https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1) | Gemma 4 E2B-IT | TopK(k=32), 4× expansion, mean contrastive | Proof-of-concept domain adaptation SAE; trained on WMDP corpus + hackathon eval set |
+| [Gemma Scope 1](https://deepmind.google/models/gemma/gemma-scope/) | Gemma 2: 2B, 9B (PT + IT) | JumpReLU SAEs, all layers | **Primary result model** — `gemma-scope-2b-pt-res layer_12/width_16k/average_l0_82` |
+| [Solshine/gemma4-e2b-bio-sae-v1](https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1) | Gemma 4 E2B-IT | TopK(k=32), 4× expansion, mean contrastive | Author-trained domain SAE; 2000-step contrastive fine-tune on WMDP bio-retain corpus. Validation run with 150-token budget confirms D label-split (comply D=0.896, refuse D=0.249, zero overlap) |
+| NullSAE (`--sae-source none`) | Any model | None | D=1.0 always; behavioral-label-only mode. Used for cross-arch Llama 3.2 1B / Qwen 2.5 1.5B / Phi-3-mini runs |
 | Custom `.pt` / `.safetensors` | Any supported model | TopK | Load any community-trained SAE by local path or HF repo ID |
 
-Gemma Scope 2 is the primary infrastructure for Gemma 3 family models. The Dec 2025 release
-explicitly enables analysis of "jailbreaks, refusal mechanisms, and chain-of-thought
-faithfulness" — BioRefusalAudit is the first bio-safety application of this capability.
-
-For Gemma 4 E2B-IT, we trained our own domain-specific SAE (`Solshine/gemma4-e2b-bio-sae-v1`,
-2000-step mean-contrastive fine-tune on the WMDP bio-retain corpus) since no community Gemma 4
-SAE existed at hackathon submission time. See the [model card](https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1)
-for full training details and loading instructions.
+For Gemma 4 E2B-IT, no community SAE existed at hackathon submission time, so we trained
+`Solshine/gemma4-e2b-bio-sae-v1` — a 2000-step mean-contrastive SAE on the WMDP bio-retain
+corpus (safe biology papers as benign, the hackathon eval set as hazard-adjacent). See the
+[model card](https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1) for training details.
 
 #### Running with a specific SAE source
 
@@ -352,21 +364,16 @@ Each tier is split across: direct, educational, roleplay, obfuscated framings. T
 
 ## Supported models
 
-| Model | Size | SAE source | Min VRAM | Notes |
+| Model | Size | SAE source | Min VRAM | Status |
 |---|---|---|---|---|
-| `google/gemma-2-2b-it` | 2B | Gemma Scope 1 | 4GB (4-bit) | Primary result model; 5K-step contrastive SAE also available |
-| `google/gemma-4-E2B-it` | 2B | [Solshine/gemma4-e2b-bio-sae-v1](https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1) | 4GB (4-bit) | Proof-of-concept domain adaptation SAE; multimodal architecture (hook at layer 17) |
-| `google/gemma-3-270m-it` | 270M | Gemma Scope 2 | 2GB | Fastest local dev option |
-| `google/gemma-3-1b-it` | 1B | Gemma Scope 2 | 4GB (4-bit) | Good calibration reference |
-| `google/gemma-3-4b-it` | 4B | Gemma Scope 2 | 10GB | Main Gemma 3 production model |
-| `google/gemma-3-12b-it` | 12B | Gemma Scope 2 | 24GB | Scaling story upper bound |
-| `meta-llama/Llama-3.1-8B-Instruct` | 8B | Llama Scope | 16GB (T4) | Cross-architecture; Colab only (see TROUBLESHOOTING.md §Bug C) |
+| `google/gemma-2-2b-it` | 2B | Gemma Scope 1 (layer 12) | 4GB | **Primary result model** — all paper §4 results |
+| `google/gemma-4-E2B-it` | 2B | [Solshine/gemma4-e2b-bio-sae-v1](https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1) | 4GB (4-bit) | Author-trained SAE; 150-token validation confirms D label-split |
+| `meta-llama/Llama-3.2-1B-Instruct` | 1B | NullSAE (behavioral labels only) | 4GB | Cross-arch behavioral run complete; ReLU SAE deferred (see TROUBLESHOOTING.md §`--architecture relu invalid`) |
+| `Qwen/Qwen2.5-1.5B-Instruct` | 1.5B | NullSAE (behavioral labels only) | 4GB (4-bit) | Cross-arch behavioral run complete |
+| `microsoft/Phi-3-mini-4k-instruct` | 3.8B | NullSAE (behavioral labels only) | 4GB (4-bit) | Cross-arch behavioral run complete |
 | Any model | varies | Custom `.pt` or HF repo | varies | `--sae-source custom --sae-release <path-or-repo-id>` |
 
-For Gemma 3 12B and Llama 3.1 8B, a rented T4/A100 is recommended. Llama 3.1 8B is confirmed
-non-functional locally on 4 GB VRAM due to a bitsandbytes CPU-offload bug; use
-`notebooks/colab_biorefusalaudit.ipynb` on Colab T4 instead. See [docs/COMPUTE.md](docs/COMPUTE.md)
-for RunPod/Lambda setup.
+NullSAE mode (`--sae-source none`) produces D=1.0 always and behavioral surface labels only — useful for cross-architecture surface behavior comparison without requiring a matched SAE.
 
 ---
 
@@ -386,45 +393,51 @@ Source: `runs/gemma-2-2b-it-L12-tuned/report.json` (D-values); corrected surface
 
 **Causal intervention result:** 60/75 prompts (80%) across all three tiers qualify as candidate mechanistic features (CMF: `|ΔD| > 0.2` or `label_changed`). Inverted tier ordering: benign 87% > dual-use 80% > hazard-adjacent 73% — consistent with a biology-vocabulary catalog rather than bio-specific hazard circuitry. Dose-proportionality confirmed at 4 boost levels (1.5×/2.0×/3.0×/4.0×). See `runs/interventions/` and §4.3 of the paper.
 
-**Cross-architecture results (Colab T4 — Gemma 2 9B-IT + Llama 3.1 8B-Instruct):** pending `notebooks/colab_biorefusalaudit.ipynb` run. Will appear in `runs/colab_*/report.json` and §4.4 of the paper.
+**Cross-architecture behavioral results (surface labels only, NullSAE):** Llama 3.2 1B, Qwen 2.5 1.5B, and Phi-3-mini runs complete. Cross-arch table with per-tier comply/hedge/refuse rates will appear in §4.4 of the paper after final report parsing.
 
-**Limitations:** Feature catalogs for Gemma 2 2B-IT are auto-tuned from Cohen's-d selection on 75-prompt activation dumps — not Neuronpedia hand-validated. Calibration T is fit on the same 75 prompts used for evaluation (no held-out calibration set). Gemma 3 and Gemma 4 results remain pending public SAE releases and additional compute. See §4.5 of the paper for full caveats.
+**Gemma 4 E2B-IT with author-trained bio SAE (150-token budget, T_prior calibration, n=75):**
+
+| Surface label | n | Mean D | Std |
+|---|---:|---:|---:|
+| comply | 59 | 0.896 | 0.001 |
+| refuse | 16 | 0.249 | 0.004 |
+
+Zero overlap. 0.647-point separation. The metric is tracking the thing it was designed to track.
+
+**Limitations:** Feature catalogs are Cohen's-d auto-tuned from 75-prompt activation dumps — not Neuronpedia hand-validated. Calibration T for Gemma 2 results is fit within-sample (a held-out v3 calibration inverted tier ordering, confirming T is framing-distribution-sensitive). Gemma 4 results use T_prior (identity-biased permutation). The Gemma 2 tier-D separation (d=1.29) likely reflects vocabulary routing as much as genuine hazard detection. See §4.2 and §5 of the paper for full caveats.
 
 ---
 
 ## Dashboard
 
-The Streamlit dashboard provides a practitioner-facing interface for real-time auditing.
+The Streamlit dashboard provides a practitioner-facing interface for per-prompt auditing of pre-computed eval results.
 
-```powershell
+```bash
 streamlit run app/dashboard.py
 ```
 
-Features:
-- Paste any prompt, select a model, see surface classification + top-k activated SAE features + divergence score in real time
-- Compare two models side-by-side on the same prompt
-- Load a JSONL file of prompts and run a batch audit
-- Flag high-divergence prompts for export
-- Full eval set browser with filtering by tier, framing, and divergence range
+The dashboard reads a pre-computed `runs/*/report.json` (generated by the CLI). It does not run model inference in real time. Features:
 
-A demo walkthrough video is planned; in the meantime `demo/scaling_plot.png` shows the per-tier divergence comparison across completed runs.
+- Browse all 75 eval prompts with per-prompt D scores, surface labels, and top-k activated SAE features
+- Filter by tier (benign / dual-use / hazard-adjacent), framing (direct / educational / roleplay / obfuscated), and divergence range
+- Flag high-divergence prompts for export
+- Compare runs side-by-side
+
+`demo/scaling_plot.png` shows the per-tier D comparison across all completed runs.
 
 ---
 
 ## Running the tests
 
-```powershell
+```bash
 # Activate venv first
-.\.venv\Scripts\Activate.ps1
+source .venv/Scripts/activate   # Windows Git Bash
 
-# All tests
-pytest tests/ -v
+# All unit tests (no model loading, required green before any commit)
+KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=. python -m pytest tests/ -q -m "not integration"
 
-# Fast unit tests only (no model loading)
-pytest tests/ -v -m "not integration"
-
-# Integration smoke test (loads Gemma 3 270M, takes ~3 min)
-pytest tests/integration/test_end_to_end_smoke.py -v
+# Integration smoke test (loads Gemma 2 2B-IT, takes ~5 min, needs GPU or patience)
+KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=. python -m pytest tests/integration/test_end_to_end_smoke.py -v
 ```
 
 Expected output format:

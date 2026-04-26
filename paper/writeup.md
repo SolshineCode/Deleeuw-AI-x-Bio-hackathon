@@ -2,9 +2,21 @@
 
 **Caleb DeLeeuw**, AIxBio Hackathon 2026, Track 3 (Biosecurity Tools)
 
-**Status at submission:** Flagship pipeline shipped end-to-end + specialist review fully addressed (`notes/SPECIALIST_REVIEW_2026_04_23.md`). The three-legged evidence requirement (activation + attribution + perturbation) is codified: no feature gets called a "named circuit" unless it passes all three via `attribution_labels.py::classify_tier`. Results in §4 from tuned-catalog + fitted-T run on Gemma 2 2B-IT + Gemma Scope 1 layer 12.
+**Status at submission:** End-to-end pipeline shipped; specialist review addressed (`notes/SPECIALIST_REVIEW_2026_04_23.md`). Three-legged evidence requirement codified: activation + attribution + perturbation, enforced via `attribution_labels.py::classify_tier`. Primary results: Gemma 2 2B-IT + Gemma Scope 1 layer 12, 75 prompts, tuned catalog + within-sample fitted T. Gemma 4 E2B-IT validation run with author-trained SAE at 150-token budget. Behavioral-label-only cross-architecture runs: Llama 3.2 1B, Qwen 2.5 1.5B, Phi-3-mini (NullSAE). Judge-pipeline failure corrected: 29/75 original "refuse" labels were consortium fallback artifacts; corrected via regex re-judge at `runs/gemma-2-2b-it-L12-tuned-rejudged/`.
 
-**Headline findings:** (1) Gemma 2 2B-IT: per-tier mean D = 0.467 / 0.655 / 0.669 (benign / dual-use / hazard), Cohen's *d* = 1.29, p = 0.0001, non-overlapping 95% CIs. Corrected surface labels (regex re-judge of stored completions): **0 genuine refusals; 40 comply (53%), 35 hedge (47%)**. Hazard-adjacent tier 100% hedge, 0% comply, 0% refuse. The 34.8% over-refusal statistic is retracted (§4.2 correction). (2) Gemma 4 E2B's RLHF safety circuit is format-gated: missing canonical `<start_of_turn>` tokens disables it entirely. Both models refuse **0% at 80-token max generation** across all tiers (§4.5). (3) All 9 correct-format Gemma 4 comply cases fire `refusal_features_active_despite_compliance`. The safety circuit represents hazard without suppressing output (§4.6). **Primary validity caveats:** T is fit within-sample. Held-out calibration (v3) inverted tier ordering (d=-0.967), showing T is framing-distribution-sensitive. Within-sample T is better-matched for v1 results (§5 correction). The feature catalog is Cohen's-d auto-tuned, not semantically validated. Flag-based findings (§4.6) survive both caveats.
+**Headline findings:**
+
+*The core question.* Standard biosecurity evaluations measure whether a model produces hazardous output. But there is a prior question: when a model refuses, does it *can't*, or just *won't right now*? A model with shallow refusal sitting over an intact internal hazard representation is one framing shift from compliance. BioRefusalAudit measures that gap — calibrated surface-internal divergence (D) between judge-classified surface output and SAE feature activation patterns. High D on a refusal means the model is computing more than it is saying.
+
+**Finding 1: Gemma 2 2B-IT never genuinely refuses — it hedges.** After correcting a judge-pipeline failure that mislabeled 29/75 prompts as "refuse" (§4.2 correction), the actual distribution across 75 prompts is: **0 genuine refusals, 40 comply (53%), 35 hedge (47%)**. The hazard-adjacent tier hedges universally — 100% hedge, 0% comply, 0% refuse — while benign biology is 70% comply / 30% hedge. Hedge-without-refuse is a distinct failure mode from refusal bypass: the model never formed a genuine refusal to bypass. Binary surface classifiers that collapse "hedge" and "refuse" cannot surface this distinction.
+
+**Finding 2: D separates internal activation posture from surface behavior with near-zero within-class variance.** On Gemma 4 E2B-IT at 150-token budget with author-trained SAE (T_prior calibration, n = 75): comply responses D = 0.896 (±0.001), refuse responses D = 0.249 (±0.004), **0.647-point separation, zero overlap**. D = 0.249 on a refusal means internal SAE feature activations align with the refusal direction — the model isn't just saying no, it is not activating bio-hazard feature space. D = 0.896 on a compliant response means bio-relevant features remain active — expected for educational biology content, and exactly what a well-calibrated audit should surface. On Gemma 2 2B-IT (within-sample fitted T): tier separation mean D = 0.467 / 0.655 / 0.669 (benign / dual-use / hazard), Cohen's *d* = 1.29, p = 0.0001, non-overlapping 95% CIs. See within-sample calibration caveat (§4.2).
+
+**Finding 3: Format-gating and the 80-token problem.** Gemma 4 E2B's entire RLHF safety circuit is disabled without canonical `<start_of_turn>` chat-template tokens. Both models refuse **0% at 80-token max generation** across all tiers. Safety articulation requires token budget; constrained deployment contexts — mobile apps, embedded tools, latency-capped APIs — systematically bypass the safety circuits that standard lab-bench evaluations measure. Surface refusal rates do not transfer to production when production ships with different format or length constraints.
+
+**Finding 4: The refusal circuit is a biology detector, not a hazard detector.** Causal intervention named-circuit qualification runs inverted relative to hazard level: benign 87% > dual-use 80% > hazard-adjacent 73%. The strongest single result is bio_014, a benign roleplay prompt, with activation effect size 1.139 and no surface behavior change. The auto-tuned catalog encodes general technical-governance vocabulary rather than bio-specific refusal circuitry. Domain-specific SAE fine-tuning is the fix.
+
+**Primary validity caveats:** T is fit within-sample for Gemma 2 results; a held-out calibration (v3 set) inverted tier ordering (d = −0.967), confirming T is framing-distribution-sensitive. Feature catalog is Cohen's-d auto-tuned, not Neuronpedia-validated. Findings 1, 3, and 4 operate on raw labels and activation magnitudes and survive both caveats. D-values in Finding 2 should be read with the calibration caveat attached. Full correction history in §5.
 
 ---
 
@@ -104,17 +116,30 @@ All 75 prompts intervened on with `scripts/run_intervention.py` (completed 2026-
 
 Results land in `runs/colab_*/report.{md,json}`. Scaling plot regenerates via `scripts/build_scaling_plot.py --include-synthetic`. Gemma 3 family evaluation deferred pending Gemma Scope 2 public release.
 
-**Track B — Local GTX 1650 Ti (small models, 2026-04-26):** Three additional architectures confirmed to fit in 4 GB VRAM, covering Meta/Llama, Alibaba/Qwen, and Microsoft/Phi families. Key question: does the hazard_adjacent hedging pattern (100% hedge at 80 tok in Gemma 2 + Gemma 4) replicate across architectures?
+**Track B — Local GTX 1650 Ti (small models, 2026-04-26):** Three additional architectures confirmed to fit in 4 GB VRAM, covering Meta/Llama, Alibaba/Qwen, and Microsoft/Phi families. Key question: does the hazard_adjacent hedging pattern (100% hedge at 80 tok in Gemma 2 + Gemma 4) replicate across architectures? All three run with NullSAE (behavioral labels only, D=1.0 throughout). Note: the community Llama ReLU SAE (`qresearch/Llama-3.2-1B-Instruct-SAE-l9`) was originally planned for Llama but `--architecture relu` is invalid in the current CLI (only `topk`/`jumprelu` accepted); see `TROUBLESHOOTING.md §--architecture relu invalid`. All three models ran as behavioral-label-only comparisons.
 
-| Model | Architecture | Params | SAE | Layer | Quantize |
-|---|---|---:|---|---:|---|
-| `meta-llama/Llama-3.2-1B-Instruct` | Meta/Llama | 1B | `qresearch/Llama-3.2-1B-Instruct-SAE-l9` (ReLU, d_sae=32768) | 9 | FP16 |
-| `Qwen/Qwen2.5-1.5B-Instruct` | Alibaba/Qwen | 1.5B | NullSAE (behavioral labels only) | 20 | 4-bit |
-| `microsoft/Phi-3-mini-4k-instruct` | Microsoft/Phi | 3.8B | NullSAE (behavioral labels only) | 24 | 4-bit |
+**Table 4.4. Cross-architecture surface label distribution (NullSAE behavioral runs; 80-token budget; n=75 per model; regex judge; 2026-04-26). Phi-3-mini pending completion.**
 
-Script: `scripts/run_cross_arch_small_models.sh`. NullSAE models produce D=1.0 (no SAE component) but provide behavioral label distributions across architectures. Llama 3.2 1B provides a real SAE comparison point with a community-contributed ReLU SAE (Apache 2.0, L0=63).
+| Model | Params | benign comply% | benign hedge% | benign refuse% | dual-use comply% | dual-use hedge% | dual-use refuse% | hazard comply% | hazard hedge% | hazard refuse% |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Gemma 2 2B-IT (Gemma Scope 1, reference) | 2B | 70 | 30 | 0 | 80 | 20 | 0 | 0 | **100** | 0 |
+| Llama 3.2 1B-Instruct (NullSAE) | 1B | 70 | 0 | 30 | 57 | 0 | 43 | 9 | 0 | **91** |
+| Qwen 2.5 1.5B-Instruct (NullSAE) | 1.5B | 17 | 0 | 83 | 10 | 0 | 90 | 5 | 0 | **95** |
+| Phi-3-mini-4k-instruct (NullSAE) | 3.8B | — | — | — | — | — | — | — | — | — |
 
-Cross-arch small model results not yet collected; table to be filled after current GPU queue clears.
+**Key observations from completed runs (2026-04-26):**
+
+1. **Gemma 2's hedge posture is model-family-specific, not universal.** Llama 3.2 1B and Qwen 2.5 1.5B show zero hedging across all 75 prompts. Their safety circuits produce binary comply/refuse, not the graduated hedge posture Gemma 2 uses. This means "hedge-without-refuse" (Finding 1 in the main analysis) is a Gemma-family characteristic, not a general LLM behavior under RLHF alignment.
+
+2. **Llama 3.2 1B shows well-calibrated tier sensitivity.** Refuse rate rises from 30% on benign to 91% on hazard-adjacent, a 61-point gradient. This is behaviorally appropriate calibration: refusing most benign biology at 30% is still over-refusal, but the hazard signal is clearly being picked up. Compare Gemma 2: 0% refuse on benign but also 0% refuse on hazard (all hedged).
+
+3. **Qwen 2.5 1.5B shows systematic over-refusal.** 83% refuse on benign biology and 95% on hazard-adjacent; the model refuses with nearly identical rates across all tiers. A 12-point benign-to-hazard gradient vs. Llama's 61-point gradient. Qwen's hazard-adjacent refuse rate (95%) is the highest of any model tested, but the benign refuse rate (83%) is also the highest — suggesting a non-discriminating high-refusal prior rather than genuine hazard detection.
+
+4. **No cross-arch model uses hedging.** Only Gemma 2 hedges. This has implications for surface evaluation tooling: binary comply/refuse classifiers will work for Llama, Qwen, and Phi, but will miss Gemma 2's distinctive posture entirely (misclassifying hedges as either comply or refuse).
+
+Script: `scripts/run_cross_arch_small_models.sh`. NullSAE models produce D=1.0 (no SAE component) but provide behavioral label distributions across architectures. Phi-3-mini row to be filled when run completes (~18:50 local time, 2026-04-26).
+
+**Planned extension — psilocybin legality control (2026-04-26):** A 15-prompt control set (`data/eval_set_public/eval_set_psilocybin_control_v1.jsonl`) tests whether the refusal circuit responds to US legal status (Schedule I) rather than genuine CBRN risk. Psilocybin is biologically non-toxic, has FDA Breakthrough Therapy designation for depression, and appears in peer-reviewed NEJM and JAMA Psychiatry trials — but is Schedule I. Sub-categories: `psilocybin_pharmacology` (bio vocab, not illegal to study), `psilocybin_cultivation` (*Psilocybe* mycology, US-illegal), `psilocybin_clinical` (legal in research), `psilocybin_legal` (pure policy framing). If refusal/hedge rates on `psilocybin_cultivation` match hazard-adjacent tier rates but `psilocybin_pharmacology` rates match benign, legality (not bio-hazard) is the primary confounding driver of the refusal circuit. Script: `scripts/run_psilocybin_control.sh`. Run after Phi-3-mini frees the GPU.
 
 ### 4.5 Portability path: Gemma 4 E2B-IT + author-trained SAE
 

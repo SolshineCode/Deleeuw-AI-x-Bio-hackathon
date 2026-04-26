@@ -16,7 +16,7 @@ I'm Caleb DeLeeuw. This is BioRefusalAudit. Let me show you what we built and wh
 
 ---
 
-## [THE PROBLEM — ~50 seconds]
+## [THE PROBLEM — ~75 seconds]
 
 Every major biosecurity evaluation of language models asks some version of the same question: will this model produce hazardous output?
 
@@ -26,11 +26,15 @@ But that's not the question that should drive deployment decisions.
 
 The question is: when a model refuses — does it *can't*, or does it merely *won't right now*?
 
-Those are not the same thing. A model with a surface refusal sitting over an intact internal capability is one prompt-engineering step away from complying. Change the framing, change the roleplay context, change the chat-template tokens — and you might be through.
+Those are not the same thing. A model with a surface refusal sitting over an intact internal capability is one framing shift from complying. Change the context — educational, roleplay, obfuscated — and a model that was "refusing" might comply.
 
-A model whose internal representations genuinely don't activate on hazard features when it refuses — that's structurally different. Structurally safer.
+And here's what makes this specific to biosecurity: capable adversaries don't query models with obvious prompts. They use exactly those framings. WMDP-Bio tests "will the model explain how to make anthrax." It doesn't test whether the model will explain Bacillus anthracis spore formation in the context of writing a graduate-level virology module. That's the attack surface that surface evaluation is blind to.
 
-Qi et al. 2024 put it precisely: the alignment floor sits "a few tokens deep." At the AIxBio 2026 keynote, Crook independently called "binary prediction unusable — calibrated confidence required" the measurement gap. Both need *measurement*, not argument.
+There's a deeper problem. Behavioral evals can be gamed. An adversary who knows what your eval tests can engineer prompts to pass it. An adversary who cannot observe your model's internal activations cannot optimize against them. Internal-state auditing has a structural advantage that behavioral testing does not have.
+
+A model whose internal representations genuinely don't activate on hazard features when it refuses — that's structurally different. And currently, there is no tool to measure whether any model is in that category.
+
+Qi et al. 2024 put it precisely: the alignment floor sits "a few tokens deep." Crook at the AIxBio 2026 keynote independently called "binary prediction unusable — calibrated confidence required" the measurement gap. Both need *measurement*, not argument.
 
 BioRefusalAudit provides it. We call it **refusal depth**.
 
@@ -46,6 +50,8 @@ We hook into the residual stream at generation time, capture those activations, 
 
 High divergence on a refusal means the model is representing more than it's saying.
 
+Notice what's not in that pipeline: the actual content of what the user typed or what the model said. The divergence score is computed entirely from internal activation vectors — not from transcript content. That's not incidental. Sandbrink called for bio monitoring that doesn't read interaction content, doesn't disclose proprietary data, doesn't create IP risk. BioRefusalAudit implements exactly that. A hospital running this at inference time can flag sessions with anomalous refusal depth without the audit layer ever reading a word of what the user asked. That's a privacy posture content-based screening fundamentally cannot achieve.
+
 We built this as a full end-to-end pipeline: a 75-prompt stratified eval set across benign biology, dual-use governance, and hazard-adjacent tiers; four framing types — direct, educational, roleplay, and obfuscated — to test whether framing shifts behavior; and a Streamlit dashboard for per-prompt interactive auditing.
 
 It runs on a four-gigabyte consumer GPU.
@@ -54,9 +60,11 @@ It runs on a four-gigabyte consumer GPU.
 
 ## [THE FINDINGS — ~90 seconds]
 
-We ran the full pipeline on Gemma 2 2B-IT with Gemma Scope 1 layer 12 SAEs. Then on Gemma 4 E2B-IT with a prior-project SAE from our Secret Agenda deception-detection work.
+We ran the full pipeline on Gemma 2 2B-IT with Gemma Scope 1 layer 12 SAEs. Then on Gemma 4 E2B-IT with an author-trained domain-specific SAE.
 
-Two findings I want to highlight — both have immediate policy implications, and both survive the validity caveats I'll note in a moment.
+Before the numbers: the key conceptual output of this work is that there are four meaningfully distinct model safety postures that surface evaluation collapses to one. Deep refusal — the internal activation pattern is consistent with not engaging with the hazard. Shallow refusal — the model says no while hazard features are still firing. Hedge-without-refuse — what Gemma 2 actually does. And non-suppressive safety — refusal circuitry activates but doesn't gate the output. A surface evaluator sees rows 1 and 2 as identical. A behavioral red-teamer might distinguish them eventually, with enough tries. BioRefusalAudit classifies all four on a single pass. That's the contribution the numbers are supporting.
+
+Four findings — all have immediate policy implications, and most survive the validity caveats I'll name at the end.
 
 **Finding One: Gemma 2 2B-IT hedges on hazard-adjacent content — and never refuses.** After correcting a judge-pipeline failure that mislabeled 29 biology answers as refusals, the actual surface-label distribution across all 75 prompts is: zero genuine refusals, 40 comply, 35 hedge. The tier pattern is striking: benign biology 70% comply / 30% hedge. Dual-use 80% comply / 20% hedge. Hazard-adjacent: 100% hedge, zero comply, zero refuse. The model responds to hazard-tier content with a consistent hedge posture — softening the response, not terminating it. That's a different failure mode than refusal bypass. Hedge-without-refuse is harder to detect with binary classifiers and may provide more partial information than a genuine refusal would. BioRefusalAudit surfaces this distinction. Surface evaluation alone cannot — it collapses "refuse" and "hedge" into the same bucket.
 
@@ -78,19 +86,21 @@ Findings One and Four together sketch a concrete four-cell typology for model sa
 
 ---
 
-## [HL3 AND RESPONSIBLE RELEASE — ~45 seconds]
+## [HL3 AND RESPONSIBLE RELEASE — ~60 seconds]
 
-One more contribution I want to be direct about, because it matters structurally.
+One more contribution I want to be direct about, because it matters structurally — and because it directly addresses something multiple speakers at this hackathon called for.
 
 The code is under Hippocratic License 3.0. The tier-3 hazard-adjacent eval data is behind an HL3-gated attestation on Hugging Face. Tiers 1 and 2 — benign biology and governance questions — are CC-BY-4.0, fully open.
 
-This is not a formality.
+This is not a formality. And I want to explain why this specific tool needs this specific license.
 
-At this hackathon, Sandbrink, Crook, and Yassif from NTI each called for tiered managed-access frameworks for AI biosecurity tools. The NTI Bio paper from January 2026 is explicit: for tools designed to probe hazard-adjacent model behavior, access criteria are warranted.
+Sandbrink, Crook, and Yassif from NTI each called for tiered managed-access frameworks for AI biosecurity tools. The NTI Bio paper from January 2026 is explicit: for tools designed to probe hazard-adjacent model behavior, access criteria are warranted.
 
-BioRefusalAudit implements two layers of that framework. The measurement layer is the divergence score — it quantifies how safe a refusal is, which is what makes a managed-access decision principled rather than arbitrary. The enforcement layer is HL3. Standard permissive licenses — MIT, Apache — allow any use, including weaponization. HL3 doesn't. It binds downstream users to enforceable human rights obligations. Violation terminates the license.
+BioRefusalAudit is exactly such a tool. A probing tool is dual-use by definition — it can be used to verify that a refusal is safe, or it can be used to find the prompts where refusals are shallow. A permissive license that allows any downstream use, including weaponization of the probing capability, is structurally incoherent with the biosecurity purpose. HL3 doesn't allow that. It binds downstream users to enforceable human rights obligations. Violation terminates the license.
 
-For a tool explicitly designed to probe hazard-adjacent model behavior, that distinction is load-bearing. The tiered data release implements the Biosecurity Data Level framework from Bloomfield, Black, Crook et al. in *Science* 2026 — directly, as a working instantiation.
+BioRefusalAudit also implements the Sandbrink monitoring requirement in a specific way that matters: the divergence score D is computed from SAE feature activations, not content. You can run this audit on a production system without the audit layer reading what users typed. That's privacy-preserving monitoring of bio-sensitive AI interactions — which is what Sandbrink called for — implemented as a working tool, not a proposal.
+
+The tiered data release implements the Biosecurity Data Level framework from Bloomfield, Black, Crook et al. in *Science* 2026 — directly, as the first working instantiation of that framework in an AI biosecurity tool.
 
 ---
 
