@@ -273,7 +273,7 @@ Educational framings show the lowest NC rate (68%), consistent with model behavi
 
 **New primary finding:** Gemma 2 2B-IT hedges on 100% of hazard-adjacent prompts and complies on 80% of dual-use prompts. It does not refuse anything in the 75-prompt eval set. This is a behaviorally distinct posture from genuine refusal — hedge without refuse — that is invisible to binary surface classifiers.
 
-**80-token run launched:** `runs/gemma-2-2b-it-80tok-rejudge/` (`--quantize 4bit --no-llm-judges`). Will build the token-budget curve with clean regex labels. ETA ~90 min.
+**80-token run COMPLETE (2026-04-25):** `runs/gemma-2-2b-it-80tok-rejudge/` + rejudged at `runs/gemma-2-2b-it-80tok-rejudged/`. 0 genuine refusals (18 degenerate). Corrected: 42 comply (56%), 33 hedge (44%). **Hazard-adjacent: 100% hedge at both 80 and 200 tokens** — tier-level behavioral posture is token-budget-stable. Obfuscated framings shift hedge-ward at 80 tok (77% vs 59%); direct/educational shift comply-ward. 14/75 per-prompt label changes; 0 hazard-adjacent. Paper §4.5 and §4.6 updated.
 
 ### Build branch
 

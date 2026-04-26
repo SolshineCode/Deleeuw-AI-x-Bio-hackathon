@@ -96,7 +96,7 @@ Each of these gets a one-paragraph "planned" entry in the paper's §8 Future Wor
 - [x] **`scripts/rejudge_stored_completions.py`** — regex re-judge of stored completions without model re-run. Output: `runs/gemma-2-2b-it-L12-tuned-rejudged/report.json`.
 - [x] **Corrected surface labels in paper** — 0 genuine refusals; 40 comply (53%); 35 hedge (47%). Hazard-adjacent 100% hedge / 0% comply / 0% refuse. §4.2 table footnote added, CORRECTED block updated, §4.6 Finding B revised, §5 judge failure bullet updated with corrected numbers.
 - [x] **Video script and policy brief updated** with corrected finding (hedge-without-refuse replaces retracted over-refusal statistic).
-- [ ] **80-token corrected run** — `runs/gemma-2-2b-it-80tok-rejudge/` (`--quantize 4bit --no-llm-judges`). In progress. Will update §4.5 token-budget finding from 24-prompt format-ablation subset to full 75-prompt corrected data.
+- [x] **80-token corrected run** — `runs/gemma-2-2b-it-80tok-rejudge/` + `runs/gemma-2-2b-it-80tok-rejudged/`. 0 genuine refusals; hazard-adjacent 100% hedge at both 80 and 200 tokens (token-budget-stable). Paper §4.5 and §4.6 Finding A updated. Word count: 3494/3500.
 
 ## Nice-to-have before submission (not blocking)
 
