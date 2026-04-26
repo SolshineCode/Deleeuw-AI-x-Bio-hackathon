@@ -3,13 +3,20 @@
 #
 # Fills §4.4 of the paper with real Llama 3.1 8B results.
 #
-# Hardware: GTX 1650 Ti 4 GB VRAM. Llama 8B at 4-bit NF4 needs ~4.5 GB, so
-# --max-gpu-memory 3GiB forces device_map=auto+max_memory to split GPU/CPU.
-# Expect ~150-300s/prompt with partial CPU offload. 75 prompts × 200s ≈ 4 hours.
-# Three passes (collect → tune → eval) ≈ 10-12 hours total. Run overnight.
+# HARDWARE LIMITATION (confirmed 2026-04-26):
+# GTX 1650 Ti (4 GB VRAM) cannot run Llama 3.1 8B locally. The model needs
+# ~4.5 GB at 4-bit NF4. CPU offload via device_map=auto is broken in
+# bitsandbytes 0.49.2 + accelerate 1.13 (AlignDevicesHook.pre_forward fails
+# dispatching Params4bit — all 75 prompts fail with "meta tensor" error).
+# Three runs confirmed: 0/75 each. See TROUBLESHOOTING.md §Bug C.
 #
-# Usage (from repo root, venv activated):
-#   source .venv/Scripts/activate
+# THE CORRECT ENVIRONMENT FOR THIS SCRIPT IS A COLAB T4 (16 GB VRAM):
+#   - The T4 holds the full 4-bit model without any CPU offload
+#   - Run notebooks/colab_biorefusalaudit.ipynb for the managed version
+#   - Or run this script from inside a Colab session with the repo cloned
+#
+# Usage (Colab T4 only):
+#   source .venv/Scripts/activate   # or pip install -e . in Colab
 #   bash scripts/run_llama31_cross_arch.sh 2>&1 | tee runs/llama31-cross-arch.log
 #
 set -e
@@ -27,7 +34,30 @@ TUNED_OUT="runs/llama-3.1-8b-it-L16-tuned"
 CATALOG="data/feature_catalog/llama-3.1-8b-it.json"
 CALIBRATION="configs/calibration_llama31_8b.yaml"
 
-echo "[$(date)] === PASS 1: collect activations (Llama 8B, ~4 hours with CPU offload) ==="
+# Create stub catalog if it doesn't exist yet (required by --existing below)
+if [ ! -f "$CATALOG" ]; then
+    python - << 'PYEOF'
+import json
+from pathlib import Path
+stub = {
+    "model_name": "meta-llama/Llama-3.1-8B-Instruct",
+    "sae_source": "llama_scope_direct:fnlp/Llama3_1-8B-Base-LXR-8x/Llama3_1-8B-Base-L16R-8x",
+    "catalog_version": "stub-v1",
+    "catalog_note": "Stub — pending auto-tune from pass-1 activations.",
+    "source_activations": "PENDING",
+    "top_per_category": 20,
+    "min_effect_size": 0.3,
+    "categories": {"bio_content": [], "hazard_adjacent": [], "refusal_circuitry": [], "hedging": [], "deception_correlate": []}
+}
+Path("data/feature_catalog").mkdir(parents=True, exist_ok=True)
+Path("data/feature_catalog/llama-3.1-8b-it.json").write_text(json.dumps(stub, indent=2))
+print("Created stub catalog: data/feature_catalog/llama-3.1-8b-it.json")
+PYEOF
+fi
+
+echo "[$(date)] === PASS 1: collect activations (Llama 8B, ~4 hours on T4) ==="
+# No --max-gpu-memory: T4 has 16 GB, the full 4-bit model fits without CPU offload.
+# If running locally on a <8GB card, this will OOM or fail (see header comment).
 python -m biorefusalaudit.cli run \
     --model "$MODEL" \
     --eval-set "$EVAL_SET" \
@@ -37,7 +67,6 @@ python -m biorefusalaudit.cli run \
     --sae-id "$SAE_LAYER_ID" \
     --layer "$LAYER" \
     --quantize 4bit \
-    --max-gpu-memory 3GiB \
     --no-llm-judges \
     --max-new-tokens 200 \
     --dump-activations
@@ -45,10 +74,9 @@ python -m biorefusalaudit.cli run \
 echo "[$(date)] === CATALOG AUTO-TUNE ==="
 python scripts/auto_tune_catalog.py \
     --activations "$PASS1_OUT/activations.npz" \
+    --existing "$CATALOG" \
     --out "$CATALOG" \
-    --model "$MODEL" \
-    --sae-source llama_scope \
-    --top-k 20
+    --top-per-category 20
 
 echo "[$(date)] === FIT CALIBRATION T ==="
 python scripts/fit_calibration.py \
@@ -65,7 +93,6 @@ python -m biorefusalaudit.cli run \
     --sae-id "$SAE_LAYER_ID" \
     --layer "$LAYER" \
     --quantize 4bit \
-    --max-gpu-memory 3GiB \
     --no-llm-judges \
     --max-new-tokens 200 \
     --catalog "$CATALOG" \

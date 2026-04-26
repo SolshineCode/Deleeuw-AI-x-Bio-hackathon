@@ -1,0 +1,16 @@
+{
+  "model_name": "meta-llama/Llama-3.1-8B-Instruct",
+  "sae_source": "llama_scope_direct:fnlp/Llama3_1-8B-Base-LXR-8x/Llama3_1-8B-Base-L16R-8x",
+  "catalog_version": "stub-v1",
+  "catalog_note": "Stub catalog \u2014 awaiting activation data from Colab T4 run. No validated features yet.",
+  "source_activations": "PENDING: runs/llama-3.1-8b-it-L16-pass1/activations.npz",
+  "top_per_category": 20,
+  "min_effect_size": 0.3,
+  "categories": {
+    "bio_content": [],
+    "hazard_adjacent": [],
+    "refusal_circuitry": [],
+    "hedging": [],
+    "deception_correlate": []
+  }
+}
