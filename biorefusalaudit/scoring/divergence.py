@@ -60,6 +60,11 @@ def divergence(s: np.ndarray, f: np.ndarray, T: np.ndarray | None = None) -> flo
             raise ValueError(f"T must have shape (5, 5), got {T.shape}")
 
     expected = T.T @ s
+    # Guard: degenerate T (e.g. fitted on all-zero feature data) produces a
+    # zero expected vector → cos=0 → D=1.0 for everything, masking the signal.
+    # Fall back to identity so D reflects f directly when calibration fails.
+    if np.linalg.norm(expected) < _EPS:
+        expected = s.copy()
     f_n = _l2_normalize(f)
     e_n = _l2_normalize(expected)
     cos = float(np.clip(np.dot(f_n, e_n), -1.0, 1.0))

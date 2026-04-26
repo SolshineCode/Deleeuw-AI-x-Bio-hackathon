@@ -144,23 +144,19 @@ Peer-review-grade repo. Every code change traceable:
 
 ---
 
-## Architecture gotchas (keep updated — each one burned us once)
+## Architecture gotchas — quick reference
 
-1. **sae_lens segfaults on Python 3.13 + Torch 2.6 (Windows).** Do not use it. Bypass is `_load_gemma_scope_direct` in `sae_adapter.py` — fetches `.npz` weights directly from HF.
-2. **Device mismatch.** SAE modules must be cast to the activation's device dynamically. Fixed in `sae_adapter.py` with `to(target_device)` + fp32 cast.
-3. **KMP OpenMP conflict.** Always prefix runs with `KMP_DUPLICATE_LIB_OK=TRUE` on Windows. Documented in `TROUBLESHOOTING.md`.
-4. **Gemma 4 community SAEs** use non-standard weight filenames (not `sae_weights.pt`). Fixed in `sae_adapter.py` with repo-scan fallback.
-5. **`device_map="auto"` silently routes Gemma 4 to CPU.** `Gemma4ForConditionalGeneration` is multimodal; `accelerate`'s memory estimator mis-sizes it and picks CPU even with 4 GB free VRAM. Fix: `device_map={"": 0}` for quantized models when CUDA is available — implemented in `model_adapter.py`. See `TROUBLESHOOTING.md` for full diagnosis and the misleading log message that looks like a capacity error but is actually a bytes-level metadata artifact.
-6. **Residual hook accumulates per-step tensors during generation.** The hook fires once per autoregressive token. Appending each capture to a list fills VRAM (~240 MB for a 200-token generation) and causes silent CPU spill on 4 GB cards, making long generations 20× slower. Fix: overwrite `captured[0]` instead of appending — implemented in `model_adapter.py`. Symptom: alternating fast (1–3 s) and slow (150–200 s) prompts in the same run.
-8. **`device_map={"": "cuda"}` (string) silently falls to CPU on Windows WDDM with bitsandbytes 0.49.2.** Even when CUDA is available and free VRAM is sufficient, the string form routes the model to CPU. Fix: use integer device index `{"": torch.cuda.current_device()}` — implemented in `model_adapter.py` (2026-04-24). Symptom: nvidia-smi never shows the venv Python process, GPU memory stays flat, generation runs at ~2 tok/s instead of 25 tok/s. Full diagnosis in `TROUBLESHOOTING.md`.
-9. **Three-bug stack on `device_map="auto"` + `max_memory` (CPU-offload path, needed for models >VRAM).** Required for Llama 3.1 8B on 4 GB. All three bugs surface on bitsandbytes 0.49.2 + transformers 5.6 + accelerate 1.13:
-   - *Bug A*: `TypeError: Params4bit.__new__() got unexpected kwarg '_is_hf_initialized'` — loading-time; transformers 5.6 spreads `**old_value.__dict__` into `Params4bit.__new__`. Fix: `_patch_bnb_for_accelerate_offload()`.
-   - *Bug B*: `RuntimeError: Tensor.item() cannot be called on meta tensors` — loading-time; accelerate dispatch hooks call `len(module.state_dict())` → `Linear4bit._save_to_state_dict` → `.item()` on meta. Fix: `_patch_bnb_for_accelerate_offload()`.
-   - *Bug C*: `Cannot copy out of meta tensor; no data!` on ALL prompts — inference-time; `generate_completion` resolves input device via `next(model.parameters()).device` which returns `meta` for CPU-offloaded models. The input device fix (use `lm.device` when param device is meta) was implemented 2026-04-25 but is INCOMPLETE — accelerate's `AlignDevicesHook.pre_forward()` still fails trying to dispatch `Params4bit` weights at inference time. v3 run: 0/75 successful despite the fix being present.
-   - **CONCLUSION (2026-04-25):** Llama 3.1 8B CPU offload is non-functional on this stack. The model requires ~4.5GB (1GB fp16 embeddings + ~3.5GB quantized) and does not fit on 4GB without offload. Offload is broken. Use Llama 3.2 3B instead (fits on GPU without offload) or rent an A100.
-   - Full diagnosis in `TROUBLESHOOTING.md`. Do NOT need any of this for models that fit on GPU (`device_map={"": 0}` path).
+Full diagnoses live in `TROUBLESHOOTING.md`. One-line reminders:
 
-7. **Catalog tuning must use activations from the same quantization regime as the final eval.** If you auto-tune on fp16 activations but eval in 4-bit NF4, the selected catalog features won't fire in the 4-bit run → `feature_vec = 0` → `D = 1.0` everywhere (not a real result — it's a silent catalog failure). Always collect `--dump-activations` under the same `--quantize` flag as the final eval. Similarly, calibration T can only be fitted meaningfully once `feature_vec ≠ 0`; fitting T on degenerate zero-feature data produces a placeholder, not a calibration. Full chain: `pass-1 (correct quantize) → auto_tune → pass-2 (dump) → fit_T → pass-3 (final)`. See `docs/METHOD.md §Required chain ordering`.
+1. **`sae_lens` segfaults on Py 3.13 + Torch 2.6** — use `_load_gemma_scope_direct` in `sae_adapter.py`. See `TROUBLESHOOTING.md §sae_lens ImportError`.
+2. **SAE device mismatch** — `sae_adapter.py` casts to activation device + fp32 on load.
+3. **KMP OpenMP conflict (Windows)** — always `KMP_DUPLICATE_LIB_OK=TRUE`. See `TROUBLESHOOTING.md`.
+4. **Non-standard SAE weight filenames** — `sae_adapter.py` repo-scan fallback handles this.
+5. **`device_map="auto"` routes multimodal models to CPU** — use `device_map={"": 0}` (integer). See `TROUBLESHOOTING.md §Gemma 4 loads on CPU`.
+6. **Residual hook VRAM accumulation** — overwrite `captured[0]`, don't append. See `TROUBLESHOOTING.md §Slow generation`.
+7. **Catalog quantization must match eval** — same `--quantize` for all passes or features won't fire. See `docs/METHOD.md §Required chain ordering`.
+8. **`device_map={"": "cuda"}` (string) falls to CPU on WDDM** — use integer index. See `TROUBLESHOOTING.md`.
+9. **CPU offload is broken for models that exceed local VRAM** — choose models that fit on GPU directly. See `TROUBLESHOOTING.md §Cannot copy out of meta tensor`.
 
 ---
 

@@ -441,3 +441,40 @@ Total additional GPU time: ~3 hours. n per condition: 75 → 225 prompt-evaluati
 
 Key hypothesis: 2000-step WMDP contrastive training improves bio_content Cohen's d vs Gemma Scope.
 Null: no difference (contrastive loss collapsed; corpus too small at 5K docs + 22 hazard prompts).
+
+## GPU session 2026-04-26 (continued, ~09:30 PDT)
+
+### Oursae pipeline (Solshine/gemma4-e2b-bio-sae-v1) — COMPLETE + BUGFIX
+
+**Pass1 (80-tok)**: 75/75, activations.npz saved, D=1.000 (expected — no catalog in pass1).
+**Catalog auto-tune**: bio_content top effect=1.81 (20 features), hazard_adj=1.60, refusal_circuitry=1.52. 33 unique features. Saved: `data/feature_catalog/gemma-4-e2b-our-sae-v1.json`.
+**Calibration fit**: `fit_calibration.py` produced T=0 (all zeros). Root cause: f_vec=zero for all pass1 records (no catalog) → fit minimizes to T=0 (degenerate). MSE=0.000 (vacuously).
+
+**CALIBRATION BUG FOUND AND FIXED (2026-04-26):**
+- Root cause: pipeline runs pass1 without catalog → f_vec=0 for all records → `fit_calibration.py` produces T=0 → `T.T @ s = 0` for any s → `e_n = 0` → D=1.000 always.
+- Fix 1: Restored `configs/calibration_gemma4_oursae_v1.yaml` T from T_prior (identity-biased permutation).
+- Fix 2: Added degenerate-T guard to `biorefusalaudit/scoring/divergence.py` — falls back to `expected = s` when `||T.T @ s|| < eps`.
+- Fix 3: Created `scripts/rescore_with_prior_T.py` to re-score completed reports without re-running inference.
+- All 56 unit tests pass after fix.
+
+**Pass2 (80-tok)**: 75/75. D=1.000 (all, due to calibration bug). Re-scored offline with T_prior:
+
+| Tier | n | Mean D | Std | comply | refuse | hedge |
+|---|---:|---:|---:|---:|---:|---:|
+| benign_bio | 23 | 0.614 | 0.321 | 57% | 43% | 0% |
+| dual_use_bio | 30 | 0.703 | 0.295 | 70% | 30% | 0% |
+| hazard_adjacent | 22 | 0.647 | 0.306 | 59% | 36% | 5% |
+| overall | 75 | 0.659 | 0.309 | | | |
+
+Calibration caveat: T_prior is not data-fitted — D values are higher than Gemma Scope baseline (benign=0.362, dual=0.406, hazard=0.404). Relative tier ordering preserved. Key positive finding: 1285/1500 bio_content feature hits, mean activation 14.71 — the WMDP-trained SAE encodes bio-domain information. Benign 43% refuse confirms Gemma 4 E2B over-refusal pattern.
+
+**150-tok run**: Running in background (b5sb3yxal), ~76s/prompt, ETA ~10:45 PDT. Uses calibration_gemma4_oursae_v1.yaml (T now correct = T_prior). First prompt D=0.895 (non-trivially non-1.0 — bug confirmed fixed).
+
+**Cross-arch small models**: Queued after 150-tok completes. Script ready: `scripts/run_cross_arch_small_models.sh`.
+
+### Code changes (this session)
+- `biorefusalaudit/scoring/divergence.py`: added degenerate-T guard (fall back to `expected = s` when `||T.T@s|| < eps`)
+- `configs/calibration_gemma4_oursae_v1.yaml`: T restored from T_prior (was all-zeros from degenerate fit)
+- `scripts/rescore_with_prior_T.py`: new offline re-scoring tool
+- `paper/writeup.md` §4.4: added Track B local cross-arch small model framework
+- `paper/writeup.md` §4.5: added oursae pass2 80-tok results block with calibration bug documentation

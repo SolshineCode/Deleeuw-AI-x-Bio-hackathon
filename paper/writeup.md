@@ -94,12 +94,25 @@ All 75 prompts intervened on with `scripts/run_intervention.py` (completed 2026-
 
 **Key finding: inverted tier ordering.** NC rate is highest for benign_bio and lowest for hazard_adjacent. This reinforces the §4.2 catalog-validation finding: the auto-tuned refusal_circuitry features encode generic technical-governance vocabulary that fires on biology content at all hazard levels, not on bio-specific hazard circuitry. bio_014 (benign/roleplay, effect=1.139) is the corpus peak: the largest internal-state shift with no surface behavior change, a clean example of the divergence BioRefusalAudit is designed to surface.
 
-### 4.4 Cross-architecture reference (Colab T4)
+### 4.4 Cross-architecture reference
 
+**Track A — Colab T4 (large models):**
 - `google/gemma-2-9b-it` + `gemma-scope-9b-pt-res` layer 20 at bnb 4-bit
-- `meta-llama/Llama-3.1-8B-Instruct` + Llama Scope `l16r_8x`
+- `meta-llama/Llama-3.1-8B-Instruct` + Llama Scope `l16r_8x` — hardware-blocked locally (GTX 1650 Ti, 4 GB VRAM cannot run 4-bit 8B without CPU offload; CPU offload broken in bnb 0.49.2 + accelerate 1.13, all 75 prompts fail, see `TROUBLESHOOTING.md §Bug C`). Colab T4 run in progress.
 
 Results land in `runs/colab_*/report.{md,json}`. Scaling plot regenerates via `scripts/build_scaling_plot.py --include-synthetic`. Gemma 3 family evaluation deferred pending Gemma Scope 2 public release.
+
+**Track B — Local GTX 1650 Ti (small models, 2026-04-26):** Three additional architectures confirmed to fit in 4 GB VRAM, covering Meta/Llama, Alibaba/Qwen, and Microsoft/Phi families. Key question: does the hazard_adjacent hedging pattern (100% hedge at 80 tok in Gemma 2 + Gemma 4) replicate across architectures?
+
+| Model | Architecture | Params | SAE | Layer | Quantize |
+|---|---|---:|---|---:|---|
+| `meta-llama/Llama-3.2-1B-Instruct` | Meta/Llama | 1B | `qresearch/Llama-3.2-1B-Instruct-SAE-l9` (ReLU, d_sae=32768) | 9 | FP16 |
+| `Qwen/Qwen2.5-1.5B-Instruct` | Alibaba/Qwen | 1.5B | NullSAE (behavioral labels only) | 20 | 4-bit |
+| `microsoft/Phi-3-mini-4k-instruct` | Microsoft/Phi | 3.8B | NullSAE (behavioral labels only) | 24 | 4-bit |
+
+Script: `scripts/run_cross_arch_small_models.sh`. NullSAE models produce D=1.0 (no SAE component) but provide behavioral label distributions across architectures. Llama 3.2 1B provides a real SAE comparison point with a community-contributed ReLU SAE (Apache 2.0, L0=63).
+
+**PENDING:** Cross-arch small model results not yet collected. Table to be filled after current GPU queue clears.
 
 ### 4.5 Portability path: Gemma 4 E2B-IT + author-trained SAE
 
@@ -124,6 +137,17 @@ To show the methodology is not locked to Gemma Scope releases, we ran the full c
 **Pass 5 (correct chat template applied, 2026-04-23):** With `_apply_chat_template()` fix: 65 refuse / 9 comply / 1 hedge. All 9 comply cases fire `refusal_features_active_despite_compliance` (mean refusal_circuitry ≈ 0.325). Five are hazard-adjacent prompts (pathogen-adjacent immunology, vaccine-escape, zoonotic spillover, veterinary biocontrol, prion biology). D under re-fitted T remains near-zero (benign=0.006, hazard=0.004). The cross-domain SAE limitation holds. Flags are the informative channel.
 
 **CORRECTED 2026-04-24 (chat-template token names):** Earlier prose used `<|turn>` / `<turn|>` shorthand instead of Gemma's canonical `<start_of_turn>` / `<end_of_turn>`. The malformed form appears deliberately in `scripts/format_ablation.py` conditions C and D. No empirical claim depends on this distinction.
+
+**Pass 2 (bio-trained SAE, 2026-04-26):** Full 75-prompt eval of Gemma 4 E2B-IT against our WMDP-contrastive-trained bio SAE (`Solshine/gemma4-e2b-bio-sae-v1`, TopK k=32, d_model=1536, d_sae=6144, layer 17, 2000-step training). Unlike the deception-focused SAE in Pass 4/5, this SAE produces non-zero feature vectors: 1285/1500 bio_content feature hits in pass1, mean activation 14.71. **Pipeline calibration bug (documented):** when pass1 runs without a catalog, f_vec is zero for all prompts → `fit_calibration.py` produces T=0 → pass2 D=1.000 for every prompt despite real feature activations. Fix: restore T_prior when fitted T is degenerate (added to `divergence.py`); report.json re-scored offline (`scripts/rescore_with_prior_T.py`). Re-scored results with T_prior:
+
+| Tier | n | Mean D | Std | comply (%) | refuse (%) | hedge (%) |
+|---|---:|---:|---:|---:|---:|---:|
+| `benign_bio` | 23 | 0.614 | 0.321 | 57% | 43% | 0% |
+| `dual_use_bio` | 30 | 0.703 | 0.295 | 70% | 30% | 0% |
+| `hazard_adjacent` | 22 | 0.647 | 0.306 | 59% | 36% | 5% |
+| **overall** | **75** | **0.659** | **0.309** | | | |
+
+**Calibration caveat:** T_prior is an identity-biased permutation matrix, not a data-fitted alignment. Data-fitted T (which requires a behavioral corpus where both f_vec and s_vec are informative) would produce lower absolute D and tighter tier separation. Compare to Gemma Scope baseline (Gemma 2 2B, fitted T, 80-tok): benign=0.362, dual=0.406, hazard=0.404. The higher D here reflects T_prior miscalibration, not necessarily weaker bio encoding. **Key positive finding:** the bio-trained SAE features fire reliably on bio prompts. The measurement infrastructure is working; the calibration pipeline ordering needs a guard for featureless-pass1 runs. **Surface label finding:** benign tier refuses at 43% — the same over-refusal pattern reported in §4.6 Finding A. Gemma 4 E2B safety circuit fires on biosecurity-adjacent content regardless of tier. The bio SAE activates consistently, confirming bio-domain encoding despite collapsed L_contrastive (corpus-size bottleneck noted in §8).
 
 *Format ablation (80tok, n=96 G4 A/B/C/D + n=96 G2 A/B/C/D):* G4 cond B: 58% loops; cond C: hazard 100% empty, benign/dual-use 100% comply; cond D: 100% comply. G2: 100% comply, 0% loops across all conditions. G2 at 150tok (n=48): same. **Full 75-prompt G2 corrected run at 80tok:** 0 genuine refusals; 42 comply, 33 hedge. Hazard-adjacent: 100% hedge at all three budgets (80/150/200 tok). Posture is stable. At 150 tok, obfuscated peaks at 94% (vs 77%/59% at 80/200); hazard_adj D=0.760 vs 0.669. 14/75 per-prompt changes; 0 hazard-adjacent.
 
