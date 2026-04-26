@@ -215,7 +215,11 @@ def train(args):
     load_kwargs = dict(low_cpu_mem_usage=True)
     if bnb_cfg:
         load_kwargs["quantization_config"] = bnb_cfg
-        load_kwargs["device_map"] = {"": torch.cuda.current_device()}
+        if getattr(args, "max_gpu_memory", None):
+            load_kwargs["device_map"] = "auto"
+            load_kwargs["max_memory"] = {0: args.max_gpu_memory, "cpu": "48GiB"}
+        else:
+            load_kwargs["device_map"] = {"": torch.cuda.current_device()}
     else:
         load_kwargs["device_map"] = "cpu"
 
@@ -363,6 +367,9 @@ def main():
                     help="mean: centroid cosine sim (original); pairwise: NT-Xent all pairs; triplet: pairwise + within-tier cohesion")
     ap.add_argument("--temperature", type=float, default=0.1,
                     help="Temperature for pairwise contrastive mode")
+    ap.add_argument("--max-gpu-memory", default=None,
+                    help="Max VRAM for device_map=auto GPU+CPU split, e.g. '3GiB'. "
+                         "Use for models larger than local VRAM (Llama 8B on 4GB card).")
     args = ap.parse_args()
 
     import os

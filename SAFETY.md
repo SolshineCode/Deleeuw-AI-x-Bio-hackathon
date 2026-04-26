@@ -76,6 +76,16 @@ If you observe what you believe to be a misuse of BioRefusalAudit or its data:
 
 If you observe what you believe is a bug or false positive in the divergence metric itself, a GitHub issue is fine; for anything with hazard-adjacent content, email instead.
 
+## HL3 license: anticipated questions
+
+**Q: Does HL3 create friction that prevents legitimate biosecurity researchers from using your tool?**
+
+Yes, there is friction — and that is intentional. HL3-FULL requires users to attest to the UN Guiding Principles on Business and Human Rights and prohibits use for harm. A biosecurity researcher at a national lab, university, or AI safety institute can attest to this in under five minutes. The friction is proportional: inconvenient enough to deter bad actors who want deniability, not so heavy that a research team with an IRB and an institutional email address would stop. The alternative — MIT or Apache — provides no friction at all, explicitly permits offensive use, and would allow the divergence metric to be used as a targeting tool to identify shallow-refusal models for adversarial exploitation. We regard that as an unacceptable risk for a tool whose explicit purpose is to probe hazard-adjacent model behavior.
+
+**Q: What if an institution's legal team is unfamiliar with HL3?**
+
+HL3 is backed by firstdonoharm.dev and has been adopted by several AI safety tools. It is SPDX-registered as `HL3-FULL`. The HL3 team provides guidance for institutional legal review at firstdonoharm.dev. For research use, the license is more permissive than GDPR compliance or standard IRB requirements — it adds human-rights conditions, not bureaucratic overhead. We are happy to provide a plain-English summary for any institution that requests one.
+
 ## Scope notes
 
 This policy governs BioRefusalAudit. It does not govern the underlying models (Gemma 3 family, Llama 3.1 8B), the SAE releases (Gemma Scope 2, Llama Scope), the judge APIs (Gemini, Claude, OpenRouter), or any external data source. Use of those is governed by their respective terms.

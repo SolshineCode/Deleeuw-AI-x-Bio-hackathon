@@ -17,7 +17,7 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 - [x] §4.3 intervention table filled with at least one real row — 4-row per-tier summary with 60/75 (80%) NC qualification; full per-prompt results at `runs/interventions/`; dose-proportionality at 4 boost levels; framing NC breakdown; inverted tier ordering finding
 - [x] Every "named circuit" claim cross-references a specific intervention JSON — cross-refs `runs/interventions/*.json`
 - [x] Limitations section states catalog + T origin + what was NOT attempted — §4.5 caveats block
-- [ ] §4.4 cross-architecture table filled — **BLOCKING: Colab T4 run not yet executed** — requires user to run `notebooks/colab_biorefusalaudit.ipynb` on Colab T4 (~90 min). Acknowledged as deferred in paper §5 Limitations ("Cross-architecture comparison deferred"). Cannot be completed autonomously — requires user GPU time.
+- [ ] §4.4 cross-architecture table filled — **IN PROGRESS:** Llama 3.1 8B-Instruct + Llama Scope l16r_8x overnight local run prepared (`scripts/run_llama31_cross_arch.sh`). Requires `source .venv/Scripts/activate && bash scripts/run_llama31_cross_arch.sh 2>&1 | tee runs/llama31-cross-arch.log` (~10-12h with 4GB GPU CPU-offload). Colab T4 run (Gemma 2 9B) still deferred. Local Llama run fills one row of §4.4; sufficient for cross-architecture claim.
 
 ### Artifacts
 

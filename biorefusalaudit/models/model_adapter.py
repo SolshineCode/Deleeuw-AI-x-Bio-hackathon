@@ -35,8 +35,17 @@ def load_model(
     quantize: str | None = None,
     device: str | None = None,
     dtype: str = "float16",
+    max_memory: dict | None = None,
 ) -> LoadedModel:
-    """Load an HF model + tokenizer. Quantize via bitsandbytes if requested."""
+    """Load an HF model + tokenizer. Quantize via bitsandbytes if requested.
+
+    max_memory: optional dict for accelerate device_map="auto", e.g.
+      {0: "3GiB", "cpu": "48GiB"} — use for models larger than local VRAM.
+      When provided, device_map is forced to "auto" regardless of quantize mode.
+      Example: Llama 3.1 8B 4-bit on 4 GB GPU:
+        load_model("meta-llama/Llama-3.1-8B-Instruct", quantize="4bit",
+                   max_memory={0: "3GiB", "cpu": "48GiB"})
+    """
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
     if device is None:
@@ -51,22 +60,34 @@ def load_model(
             bnb_4bit_quant_type="nf4",
             bnb_4bit_use_double_quant=True,
         )
-        # Use integer device index (0) rather than string "cuda" — bitsandbytes on
-        # Windows WDDM silently falls back to CPU when the string form is used and
-        # VRAM is tight. Integer index forces the allocation correctly.
-        cuda_idx = torch.cuda.current_device() if torch.cuda.is_available() else None
-        kwargs["device_map"] = {"": cuda_idx} if cuda_idx is not None else "auto"
+        if max_memory is not None:
+            # Caller explicitly wants GPU+CPU split (e.g. model > VRAM).
+            kwargs["device_map"] = "auto"
+            kwargs["max_memory"] = max_memory
+        else:
+            # Use integer device index (0) rather than string "cuda" — bitsandbytes on
+            # Windows WDDM silently falls back to CPU when the string form is used and
+            # VRAM is tight. Integer index forces the allocation correctly.
+            cuda_idx = torch.cuda.current_device() if torch.cuda.is_available() else None
+            kwargs["device_map"] = {"": cuda_idx} if cuda_idx is not None else "auto"
     elif quantize == "8bit":
         kwargs["quantization_config"] = BitsAndBytesConfig(load_in_8bit=True)
-        cuda_idx = torch.cuda.current_device() if torch.cuda.is_available() else None
-        kwargs["device_map"] = {"": cuda_idx} if cuda_idx is not None else "auto"
+        if max_memory is not None:
+            kwargs["device_map"] = "auto"
+            kwargs["max_memory"] = max_memory
+        else:
+            cuda_idx = torch.cuda.current_device() if torch.cuda.is_available() else None
+            kwargs["device_map"] = {"": cuda_idx} if cuda_idx is not None else "auto"
     else:
         kwargs["torch_dtype"] = torch_dtype
-        # Prefer device_map="auto" on CUDA so models larger than VRAM
-        # (e.g., Gemma 2 2B fp16 = 5.2GB on a 4GB GTX 1650) auto-offload
-        # to CPU for the overflow instead of OOM-ing. Keeps GPU busy at
-        # ~90% utilization on the on-device layers.
-        kwargs["device_map"] = "auto" if device == "cuda" else device
+        if max_memory is not None:
+            kwargs["device_map"] = "auto"
+            kwargs["max_memory"] = max_memory
+        else:
+            # Prefer device_map="auto" on CUDA so models larger than VRAM
+            # (e.g., Gemma 2 2B fp16 = 5.2GB on a 4GB GTX 1650) auto-offload
+            # to CPU for the overflow instead of OOM-ing.
+            kwargs["device_map"] = "auto" if device == "cuda" else device
 
     tokenizer = AutoTokenizer.from_pretrained(name)
     model = AutoModelForCausalLM.from_pretrained(name, **kwargs)

@@ -115,6 +115,49 @@ def load_sae_from_state_dict(
     return sae
 
 
+def _load_llama_scope_direct(repo_id: str, sae_path: str, layer: int) -> LoadedSAE:
+    """Direct loader for Llama Scope JumpReLU SAEs from fnlp/Llama3_1-8B-Base-LXR-Nx.
+
+    Bypasses sae_lens (segfaults on torch 2.6 + Py 3.13 on Windows).
+    Weight file: <repo_id> / <sae_path>/checkpoints/final.safetensors
+    Keys: encoder.weight (d_sae, d_model), decoder.weight (d_model, d_sae),
+          encoder.bias (d_sae), decoder.bias (d_model).
+    Architecture: JumpReLU with threshold=ones (≈ pre * step(pre > 1.0)).
+    """
+    from huggingface_hub import hf_hub_download
+    from safetensors.torch import load_file
+
+    sf_path = hf_hub_download(
+        repo_id=repo_id,
+        filename="final.safetensors",
+        subfolder=f"{sae_path}/checkpoints",
+    )
+    sd = load_file(sf_path, device="cpu")
+    # encoder.weight shape: (d_sae, d_model) — transpose to (d_model, d_sae) for W_enc
+    W_enc = sd["encoder.weight"].T.float()   # (d_model, d_sae)
+    W_dec = sd["decoder.weight"].T.float()   # (d_sae, d_model)
+    b_enc = sd["encoder.bias"].float()       # (d_sae,)
+    b_dec = sd["decoder.bias"].float()       # (d_model,)
+    d_model, d_sae = W_enc.shape
+    threshold = torch.ones(d_sae)
+
+    sae = JumpReLUSAE(d_model=d_model, d_sae=d_sae, threshold=threshold)
+    sae.W_enc.data.copy_(W_enc)
+    sae.W_dec.data.copy_(W_dec)
+    sae.b_enc.data.copy_(b_enc)
+    sae.b_dec.data.copy_(b_dec)
+    sae.eval()
+    return LoadedSAE(
+        source="llama_scope_direct",
+        name=f"{repo_id}/{sae_path}",
+        d_model=d_model,
+        d_sae=d_sae,
+        architecture="jumprelu",
+        hook_layer=layer,
+        sae_module=sae,
+    )
+
+
 def _load_gemma_scope_direct(release: str, sae_id: str, layer: int) -> LoadedSAE:
     """Bypass sae_lens and load a Gemma Scope JumpReLU SAE directly from HF.
 
@@ -147,6 +190,55 @@ def _load_gemma_scope_direct(release: str, sae_id: str, layer: int) -> LoadedSAE
     )
 
 
+def _load_dict_learning_direct(repo_id: str, folder_name: str, layer: int) -> LoadedSAE:
+    """Direct loader for dictionary-learning SAEs (e.g. andyrdt/saes-qwen2.5-7b-instruct).
+
+    File: <repo_id>/<folder_name>/ae.pt
+    Keys: W_enc (d_model, d_sae) or encoder.weight.T, W_dec (d_sae, d_model),
+          b_dec (d_model), optionally b_enc (d_sae).
+    Architecture: ReLU (standard dictionary learning).
+    """
+    from huggingface_hub import hf_hub_download
+
+    pt_path = hf_hub_download(repo_id=repo_id, filename=f"{folder_name}/ae.pt")
+    sd = torch.load(pt_path, map_location="cpu")
+
+    W_enc = sd.get("W_enc", sd.get("encoder.weight", None))
+    if W_enc is None:
+        raise KeyError(f"Could not find W_enc in {repo_id}/{folder_name}/ae.pt keys: {list(sd.keys())}")
+    if "encoder.weight" in sd and "W_enc" not in sd:
+        W_enc = sd["encoder.weight"].T  # (d_sae, d_model) → (d_model, d_sae)
+    W_enc = W_enc.float()
+
+    W_dec = sd.get("W_dec", sd.get("decoder.weight", None))
+    if W_dec is None:
+        raise KeyError(f"Could not find W_dec in ae.pt keys: {list(sd.keys())}")
+    if "decoder.weight" in sd and "W_dec" not in sd:
+        W_dec = sd["decoder.weight"].T
+    W_dec = W_dec.float()
+
+    d_model, d_sae = W_enc.shape
+    b_enc_raw = sd.get("b_enc", sd.get("encoder.bias", torch.zeros(d_sae)))
+    b_dec_raw = sd.get("b_dec", sd.get("bias", sd.get("decoder_bias", torch.zeros(d_model))))
+
+    # Use standard JumpReLU with threshold=0 (≡ ReLU) for dict-learning SAEs
+    sae = JumpReLUSAE(d_model=d_model, d_sae=d_sae, threshold=torch.zeros(d_sae))
+    sae.W_enc.data.copy_(W_enc)
+    sae.W_dec.data.copy_(W_dec)
+    sae.b_enc.data.copy_(b_enc_raw.float())
+    sae.b_dec.data.copy_(b_dec_raw.float())
+    sae.eval()
+    return LoadedSAE(
+        source="dict_learning_direct",
+        name=f"{repo_id}/{folder_name}",
+        d_model=d_model,
+        d_sae=d_sae,
+        architecture="jumprelu",
+        hook_layer=layer,
+        sae_module=sae,
+    )
+
+
 def load_sae(source: str, repo_or_path: str, layer: int, **kwargs) -> LoadedSAE:
     """Dispatch loader based on source tag.
 
@@ -165,18 +257,15 @@ def load_sae(source: str, repo_or_path: str, layer: int, **kwargs) -> LoadedSAE:
         sae_id = kwargs.get("sae_id", "")
         return _load_gemma_scope_direct(repo_or_path, sae_id, layer)
     if source == "llama_scope":
-        from sae_lens import SAE  # type: ignore
-
-        sae, cfg, _ = SAE.from_pretrained(release=repo_or_path, sae_id=kwargs.get("sae_id", ""))
-        return LoadedSAE(
-            source=source,
-            name=repo_or_path,
-            d_model=cfg["d_in"],
-            d_sae=cfg["d_sae"],
-            architecture=cfg.get("architecture", "jumprelu"),
-            hook_layer=layer,
-            sae_module=sae,
-        )
+        # Use direct HF loader — sae_lens segfaults on torch 2.6 + Py 3.13 on Windows.
+        # repo_or_path = HF repo id (e.g. "fnlp/Llama3_1-8B-Base-LXR-8x")
+        # kwargs["sae_id"] = the subfolder path (e.g. "Llama3_1-8B-Base-L16R-8x")
+        sae_path = kwargs.get("sae_id", "")
+        return _load_llama_scope_direct(repo_or_path, sae_path, layer)
+    if source == "dict_learning":
+        # andyrdt/saes-qwen2.5-7b-instruct style; folder_name = SAE subfolder
+        folder = kwargs.get("sae_id", "")
+        return _load_dict_learning_direct(repo_or_path, folder, layer)
     if source == "custom":
         state_path = Path(repo_or_path)
         if not state_path.exists() and "/" in repo_or_path:
