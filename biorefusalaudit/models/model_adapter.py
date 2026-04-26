@@ -59,9 +59,12 @@ def load_model(
             bnb_4bit_compute_dtype=torch.float16,
             bnb_4bit_quant_type="nf4",
             bnb_4bit_use_double_quant=True,
+            llm_int8_enable_fp32_cpu_offload=max_memory is not None,
         )
         if max_memory is not None:
             # Caller explicitly wants GPU+CPU split (e.g. model > VRAM).
+            # llm_int8_enable_fp32_cpu_offload=True allows non-quantized layers
+            # (e.g. lm_head) to live on CPU in fp32 while quantized layers stay on GPU.
             kwargs["device_map"] = "auto"
             kwargs["max_memory"] = max_memory
         else:
