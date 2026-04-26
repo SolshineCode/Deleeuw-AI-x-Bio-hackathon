@@ -321,3 +321,32 @@ Three SAE model cards written:
 - `hf_assets/gemma2-2b-bio-sae-pairwise/README.md` — Pairwise Gemma 2 2B SAE (contrastive collapsed, best as reconstruction SAE)
 - `hf_assets/gemma4-e2b-bio-sae-v1/README.md` — Gemma 4 E2B SAE v1 (step 1000 recommended, l_contrastive=0.777)
 - Push script `scripts/push_sae_to_hf.py` ready, pending user approval per HF push policy
+
+## GPU session 2026-04-25/26 continued (~00:00 PDT)
+
+Branch: `feat/gemma4-sae-v1-notebook-repair`
+
+### Colab notebook bug fixes from Gemini review (2026-04-26)
+
+Gemini reviewed both Colab notebooks (`colab_biorefusalaudit.ipynb`, `colab_gemma4_sae_training.ipynb`) and found 8 issues. Fixed in commit on branch `feat/gemma4-sae-v1-notebook-repair`:
+
+**colab_gemma4_sae_training.ipynb:**
+- ✅ Removed 22-line orphaned dead code block (unreachable `ds_hazard/ds_benign` synthesis after a `pass` + dangling `except Exception as e:` with no matching `try:` → SyntaxError on Colab). Root cause: prior repair script left fragment from old try/except structure.
+- ✅ Added `mode="disabled"` to `wandb.init()` when `WANDB_API_KEY` is absent (prevents interactive hang during Run All)
+- ✅ GITHUB_TOKEN injection into clone URL was already implemented (Gemini false positive)
+
+**colab_biorefusalaudit.ipynb:**
+- ✅ Injected GITHUB_TOKEN into git clone URL — supports private repo access with fallback to public URL
+- ✅ Filtered `-smoke` runs from scaling plot glob — smoke test runs no longer pollute cross-model figure
+- ✅ Fixed split f-string across source lines in cell 20 (`print(f"\nDone...")` → SyntaxError on Python 3.12+)
+
+**pyproject.toml:**
+- ✅ Lowered `requires-python` from `>=3.11` to `>=3.10` — `pip install -e .` now succeeds on Colab's default Python 3.10.12 runtime (was hard failing with version constraint error)
+
+### Gemma 4 bio SAE eval pass1 (in progress, 2026-04-26 ~00:00)
+
+- Running: `runs/gemma-4-E2B-it-bio-sae-v1-pass1/` using `checkpoint_01000.pt` (step 1000 — recommended for tier-separation)
+- No catalog supplied → D=1.000 everywhere (expected; activations.npz is the output artifact)
+- At 25/75 prompts at 00:07 PDT; ETA ~32 min (~00:39 PDT)
+- Post-eval pipeline: auto_tune_catalog.py → pass2 with catalog → meaningful D values
+- Script ready at `/tmp/run_gemma4_biosae_pass2.sh`
