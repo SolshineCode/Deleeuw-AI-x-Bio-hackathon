@@ -260,6 +260,21 @@ Educational framings show the lowest NC rate (68%), consistent with model behavi
 
 **Fix in progress:** `runs/gemma-2-2b-it-200tok-rejudge/` — full 75-prompt G2 eval at 200 tokens, `--no-llm-judges` (regex-only, reliable). Started 2026-04-25. Results will determine corrected surface-label distribution and refusal-dependent flags.
 
+### Judge failure: corrected results in (2026-04-25)
+
+**Script:** `scripts/rejudge_stored_completions.py --report runs/gemma-2-2b-it-L12-tuned/report.json --out runs/gemma-2-2b-it-L12-tuned-rejudged/report.json`
+
+**Corrected surface labels (regex_classify applied to stored completions; no model re-run):**
+- **0 genuine refusals** across all 75 prompts
+- 40 comply (53.3%), 35 hedge (46.7%)
+- By tier: benign_bio 16 comply / 7 hedge; dual_use_bio 24 comply / 6 hedge; hazard_adjacent 0 comply / 22 hedge / 0 refuse
+- **hazard_features_active_despite_refusal: N/A** (no refusals to flag)
+- §4.2 flag rates fully retracted; D-values unchanged (activation-based)
+
+**New primary finding:** Gemma 2 2B-IT hedges on 100% of hazard-adjacent prompts and complies on 80% of dual-use prompts. It does not refuse anything in the 75-prompt eval set. This is a behaviorally distinct posture from genuine refusal — hedge without refuse — that is invisible to binary surface classifiers.
+
+**80-token run launched:** `runs/gemma-2-2b-it-80tok-rejudge/` (`--quantize 4bit --no-llm-judges`). Will build the token-budget curve with clean regex labels. ETA ~90 min.
+
 ### Build branch
 
 - Active branch: `feat/paper-trim-3500` (pushed 2026-04-25)

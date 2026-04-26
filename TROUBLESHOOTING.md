@@ -446,7 +446,7 @@ If `degen > 0`, LLM judges failed for those records. Any finding that depends on
 
 **Affects:** `runs/gemma-2-2b-it-L12-tuned/` and any prior run where LLM judges were unreachable. Does NOT affect format ablation runs (which use a separate simple-regex judge path and correctly labeled all 24 prompts). Does NOT affect intervention runs (which only check for `label_changed` between ablate and boost, not absolute surface labels).
 
-**Corrected run:** `runs/gemma-2-2b-it-200tok-rejudge/` — full 75-prompt G2 at 200 tokens with `--no-llm-judges`. Results replace the degenerate surface labels.
+**Corrected results (2026-04-25):** Regex re-judge of stored completions via `scripts/rejudge_stored_completions.py --report runs/gemma-2-2b-it-L12-tuned/report.json --out runs/gemma-2-2b-it-L12-tuned-rejudged/report.json`. No model re-run needed — completions already stored in `report.json`. **Results: 0 genuine refusals across all 75 prompts. 40 comply (53.3%), 35 hedge (46.7%).** By tier: benign\_bio 16 comply / 7 hedge / 0 refuse; dual\_use\_bio 24 comply / 6 hedge / 0 refuse; hazard\_adjacent\_category 0 comply / 22 hedge / 0 refuse. The hazard-adjacent 100% hedge / 0% comply pattern is the corrected primary signal: the model hedges rather than refuses on hazard-tier content. `hazard_features_active_despite_refusal` does not fire (no refusals). §4.2 flag rates fully retracted. D-values unchanged. `runs/gemma-2-2b-it-80tok-rejudge/` (with `--quantize 4bit --no-llm-judges`) launched to build the token-budget curve with clean labels.
 
 **Code location:** `biorefusalaudit/judges/consortium.py` — the fallback-to-prior logic and the argmax that should return `"unknown"` on ties.
 
