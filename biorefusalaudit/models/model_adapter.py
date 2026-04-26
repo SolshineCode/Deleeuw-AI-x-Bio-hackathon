@@ -30,6 +30,56 @@ class LoadedModel:
     quantize: str | None  # None | "4bit" | "8bit"
 
 
+def _patch_params4bit_for_transformers5() -> None:
+    """Compatibility shim for transformers 5.6 + bitsandbytes 0.49.2.
+
+    transformers 5.6 sets _is_hf_initialized=True on parameters during
+    init_empty_weights and later passes **old_value.__dict__ to Params4bit.__new__
+    inside Bnb4bitQuantize.convert. bitsandbytes 0.49.2's Params4bit.__new__
+    has no **kwargs to absorb it, causing TypeError when device_map="auto"
+    triggers this code path (CPU-offload models).
+
+    Patching Params4bit.__new__ to accept and drop unknown HF kwargs is
+    the minimal fix that doesn't require touching venv files.
+    """
+    try:
+        import bitsandbytes.nn.modules as _bnb
+        if getattr(_bnb.Params4bit, "_hf5_compat_patched", False):
+            return
+        _orig_new = _bnb.Params4bit.__new__
+
+        def _compat_new(
+            cls,
+            data=None,
+            requires_grad=False,
+            quant_state=None,
+            blocksize=None,
+            compress_statistics=True,
+            quant_type="fp4",
+            quant_storage=torch.uint8,
+            module=None,
+            bnb_quantized=False,
+            **_ignored_hf_kwargs,
+        ):
+            return _orig_new(
+                cls,
+                data=data,
+                requires_grad=requires_grad,
+                quant_state=quant_state,
+                blocksize=blocksize,
+                compress_statistics=compress_statistics,
+                quant_type=quant_type,
+                quant_storage=quant_storage,
+                module=module,
+                bnb_quantized=bnb_quantized,
+            )
+
+        _bnb.Params4bit.__new__ = staticmethod(_compat_new)
+        _bnb.Params4bit._hf5_compat_patched = True
+    except (ImportError, AttributeError):
+        pass
+
+
 def load_model(
     name: str,
     quantize: str | None = None,
@@ -47,6 +97,9 @@ def load_model(
                    max_memory={0: "3GiB", "cpu": "48GiB"})
     """
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+
+    if quantize == "4bit":
+        _patch_params4bit_for_transformers5()
 
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"

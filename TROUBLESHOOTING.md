@@ -374,6 +374,24 @@ target_layer = _find_layer(model, layer)
 
 ---
 
+## `TypeError: Params4bit.__new__() got an unexpected keyword argument '_is_hf_initialized'` (transformers 5.6 + bitsandbytes 0.49.2, CPU-offload path)
+
+**Symptom:** `load_model(..., quantize="4bit", max_memory={...})` raises:
+
+```
+TypeError: Params4bit.__new__() got an unexpected keyword argument '_is_hf_initialized'
+```
+
+during `AutoModelForCausalLM.from_pretrained`. Only occurs when `max_memory` is passed (triggering `device_map="auto"` for CPU offload). Models loaded without `max_memory` (e.g., Gemma 2 2B, Gemma 4 E2B using `device_map={"": 0}`) are NOT affected.
+
+**Root cause:** `device_map="auto"` causes transformers to load the model with `init_empty_weights()`. During that context, `core_model_loading.py` sets `_is_hf_initialized = True` on each parameter. When real weights are dispatched, `transformers/integrations/bitsandbytes.py:Bnb4bitQuantize.convert` calls `bnb.nn.Params4bit(value, **old_value.__dict__)`, spreading the dict which now includes `_is_hf_initialized=True`. bitsandbytes 0.49.2's `Params4bit.__new__` has no `**kwargs` to absorb it → TypeError.
+
+**Fix (implemented in `model_adapter.py`):** `_patch_params4bit_for_transformers5()` monkey-patches `Params4bit.__new__` to accept and discard unknown kwargs. Applied automatically when `load_model` is called with `quantize="4bit"`. Idempotent (guarded by `_hf5_compat_patched` flag). Does not modify venv files.
+
+**First observed:** 2026-04-25, Llama 3.1 8B-Instruct 4-bit with `max_memory={0: "3GiB", "cpu": "48GiB"}`.
+
+---
+
 ## `device_map={"": "cuda"}` silently falls back to CPU on Windows WDDM (bitsandbytes 0.49.2, transformers 5.6.0)
 
 **Symptom:** `load_model(..., quantize="4bit")` returns with model on CPU despite CUDA being available. `nvidia-smi` does not show the venv Python process, only other processes. Generation runs at ~1-3 tok/s instead of 20-30 tok/s. Process appears alive but makes no GPU-visible progress for 30+ minutes.
