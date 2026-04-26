@@ -65,6 +65,8 @@ Two 75-prompt passes: pass 1 collects activations for catalog tuning (`activatio
 
 95% CIs from 10,000 bootstrap resamplings (seed 42). Benign CI [0.392, 0.548] does not overlap hazard [0.619, 0.715]. Effect size (hazard vs. benign): Cohen's d = **1.29**, p = 0.0001. Within-tier overlap exists: 22% of benign > dual-use mean, 32% of hazard < dual-use mean. Individual-prompt discrimination requires wider CIs than group-level separation at n=23–30.
 
+**Calibration validity caveat (read before citing D-values):** T is fitted on the same 75 prompts evaluated here — within-sample, not held-out. A held-out calibration experiment (60-prompt v3 set, §5 CORRECTED) produced a T that *inverts* tier ordering on v1 data: held-out T yields benign D=0.089 > hazard D=0.023 (d=−0.967). T is framing-distribution-sensitive; v3 over-represents roleplay/obfuscated prompts and the fitted T overfits that distribution. The D-values in this section are within-sample calibration demonstrations — they show the pipeline produces non-trivial, tier-ordered outputs, but they should not be read as held-out validated or distribution-general measurements. For policy-relevant claims use the flag-based findings in §4.6, which operate on raw activation magnitudes and do not pass through T.
+
 **Feature catalog validation, Neuronpedia lookup (2026-04-23):**
 
 | Feature ID | Category | Neuronpedia label | Assessment |

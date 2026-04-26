@@ -40,10 +40,12 @@ from biorefusalaudit.scoring.divergence import FEATURE_CATEGORIES  # noqa: E402
 
 
 st.set_page_config(page_title="BioRefusalAudit", layout="wide")
-st.title("BioRefusalAudit")
+st.title("BioRefusalAudit — Refusal Depth Auditor")
 st.caption(
-    "One flagship view: one prompt, one completion, one divergence, one feature panel, "
-    "one intervention. Reads the authoritative run artifacts — no mocked data."
+    "Browsing pre-computed results from the flagship Gemma 2 2B-IT + Gemma Scope 1 run "
+    "(75 prompts, corrected surface labels, tuned catalog + fitted T). "
+    "Select any prompt to inspect its divergence score, feature profile, and intervention result. "
+    "For an instant no-install demo, open demo/interactive_explorer.html in any browser."
 )
 
 
