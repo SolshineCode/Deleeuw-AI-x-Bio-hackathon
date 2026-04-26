@@ -23,6 +23,7 @@ This gap matters for every deployment decision. A model with a shallow refusal o
 3. A **multi-judge consortium** combining regex first-pass, Gemini CLI, Claude Haiku via `claude -p` subprocess, and local Ollama, with weighted voting and disagreement flagging.
 4. A **reproducible end-to-end pipeline** runnable from a fresh clone on a 4 GB GPU (Gemma 2 2B-IT + Gemma Scope 1). Gemma 4 E2B + author-trained SAE validates portability to community-trained artifacts.
 5. A **Streamlit dashboard** for per-prompt interactive auditing.
+6. A **HL3-gated responsible release** — to our knowledge the first in AI biosecurity tooling — instantiating the BDL framework (Bloomfield, Black, Crook et al., *Science* 2026): tiers 1–2 CC-BY-4.0 open, tier-3 hazard bodies behind signed attestation.
 
 ## 3. Method (summary)
 
@@ -159,7 +160,7 @@ BioRefusalAudit extends two findings from the author's Secret Agenda work (arXiv
 
 Code: HL3-FULL. Eval tiers 1+2: CC-BY-4.0. Tier 3: category-level descriptors in this public repo, with full prompt bodies on HL3-gated HF dataset (`SolshineCode/biorefusalaudit-gated`). See `SAFETY.md`, `docs/HL3_RATIONALE.md`, `LICENSE_HL3_DATASET.md`.
 
-**Why HL3, not MIT.** MIT and Apache 2.0 expressly permit offensive applications. For a tool identifying which models retain hazard representations behind a surface refusal, that neutrality creates a specific risk: an adversarial actor using our divergence score to *target* shallow-refusal models for prompt-engineering attack. HL3-FULL prevents this with enforceable human-rights conditions. The tiered data release instantiates the Biosecurity Data Level (BDL) framework (Bloomfield, Black, Crook et al., *Science* 2026): tiers 1+2 CC-BY-4.0 open, tier 3 requires signed attestation. Enforceable repo tests (`safety_review.check_no_hazard_bodies`, `reporting.redaction.redact_tier3`) exceed host ground rules. HL3 is a norm-setting signal that biosecurity AI tooling belongs in a different licensing category than general-purpose infrastructure.
+**Why HL3, not MIT.** MIT and Apache 2.0 permit offensive applications. For a tool identifying which models retain hazard representations behind a surface refusal, that neutrality is a real attack surface: an adversarial actor using the divergence score to target shallow-refusal models. HL3-FULL prevents this with enforceable human-rights conditions; violation terminates the license. Enforceable repo tests (`safety_review.check_no_hazard_bodies`, `reporting.redaction.redact_tier3`) exceed host ground rules.
 
 ## 8. Future work
 
