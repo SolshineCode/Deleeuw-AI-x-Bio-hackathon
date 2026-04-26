@@ -102,4 +102,9 @@ Each of these gets a one-paragraph "planned" entry in the paper's §8 Future Wor
 
 - [x] Non-bio control experiment results: `runs/control-legal-financial-gemma2/report.{md,json}` — **COMPLETE 2026-04-23.** benign 0.573 / dual-use 0.672 / hazard 0.665. Bio d=1.29 (p=0.0001) vs. legal d=0.67 (p=0.052, NS). Paper §8 updated with full statistical comparison.
 - [x] Dashboard loads and renders latest real report (streamlit smoke check) — verified 2026-04-24: loads gemma-2-2b-it-L12-tuned, correct D values, feature panel, intervention panel (bio_004 Named circuit? ✓ YES)
+- [x] **Interactive demo HTML** — `demo/interactive_explorer.html` (self-contained, no server; 4 tabs: Refusal Depth Explorer, Circuit Game, Token Budget, Circuit Evidence; 2026-04-25). `demo/data_for_viz.json` embedded. Merged to main via PR #18 (2026-04-26).
+- [x] **Notebook robustness fixes** — `notebooks/colab_biorefusalaudit.ipynb`: force-clean clone cell (exit 128 fix), `--no-llm-judges` on all full evals, rejudge cells inserted after each run (2026-04-25). Merged to main via PR #18 (2026-04-26).
+- [x] **SAE published to HuggingFace** — `Solshine/biorefusalaudit-sae-gemma2-2b-l12-5000steps`: weights (113 MB), training script (`train_sae_local.py`), model card, training logs (2026-04-26). Paper §8 references HF repo.
+- [x] **Improved SAE training script** — `scripts/train_sae_local.py`: `--init-from` (warm start), `--checkpoint-every`, `--contrastive-mode mean|pairwise|triplet`. Iterative training in progress: pairwise mode + lam_contrast=0.5 warm-started from 5k checkpoint.
+- [ ] **150-token run + token-budget 3-way comparison** — in progress (55/75 prompts); wakeup scheduled at 20:29 to rejudge and compare 80/150/200 tok distributions.
 - [ ] Demo video (60–90 s)
