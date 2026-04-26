@@ -1,5 +1,7 @@
 ---
-license: hl3-full
+license: other
+license_name: hl3-bds-cl-eco-extr-ffd-media-mil-my-sup-sv-tal-usta-xuar
+license_link: https://firstdonoharm.dev/version/3/0/bds-cl-eco-extr-ffd-media-mil-my-sup-sv-tal-usta-xuar.html
 tags:
   - sparse-autoencoder
   - mechanistic-interpretability
@@ -376,6 +378,7 @@ to the Gemma 2 2B SAE in the same pipeline (`runs/sae-training-gemma2-5000steps/
 
 ## License
 
-Code and weights released under the [Hippocratic License 3.0 (HL3-Full)](https://firstdonoharm.dev/).
+Code and weights released under the
+[Hippocratic License 3.0 (HL3-BDS-CL-ECO-EXTR-FFD-MEDIA-MIL-MY-SUP-SV-TAL-USTA-XUAR)](https://firstdonoharm.dev/version/3/0/bds-cl-eco-extr-ffd-media-mil-my-sup-sv-tal-usta-xuar.html).
 You may use these weights for biosecurity research, AI safety research, and defensive
 interpretability work. You may not use them to facilitate harm.
