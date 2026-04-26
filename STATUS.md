@@ -280,3 +280,44 @@ Educational framings show the lowest NC rate (68%), consistent with model behavi
 - Active branch: `feat/paper-trim-3500` (pushed 2026-04-25)
 - PR #14 (`feat/crook-keynote-refs`) open, awaiting Gemini review + merge approval + Caleb sign-off.
 - Previous sprint branches squash-merged to main.
+
+## GPU session 2026-04-25 (8-hour grant, ~23:00 PDT start)
+
+### Gemma 4 E2B local SAE training — v1 checkpoint (2026-04-25, 23:44–23:48 PDT)
+
+**Completed:** 5000-step TopK(k=32) pairwise NT-Xent SAE training on Gemma 4 E2B residuals at layer 17.
+- d_model=1536, d_sae=6144 (4x expansion), k=32
+- Training time: 162 seconds (GPU ~80% utilization, 3.9GB VRAM)
+- Initial: total=3.42, l_recon=3.32, l_contrastive=0.570
+- Step 1000: total=0.170, l_recon=0.087, **l_contrastive=0.777** ← peak contrastive
+- Step 2000: total=0.048, l_recon=0.043, l_contrastive=0.002 ← collapse
+- Step 4999: total=0.005, l_recon=0.00058, l_contrastive=0.000116
+- Checkpoints: 1000/2000/3000/4000 + final at `runs/sae-training-gemma4-e2b-5000steps/`
+- **Key finding:** contrastive collapse occurs between steps 1000–2000 (0.777→0.002). Step 1000 checkpoint is recommended for tier-separation analysis. Same collapse pattern as pairwise Gemma 2 2B run. Bottleneck = 75-prompt corpus too small for NT-Xent.
+- HF model card: `hf_assets/gemma4-e2b-bio-sae-v1/README.md`
+- Push to HF pending user approval: `Solshine/gemma4-e2b-bio-sae-v1` (via `scripts/push_sae_to_hf.py --repo gemma4`)
+
+### Notebook repair (2026-04-25)
+
+- ✅ `notebooks/colab_gemma4_sae_training.ipynb` repaired via `scripts/_repair_sae_notebook.py`:
+  - Removed duplicate [4/7] TopKSAE cell (created by accidental double-run of fix script)
+  - WMDP dataset block: tries both `bio-forget-corpus` and `bio_forget_corpus` (hyphen and underscore), falls back gracefully to benign-only training with warning
+  - Removed REPO_AVAILABLE gate on final fallback — now uses synthetic smoke-test data instead of crashing
+  - All verifications pass: 9 cells, [5/7] bio-forget-corpus, [6/7] F import, [7/7] model(**inputs)
+
+### Llama 3.1 8B CPU offload — confirmed non-functional (2026-04-25)
+
+- Bug C fix (input device meta→cuda) is necessary but insufficient
+- accelerate's `AlignDevicesHook.pre_forward()` fails trying to dispatch Params4bit weights at inference time
+- All 75 prompts fail with "Cannot copy out of meta tensor; no data!" even with fix applied (v3 run: 0/75)
+- Conclusion: Llama 3.1 8B + 4GB GPU + bitsandbytes 0.49.2 + accelerate 1.13 + CPU offload is non-functional
+- **Workaround:** Use Llama 3.2 3B-Instruct (fits on GPU without offload) or rent A100
+- Full diagnosis added to TROUBLESHOOTING.md; CLAUDE.md gotcha #9 updated with CORRECTION block
+
+### HF assets prepared (2026-04-25)
+
+Three SAE model cards written:
+- `hf_assets/gemma2-2b-bio-sae-wmdp/README.md` — WMDP-trained Gemma 2 2B SAE (l_contrastive=0.060 at step 4999)
+- `hf_assets/gemma2-2b-bio-sae-pairwise/README.md` — Pairwise Gemma 2 2B SAE (contrastive collapsed, best as reconstruction SAE)
+- `hf_assets/gemma4-e2b-bio-sae-v1/README.md` — Gemma 4 E2B SAE v1 (step 1000 recommended, l_contrastive=0.777)
+- Push script `scripts/push_sae_to_hf.py` ready, pending user approval per HF push policy

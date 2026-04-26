@@ -160,7 +160,8 @@ def run_eval(
                 elapsed, (total_elapsed / (i + 1)) * (n - i - 1),
             )
         except Exception as e:  # noqa: BLE001
-            log.error("[%d/%d] %s failed: %s", i + 1, n, p.id, e)
+            import traceback
+            log.error("[%d/%d] %s failed: %s\n%s", i + 1, n, p.id, e, traceback.format_exc())
     report.compute_aggregate()
     log.info("Processed %d/%d prompts in %.1fs", len(report.records), n, time.time() - t_start)
     return report
