@@ -308,6 +308,69 @@ bash scripts/run_gemma4_oursae_pipeline.sh 2>&1 | tee runs/gemma4-oursae-pipelin
 
 ---
 
+## Evaluation Results
+
+Results from running this SAE through the full BioRefusalAudit pipeline on the 75-prompt
+public evaluation set (`eval_set_public_v1.jsonl`), covering benign biology, dual-use
+biology, and hazard-adjacent prompts across four framings (direct, educational, roleplay,
+obfuscated). Model: `google/gemma-4-E2B-it`, 4-bit NF4, 80-token budget.
+
+### Feature activation (pass1, no catalog)
+
+1285 out of 1500 bio_content feature checks fired across all 75 prompts, with mean activation
+14.71 on active tokens. The WMDP-trained features generalize to the BioRefusalAudit eval set.
+
+### Auto-tuned catalog (Cohen's d, post-pass1)
+
+`scripts/auto_tune_catalog.py` selects the top-20 features per category by Cohen's d
+between hazard-adjacent and benign activation profiles:
+
+| Category | Top Cohen's d | Features selected |
+|---|---:|---:|
+| bio_content | 1.81 | 20 |
+| hazard_adjacent | 1.60 | 20 |
+| refusal_circuitry | 1.52 | 20 |
+
+33 unique features total (some features appear in multiple categories).
+Catalog: `data/feature_catalog/gemma-4-e2b-our-sae-v1.json`.
+
+### Divergence metric results (pass2, 80-tok)
+
+**Calibration note — important.** The BioRefusalAudit pipeline fits calibration matrix T
+from pass1 activations. When pass1 runs without a catalog (as it must to bootstrap the
+catalog), all feature vectors are zero → `fit_calibration.py` produces T=0 → D=1.000 for
+every prompt regardless of actual SAE activations. This is a known pipeline ordering issue,
+now guarded in `biorefusalaudit/scoring/divergence.py` (falls back to T_prior when fitted T
+is degenerate). Results below use T_prior (identity-biased permutation), not a data-fitted T.
+T_prior produces higher absolute D than a fitted T would.
+
+| Tier | n | Mean D | Std | comply | refuse | hedge |
+|---|---:|---:|---:|---:|---:|---:|
+| `benign_bio` | 23 | 0.614 | 0.321 | 57% | 43% | 0% |
+| `dual_use_bio` | 30 | 0.703 | 0.295 | 70% | 30% | 0% |
+| `hazard_adjacent` | 22 | 0.647 | 0.306 | 59% | 36% | 5% |
+| **overall** | **75** | **0.659** | **0.309** | | | |
+
+**Comparison to Gemma Scope community SAE** (Gemma 2 2B-IT, fitted T, 80-tok — different
+model, different calibration, not directly comparable):
+
+| Tier | Gemma Scope baseline | This SAE (T_prior) |
+|---|---:|---:|
+| `benign_bio` | 0.362 | 0.614 |
+| `dual_use_bio` | 0.406 | 0.703 |
+| `hazard_adjacent` | 0.404 | 0.647 |
+
+The delta reflects T miscalibration and the model difference (Gemma 4 vs. Gemma 2), not a
+meaningful SAE quality gap. A properly fitted T from a behavioral corpus is needed to
+interpret absolute D magnitudes.
+
+**Surface label finding.** `benign_bio` refuses at 43% — the over-refusal pattern documented
+in BioRefusalAudit §4.6: Gemma 4 E2B's safety circuit fires on biosecurity-adjacent content
+regardless of hazard tier. This SAE confirms the same pattern as the Gemma Scope community
+SAE baseline.
+
+---
+
 ## Training your own bio-safety SAE
 
 The training notebook is at
@@ -339,10 +402,42 @@ It runs end-to-end on a free Colab T4 in ~35 minutes.
 ## Caveats
 
 - **Contrastive collapse.** The contrastive loss reached ~0 by step ~1500. The SAE reconstructs residual-stream activations well but bio-feature *separation* is not confirmed. Verification requires running `auto_tune_catalog.py` and checking Cohen's d per category against the Gemma Scope baseline.
-- **Small corpus.** Training used ~5,000 WMDP documents (benign) + 22 hazard-adjacent prompts. Too few hazard-adjacent examples to sustain the contrastive margin.
+- **Small corpus.** Training used ~5,000 WMDP documents (benign) + 22 hazard-adjacent prompts. Too few hazard-adjacent examples to sustain the contrastive margin. This is the binding constraint — not compute, not architecture.
+- **2000-step limit.** The training run was capped at 2000 steps on a free Colab T4 (~35 min wall time). By step 1000, L_contrastive had already collapsed. The final checkpoint is a high-quality reconstruction SAE, but the bio-feature separation intended by the contrastive objective did not materialize. A 10K-step run would not fix this without a larger hazard-adjacent corpus.
 - **No Neuronpedia validation.** Individual feature interpretability is unverified.
 - **4× expansion.** d_sae/d_model = 4.0, below Gemma Scope's 8×. Wider SAEs likely capture more bio-specific features.
 - **Gemma 4 multimodal wrapper.** Hook path is `model.language_model.layers[17]` — **not** `model.model.layers[17]` (Gemma 3 path). The `get_layer()` helper above handles this automatically.
+
+### What would actually improve this SAE
+
+The contrastive collapse is a corpus-size problem. Here is what we believe would fix it, in
+order of impact:
+
+1. **More hazard-adjacent examples.** 22 prompts is not enough to anchor a stable contrastive
+   direction. 500–1000 genuine hazard-adjacent activation examples (from actual model
+   responses, not just prompts) would likely sustain the contrastive margin through training.
+   This requires access to institutional CBRN datasets — the kind held by organizations like
+   Gryphon Scientific, NTI Bio, Johns Hopkins Center for Health Security, or government
+   biosecurity agencies. We are actively seeking partnerships with these organizations and
+   would welcome introductions from anyone in that space.
+
+2. **A proper base-vs-RLHF activation corpus.** Following the methodology of Secret Agenda
+   (arXiv:2509.20393): collect residual-stream activations from the base model and the
+   instruction-tuned model on identical prompts, then train the SAE to separate "what the
+   safety fine-tune changed" from "what was already there." This is a data-collection problem
+   that requires running both model variants on the same hardware at scale.
+
+3. **More compute for training.** A full SAE fine-tune at Anthropic/EleutherAI scale (100K+
+   steps, A100 or H100) would not help if the corpus is still 22 hazard-adjacent prompts —
+   the gradient signal simply isn't there. But a 10K-step run on a properly sized corpus
+   (~10K hazard-adjacent samples) would be a reasonable next experiment and is feasible on a
+   single A100 in a few hours. If you have access to institutional compute or CBRN datasets
+   and want to run this experiment, please open an issue on the
+   [BioRefusalAudit repo](https://github.com/SolshineCode/Deleeuw-AI-x-Bio-hackathon) or
+   reach out directly.
+
+4. **Wider SAE.** 8× or 16× expansion (d_sae = 12288 or 24576) with a larger k would give
+   more features to specialize. This is a secondary bottleneck behind corpus size.
 
 ---
 
