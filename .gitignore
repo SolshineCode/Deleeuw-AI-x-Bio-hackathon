@@ -35,3 +35,11 @@ Thumbs.db
 *.safetensors
 *.bin
 hf_cache/
+
+# Downloaded corpora — regenerable via prepare_wmdp_data.py / prepare_bio_forget_corpus.py
+data/wmdp/
+data/bio_forget_chunked/
+data/bio_forget_chunked_test/
+
+# Local Claude Code session artifacts
+.claude/

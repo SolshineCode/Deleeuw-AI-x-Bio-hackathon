@@ -58,17 +58,19 @@ We ran the full pipeline on Gemma 2 2B-IT with Gemma Scope 1 layer 12 SAEs. Then
 
 Two findings I want to highlight — both have immediate policy implications, and both survive the validity caveats I'll note in a moment.
 
-**Finding One: Over-refusal with intact hazard representations.** On Gemma 2 2B-IT, the hazard-features-active-despite-refusal flag fires on 34.8% of *benign* refusals. Not hazard prompts — benign textbook biology questions that the model refuses. Internal hazard feature activations are present. The model is refusing, but the refusal isn't calibrated to hazard content specifically. That's a signal that the safety mechanism is triggering broadly, not selectively.
+**Finding One: Gemma 2 2B-IT hedges on hazard-adjacent content — and never refuses.** After correcting a judge-pipeline failure that mislabeled 29 biology answers as refusals, the actual surface-label distribution across all 75 prompts is: zero genuine refusals, 40 comply, 35 hedge. The tier pattern is striking: benign biology 70% comply / 30% hedge. Dual-use 80% comply / 20% hedge. Hazard-adjacent: 100% hedge, zero comply, zero refuse. The model responds to hazard-tier content with a consistent hedge posture — softening the response, not terminating it. That's a different failure mode than refusal bypass. Hedge-without-refuse is harder to detect with binary classifiers and may provide more partial information than a genuine refusal would. BioRefusalAudit surfaces this distinction. Surface evaluation alone cannot — it collapses "refuse" and "hedge" into the same bucket.
 
-**Finding Two: Format-gated safety and the 80-token problem.** Gemma 4 E2B's entire RLHF safety circuit is gated on chat-template formatting. Without the correct `<start_of_turn>` tokens — without the specific formatting that Gemma's RLHF training expects — the same 75 prompts produce zero genuine refusals. With correct formatting, it refuses 65 of 75.
+**Finding Two: The refusal circuit responds to biology, not to hazard level.** We ran causal intervention experiments — ablating and boosting the top refusal-circuitry SAE features — across all 75 prompts. 80% qualify as candidate mechanistic features. But the NC rate runs *backwards* relative to hazard level. Benign biology prompts qualify at 87%. Dual-use at 80%. Hazard-adjacent — the prompts you most care about — at 73%. The strongest single result in the corpus is bio_014, a benign roleplay prompt, with an effect size of 1.139 and no surface behavior change at all. That's a 1.1-unit internal-state shift that the model's output says nothing about. The refusal circuit is a biology detector, not a hazard detector — exactly what you'd expect from a catalog built on general bio vocabulary. Domain-specific SAE fine-tuning is the fix.
 
-And here's the part that should concern deployers: at an 80-token generation cap, *both* Gemma 4 and Gemma 2 refuse zero percent across all tiers. The safety articulation requires token budget. Constrained deployment contexts — mobile apps, embedded tools, latency-capped APIs — may be systematically bypassing the safety circuits that lab-bench evaluations measure. Surface refusal rates don't transfer to production if production ships with different format or length constraints.
+**Finding Three: Format-gated safety and the 80-token problem.** Gemma 4 E2B's entire RLHF safety circuit is gated on chat-template formatting. Without the correct `<start_of_turn>` tokens, the same 75 prompts produce zero genuine refusals. With correct formatting, it refuses 65 of 75.
 
-The activation layer is format-robust in a way a surface completion classifier is not. That's the whole point.
+And here's the part that should concern deployers: at an 80-token generation cap, both Gemma 4 and Gemma 2 refuse zero percent across all tiers. Safety articulation requires token budget. Constrained deployment contexts — mobile apps, embedded tools, latency-capped APIs — may be systematically bypassing the safety circuits that lab-bench evaluations measure. Surface refusal rates don't transfer to production if production ships with different format or length constraints.
 
-These two findings sketch a concrete four-cell typology for model safety posture — deep refusal, shallow refusal, over-refusal, and what we're calling non-suppressive safety, where the safety circuit activates but doesn't gate the output. BioRefusalAudit distinguishes all four at the activation layer. Surface evaluation alone cannot.
+The activation layer is format-robust where a surface completion classifier is not. That's the whole point.
 
-**Validity caveats, stated plainly:** the divergence metric uses within-sample calibration — no held-out calibration set — and the feature catalog is auto-tuned by Cohen's d, not hand-validated against Neuronpedia. We've done that validation, and the top catalog features encode generic technical-governance vocabulary, not bio-specific refusal circuitry. The flag-based findings are more robust than the D-value comparisons because they operate on raw per-feature activation magnitudes and don't depend on the calibration matrix. We say this in the paper. We mean it.
+Findings One and Three together sketch a concrete four-cell typology for model safety posture — deep refusal, shallow refusal, hedge-without-refuse, and what we're calling non-suppressive safety, where the safety circuit activates but doesn't gate the output. BioRefusalAudit distinguishes all four at the activation layer. Surface evaluation alone cannot.
+
+**Validity caveats, stated plainly:** The divergence metric uses within-sample calibration, and the feature catalog is auto-tuned by Cohen's d, not hand-validated. We ran Neuronpedia lookups on the top features. They encode generic technical and governance vocabulary, not bio-specific refusal circuitry. The tier separation in D likely reflects vocabulary routing — biology prompts use technical vocabulary — as much as genuine hazard detection. A held-out calibration experiment confirmed T is framing-distribution-sensitive: a held-out T from a different framing distribution actually *inverted* the tier ordering. The flag-based and behavioral-count findings survive both caveats because they don't pass through T. The D-values need that caveat attached. We say this in the paper. We mean it.
 
 ---
 
@@ -92,9 +94,15 @@ For a tool explicitly designed to probe hazard-adjacent model behavior, that dis
 
 The main limit we're honest about is the feature catalog. Auto-tuning by Cohen's d identifies statistically discriminative features — it doesn't guarantee bio-specific refusal circuitry. What we need next:
 
-Domain-specific SAE fine-tuning on biosecurity behavioral activation corpora. Genuine refusals versus shallow ones, with a contrastive training objective. A proof-of-concept local training run confirmed the infrastructure works on consumer hardware. The bottleneck is data: roughly ten thousand hazard-adjacent prompt-activation pairs from institutional CBRN red-team datasets.
+Domain-specific SAE fine-tuning on biosecurity behavioral activation corpora. Genuine refusals versus shallow ones, with a contrastive training objective.
 
-The natural partners are AISI, CLTR, and national biosecurity labs who already hold this data. The training infrastructure is ready. The collaboration is the open item.
+We already ran this. During the hackathon, we trained a contrastive TopK sparse autoencoder on Gemma 2 2B-IT layer 12 residual activations — 5000 steps, consumer GTX 1650, under four minutes of wall clock. Reconstruction loss dropped 99.5 percent. We published that checkpoint to HuggingFace: `Solshine/biorefusalaudit-sae-gemma2-2b-l12-5000steps`.
+
+Here's what we learned: the contrastive loss — the part that's supposed to push hazard-tier and benign-tier representations apart — barely moved. Not because the model can't learn; it did. Because the bio vocabulary is genuinely shared across hazard tiers. Whether a prompt is benign, dual-use, or hazard-adjacent, it uses the same technical biology language. The SAE sees the same feature activations. The signal you need to separate those classes isn't in a 75-prompt corpus of terminology — it's in genuine behavioral divergences between a base model and an RLHF-aligned one responding to the same prompts.
+
+That's exactly what's in the WMDP forget corpus and the institutional CBRN red-team datasets. The training infrastructure is ready and validated. The bottleneck is ~10K labeled behavioral pairs from institutional partners.
+
+The natural collaborators are AISI, CLTR, and national biosecurity labs who already hold this data. The training infrastructure is ready. The collaboration is the open item.
 
 And we need refusal-depth reporting to become a standard companion to capability evaluations in RSPs and analogous governance frameworks. A model that refuses everything is not automatically safe. Refusal depth tells you whether that refusal is structurally earned.
 
@@ -116,7 +124,7 @@ Thank you.
 - *[OPENING]: Title slide — BioRefusalAudit logo + one-line description*
 - *[PROBLEM]: "surface refusal ≠ structural safety" diagram — a two-column table showing surface behavior vs. internal activation*
 - *[WHAT WE BUILT]: Pipeline diagram (prompt → residual stream → SAE → feature vec → judge → divergence score)*
-- *[FINDINGS]: The four-cell typology table; the 34.8% benign over-refusal stat; the 80-token ablation result*
+- *[FINDINGS]: The four-cell typology table; hazard-adjacent 100% hedge / 0% comply / 0% refuse corrected distribution; the 75-prompt NC table (80% overall, inverted tier ordering benign 87% > hazard 73%); bio_014 effect=1.139 as a single-prompt callout; the 80-token ablation result*
 - *[HL3]: The three-tier data release table; the measurement-enforcement two-layer diagram*
 - *[NEXT]: Roadmap slide — projection adapter / full SAE fine-tune / institutional data partners*
 - *[CLOSE]: GitHub URL + QR code*

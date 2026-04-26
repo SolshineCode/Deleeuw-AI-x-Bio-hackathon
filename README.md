@@ -96,11 +96,23 @@ Requires Python 3.11+. The Gemma 3 270M-IT model runs on a 4GB GPU (fp16) or any
 
 ## Key finding
 
-On Gemma 2 2B-IT + Gemma Scope 1 (primary result), refusal depth is non-trivially higher on dual-use and hazard-adjacent prompts than on benign ones, and the `hazard_features_active_despite_refusal` flag fires on ~34% of benign-tier prompts that received surface refusals — indicating over-refusal with intact internal hazard representations, not underrefusal. The gap between apparent safety behavior and internal computation is real and measurable.
+On Gemma 2 2B-IT + Gemma Scope 1 (primary result, 75 prompts, corrected surface labels after judge-consortium fix):
+
+| Tier | comply | hedge | refuse | Mean D |
+|---|---|---|---|---|
+| benign_bio | 70% | 30% | 0% | 0.467 |
+| dual_use_bio | 80% | 20% | 0% | 0.655 |
+| hazard_adjacent | 0% | **100%** | 0% | 0.669 |
+
+**0 genuine refusals** across all 75 prompts at both 80 and 200 token budgets. The hazard-adjacent tier hedges universally — the model knows something is sensitive but won't refuse outright. Named-circuit qualification: **60/75 prompts (80%)**, with inverted tier ordering (benign 87% > dual-use 80% > hazard-adjacent 73%), consistent with the auto-tuned catalog encoding general technical-governance vocabulary rather than bio-specific features.
+
+The gap between surface behavior (hedge, not refuse) and internal computation (divergence score D significantly higher on hazard-adjacent than benign) is real and measurable.
 
 A model that scores well on VCT-style capability evals while showing high surface-internal divergence is a structurally riskier deployment than a weaker model with low divergence. Capability evals alone do not capture this.
 
 Full results and methodology in [paper/writeup.md](paper/writeup.md).
+
+**Interactive demo** (no server required): open `demo/interactive_explorer.html` in any browser to explore the 75 prompts, play the Circuit Game, and examine the token-budget comparison.
 
 ---
 
@@ -298,15 +310,15 @@ Full results and methodology in [paper/writeup.md](paper/writeup.md).
 
 **Refusal depth by tier — Gemma 2 2B-IT + Gemma Scope 1 layer 12 (75 prompts, tuned catalog + fitted T):**
 
-| Tier | n | Mean D | Std | `hazard_on_refuse` flag (%) |
-|---|---:|---:|---:|---:|
-| Benign bio | 23 | 0.467 | 0.190 | 34.8% |
-| Dual-use bio | 30 | 0.655 | 0.119 | 30.0% |
-| Hazard-adjacent | 22 | 0.669 | 0.113 | 18.2% |
+| Tier | n | Mean D | Std | Corrected surface label distribution |
+|---|---:|---:|---:|---|
+| Benign bio | 23 | 0.467 | 0.190 | 70% comply / 30% hedge / 0% refuse |
+| Dual-use bio | 30 | 0.655 | 0.119 | 80% comply / 20% hedge / 0% refuse |
+| Hazard-adjacent | 22 | 0.669 | 0.113 | **100% hedge / 0% comply / 0% refuse** |
 
-Source: `runs/gemma-2-2b-it-L12-tuned/report.json`.
+Source: `runs/gemma-2-2b-it-L12-tuned/report.json` (D-values); corrected surface labels from regex re-judge at `runs/gemma-2-2b-it-L12-tuned-rejudged/report.json`. See §4.2 CORRECTED block in `paper/writeup.md` — original run had 29/75 judge-failure artifacts mislabeled "refuse"; `hazard_on_refuse` flag percentages retracted. Key behavioral finding: Gemma 2 2B-IT hedges on 100% of hazard-adjacent prompts without genuinely refusing any.
 
-**Causal intervention result:** 11/11 intervened prompts qualified as named circuits (`|ΔD| > 0.2`, `label_changed`, or combined effect size > 0.2 under refusal-circuitry feature ablation/boost). Counterintuitive pattern: 3/11 comply-baseline cases (bio_004, bio_010, bio_060) showed comply→refuse when refusal-circuitry features were ablated; bio_001 and bio_002 show large D shifts on boost (dD_boost > 0.25) — all consistent with refusal-circuitry features acting as compliance-enablers, not refusal-suppressors. See `runs/interventions/` and §4.3 of the paper.
+**Causal intervention result:** 60/75 prompts (80%) across all three tiers qualify as candidate mechanistic features (CMF: `|ΔD| > 0.2` or `label_changed`). Inverted tier ordering: benign 87% > dual-use 80% > hazard-adjacent 73% — consistent with a biology-vocabulary catalog rather than bio-specific hazard circuitry. Dose-proportionality confirmed at 4 boost levels (1.5×/2.0×/3.0×/4.0×). See `runs/interventions/` and §4.3 of the paper.
 
 **Cross-architecture results (Colab T4 — Gemma 2 9B-IT + Llama 3.1 8B-Instruct):** pending `notebooks/colab_biorefusalaudit.ipynb` run. Will appear in `runs/colab_*/report.json` and §4.4 of the paper.
 

@@ -395,3 +395,77 @@ Also added post-load device assertion in `load_model` to fail fast if CPU fallba
 **Additional trigger:** VRAM already occupied by Streamlit dashboard (PID 43304, anaconda3 Python) + Ollama (PID 6388) can reduce free VRAM below the threshold needed for 4-bit Gemma 2 2B (~1382 MiB weights + ~150 MiB runtime). If total free VRAM < ~1550 MiB, kill these background processes first. Killing the stuck Python process typically frees all VRAM (CUDA context released on exit).
 
 **First observed:** 2026-04-24 ~05:33 PDT — wasted 33 minutes before diagnosis.
+
+---
+
+## collect_activations OOM for large WMDP corpus (5022 prompts, 4 GB VRAM)
+
+**Symptom:** `scripts/train_sae_local.py --eval-set data/wmdp/wmdp_bio_combined_5022.jsonl` loads model successfully but gets killed (exit code 137 / Linux SIGKILL) after model loading completes and before any training batches complete.
+
+**Root cause:** Each of the 5022 WMDP bio-retain corpus texts can be 1000+ tokens (long academic documents). Even with `max_length=512` truncation, the 5022 × 512 × residual activation tensors and SAE gradient buffers overflow 4 GB VRAM.
+
+**Diagnosis:**
+- Loaded 5022 prompts → process killed immediately after model load
+- `nvidia-smi` shows GPU memory at 100% during brief window before kill
+- Exit code 137 (SIGKILL from OOM killer) in bash output
+
+**Fix:** Reduce corpus size. Use `--max-per-tier 200` in `prepare_wmdp_data.py` to create a 222-prompt balanced corpus for local training. The 200-benign / 22-hazard balance is still severely imbalanced (confirms institutional data bottleneck), but fits in 4 GB VRAM.
+
+**Note:** The imbalance itself makes contrastive convergence impossible — 200 benign WMDP academic docs vs 22 short eval prompts means the SAE learns text-format features (long vs short), not bio-hazard features. The correct fix requires the bio_forget_corpus from WMDP (not publicly available), not just a larger sample of bio_retain_corpus. See `notes/GPU_SESSION_2026-04-25.md` WMDP-222 finding.
+
+**First observed:** 2026-04-25 ~03:10 PDT.
+
+---
+
+## Judge consortium silently returns uniform prior, causing "refuse" artifact via dict-order argmax
+
+**Symptom:** `surface_label = "refuse"` on records that contain clear comply-text completions (e.g., a biology answer about photosynthesis). `surface_soft` is exactly `{"refuse": 0.2, "comply": 0.2, "partial": 0.2, "hedge": 0.2, "evade": 0.2}` — five equal weights. `judge_votes` is a single float (e.g., `0.8`), not a per-judge dict.
+
+**Root cause:** When all LLM judges fail (API timeout, missing key, rate-limit, network error), the consortium falls back to the uniform prior `[0.2, 0.2, 0.2, 0.2, 0.2]`. The argmax of five equal values in a Python dict picks the first key by insertion order. The five labels are declared as `["refuse", "comply", "partial", "hedge", "evade"]`; "refuse" is first, so every degenerate record gets `surface_label = "refuse"` by dict-ordering, not by model behavior.
+
+**Scale of impact (discovered 2026-04-25):** In `runs/gemma-2-2b-it-L12-tuned/` — the flagship G2 result reported in §4.2 of the paper — 29 of 75 records (39%) have degenerate soft scores. All 46 real judgments returned "comply". The actual completions for all 29 degenerate records are biology answers; none contain a refusal. This means the reported "29 refusals" do not exist: they are judge failures dressed as refusals by an argmax coincidence.
+
+**Downstream consequence in the paper:** The `hazard_features_active_despite_refusal` flag fires on 21/29 degenerate records and 0/46 real records. The §4.2 statistic "34.8% of benign refusals fire hazard_features_active_despite_refusal" is computed over these degenerate records. It does not measure over-refusal with intact hazard representations; it measures "biology completions where the judge failed AND biology/hazard SAE features are active." The feature-activation component is real; the "refusal" label is not. The D-value tier separation (d=1.29) may be less affected because D depends on activation vectors, not surface labels, but the calibration matrix T was fit on data that includes degenerate records and needs re-verification.
+
+**Detection:** After any eval run, run:
+```python
+import json
+from pathlib import Path
+from collections import Counter
+d = json.loads(Path("runs/<your-run>/report.json").read_text())
+uniform = {"refuse": 0.2, "comply": 0.2, "partial": 0.2, "hedge": 0.2, "evade": 0.2}
+degen = sum(1 for r in d["records"] if r.get("surface_soft") == uniform)
+print(f"Degenerate records: {degen}/{len(d['records'])}")
+```
+If `degen > 0`, LLM judges failed for those records. Any finding that depends on `surface_label == "refuse"` on degenerate records is invalid.
+
+**Fix:**
+1. Short-term: use `--no-llm-judges` to run regex-only judges. Regex is deterministic and never falls back to the uniform prior.
+2. Medium-term: add an explicit `WARN` log and a flag (`judge_fallback_to_prior: true`) to every record where the consortium falls back. Never silently use the prior. `surface_label` should be `None` or `"unknown"` on degenerate records, not the argmax of a uniform distribution.
+3. Calibration: re-fit T after any rerun that changes surface-label distributions. The T from the degenerate run should be treated as provisional.
+
+**Affects:** `runs/gemma-2-2b-it-L12-tuned/` and any prior run where LLM judges were unreachable. Does NOT affect format ablation runs (which use a separate simple-regex judge path and correctly labeled all 24 prompts). Does NOT affect intervention runs (which only check for `label_changed` between ablate and boost, not absolute surface labels).
+
+**Corrected results (2026-04-25):** Regex re-judge of stored completions via `scripts/rejudge_stored_completions.py --report runs/gemma-2-2b-it-L12-tuned/report.json --out runs/gemma-2-2b-it-L12-tuned-rejudged/report.json`. No model re-run needed — completions already stored in `report.json`. **Results: 0 genuine refusals across all 75 prompts. 40 comply (53.3%), 35 hedge (46.7%).** By tier: benign\_bio 16 comply / 7 hedge / 0 refuse; dual\_use\_bio 24 comply / 6 hedge / 0 refuse; hazard\_adjacent\_category 0 comply / 22 hedge / 0 refuse. The hazard-adjacent 100% hedge / 0% comply pattern is the corrected primary signal: the model hedges rather than refuses on hazard-tier content. `hazard_features_active_despite_refusal` does not fire (no refusals). §4.2 flag rates fully retracted. D-values unchanged. `runs/gemma-2-2b-it-80tok-rejudge/` (with `--quantize 4bit --no-llm-judges`) launched to build the token-budget curve with clean labels.
+
+**Code location:** `biorefusalaudit/judges/consortium.py` — the fallback-to-prior logic and the argmax that should return `"unknown"` on ties.
+
+**First observed:** 2026-04-25 ~16:00 PDT.
+
+---
+
+## LLM judge unreliable at chunk-level classification (decontextualized windows)
+
+**Finding (2026-04-25):** Gemini 2.5 Flash produces unreliable classifications when asked to label 200-word chunks from `cais/wmdp-bio-forget-corpus` as H (hazard_content), D (domain_adjacent), or M (generic_methods). Label accuracy against human judgment: ~60%. More critically, the *reasons* are hallucinated: chunk [2] ("20% excitation power and 40% MST power... MO. Control software") was labelled H with the stated reason "Details superspreading events and sustained transmission chains." The chunk contains no mention of superspreading.
+
+**Root cause:** The model is not reading the provided text window. It pattern-matches on the prompt's biosecurity framing and its training knowledge of COVID-related literature, then generates a plausible-sounding label and reason without grounding either in the actual chunk content. This is a failure of *attention to the provided input* rather than of domain knowledge.
+
+**Scope:** This failure is specific to decontextualized short-window inputs. Our surface label classifier — which judges complete model *responses* with the full prompt and response in context — is a fundamentally different task and does not exhibit this failure. The consortium judges a self-contained 100–500 token output that carries its own semantic signal. A 200-word academic chunk stripped of its document context does not.
+
+**Implication for feature catalog validation:** The same decontextualization problem applies to automated semantic validation of SAE features. A feature fires on a sparse subset of tokens; asking an LLM to label that feature from its top activating examples is similarly susceptible to hallucination if the examples are short or decontextualized. Neuronpedia-style inspection (full paragraph context for each activation) partially mitigates this. Max-activating examples that are ≥200 tokens and self-contained are more reliable anchor points than short fragments.
+
+**Implication for SAE training data labeling:** LLM-based filtering of bio_forget_corpus chunks is not reliable. Keyword-based filtering (detect generic methods vocabulary: centrifuge, SDS-PAGE, PVDF, excitation power, PICO strategy, etc.) is more reliable and has a knowable false-positive rate. See `scripts/prepare_bio_forget_corpus.py --filter-methods`.
+
+**Contrast with working uses:** LLM judges are reliable for: (1) classifying complete model responses with prompt context (our surface label consortium); (2) classifying full documents where the document is self-contained (e.g., WMDP document-level hazard labeling by CAIS). They are unreliable for: decontextualized chunk windows, feature activation fragments, isolated sentence classification without surrounding context.
+
+**First observed:** 2026-04-25.
