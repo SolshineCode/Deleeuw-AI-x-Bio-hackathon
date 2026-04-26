@@ -7,12 +7,13 @@ name = "biorefusalaudit"
 version = "0.1.0"
 description = "Auditing the depth of LLM bio-safety refusals using sparse autoencoder interpretability"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 license = { text = "Hippocratic-3.0-FULL" }
 authors = [{ name = "Caleb DeLeeuw", email = "caleb.deleeuw@gmail.com" }]
 keywords = ["interpretability", "sparse-autoencoders", "biosecurity", "ai-safety", "refusal-depth"]
 classifiers = [
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -61,4 +62,4 @@ addopts = "-q"
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py310"
