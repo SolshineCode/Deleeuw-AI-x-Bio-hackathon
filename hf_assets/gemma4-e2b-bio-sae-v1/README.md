@@ -402,18 +402,26 @@ It runs end-to-end on a free Colab T4 in ~35 minutes.
 ## Caveats
 
 - **Contrastive collapse.** The contrastive loss reached ~0 by step ~1500. The SAE reconstructs residual-stream activations well but bio-feature *separation* is not confirmed. Verification requires running `auto_tune_catalog.py` and checking Cohen's d per category against the Gemma Scope baseline.
-- **Small corpus.** Training used ~5,000 WMDP documents (benign) + 22 hazard-adjacent prompts. Too few hazard-adjacent examples to sustain the contrastive margin. This is the binding constraint — not compute, not architecture.
-- **2000-step limit.** The training run was capped at 2000 steps on a free Colab T4 (~35 min wall time). By step 1000, L_contrastive had already collapsed. The final checkpoint is a high-quality reconstruction SAE, but the bio-feature separation intended by the contrastive objective did not materialize. A 10K-step run would not fix this without a larger hazard-adjacent corpus.
+- **Small corpus (v1).** Training used ~5,000 WMDP documents (benign) + 22 hazard-adjacent prompts. Too few hazard-adjacent examples to sustain the contrastive margin. This is the binding constraint — not compute, not architecture. **Fixed in v2** (see below).
+- **2000-step limit (v1).** Capped at 2000 steps; L_contrastive collapsed by step 1000. Final checkpoint reconstructs well but bio-feature separation is not confirmed. **Fixed in v2:** 5000 steps with real hazard corpus.
 - **No Neuronpedia validation.** Individual feature interpretability is unverified.
 - **4× expansion.** d_sae/d_model = 4.0, below Gemma Scope's 8×. Wider SAEs likely capture more bio-specific features.
 - **Gemma 4 multimodal wrapper.** Hook path is `model.language_model.layers[17]` — **not** `model.model.layers[17]` (Gemma 3 path). The `get_layer()` helper above handles this automatically.
 
-### What would actually improve this SAE
+### v2 training run (in progress)
 
-The contrastive collapse is a corpus-size problem. Here is what we believe would fix it, in
+Access to `cais/wmdp-bio-forget-corpus` was granted on 2026-04-26. The v2 notebook
+(`notebooks/colab_gemma4_sae_training.ipynb`) now loads 5,000 papers from that corpus as
+the hazard-adjacent class, balanced against 5,000 benign documents from the retain corpus,
+for 5,000 training steps. This directly addresses the corpus-size bottleneck. Results will
+be published as `Solshine/gemma4-e2b-bio-sae-v2` on completion.
+
+### What would further improve this SAE
+
+The corpus-size problem is now addressed for the primary bottleneck. Remaining priorities, in
 order of impact:
 
-1. **More hazard-adjacent examples.** 22 prompts is not enough to anchor a stable contrastive
+1. **More hazard-adjacent examples (partially addressed in v2).** 22 prompts is not enough to anchor a stable contrastive
    direction. 500–1000 genuine hazard-adjacent activation examples (from actual model
    responses, not just prompts) would likely sustain the contrastive margin through training.
    This requires access to institutional CBRN datasets — the kind held by organizations like
