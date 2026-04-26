@@ -449,6 +449,22 @@ except StopIteration:
 `lm.device` is set to `"cuda"` by `load_model` when CUDA is available, so it correctly points
 to the GPU execution device even when the model's nn.Module parameters are on meta.
 
+**CORRECTION (2026-04-25 v3 run):** This fix is necessary but not sufficient. Moving inputs to
+"cuda" prevents the meta-input error, but `lm.model.generate(**enc, ...)` still fails because
+accelerate's `AlignDevicesHook.pre_forward()` tries to move `Params4bit` module weights from
+meta → CPU during inference-time dispatch. bitsandbytes 0.49.2 + accelerate 1.13 cannot
+correctly dispatch bitsandbytes quantized modules via CPU offload at inference time. All 75
+prompts still fail with the same error even with the input fix applied. v3 run: 0/75 successful.
+
+**Conclusion:** Llama 3.1 8B with `device_map="auto"` + `max_memory` CPU offloading is not
+functional on this hardware/software stack (GTX 1650 Ti 4GB + bitsandbytes 0.49.2 + accelerate
+1.13 + transformers 5.6). The model requires ~4.5GB (1GB fp16 embeddings + ~3.5GB quantized
+layers) which exceeds the 4GB card. CPU offloading is the only path, but inference-time dispatch
+is broken for bitsandbytes 4-bit quantized models in this version combination.
+
+**Workaround:** Use Llama 3.2 3B-Instruct (~1.7GB at 4-bit, fits fully on GPU) instead. Or run
+Llama 3.1 8B cross-arch eval on a rented A100 (see `docs/COMPUTE.md`).
+
 **First observed:** 2026-04-25, Llama 3.1 8B-Instruct 4-bit with `max_memory={0: "3GiB", "cpu": "48GiB"}`.
 
 ---

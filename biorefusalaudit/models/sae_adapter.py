@@ -88,29 +88,77 @@ class JumpReLUSAE(nn.Module):
         return z, self.decode(z)
 
 
+class _NullSAE(nn.Module):
+    """Placeholder for cross-architecture runs with no community SAE.
+
+    Returns a (batch, 1) zero feature vector so D=1.0 throughout.
+    Judge-based compliance labels (comply/refuse/hedge) are still computed.
+    Use when no SAE is available for the target model architecture.
+    """
+
+    def encode(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.zeros(x.shape[0], 1, dtype=torch.float32, device=x.device)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        z = self.encode(x)
+        return z, x
+
+
 def load_sae_from_state_dict(
     path: str | Path, architecture: str, d_model: int, d_sae: int, k: int | None = None
 ) -> nn.Module:
-    """Load a custom SAE from a .pt or .safetensors file."""
-    state = torch.load(str(path), map_location="cpu")
+    """Load a custom SAE from a .pt or .safetensors file.
+
+    Handles three weight layouts:
+    - nn.Parameter format: keys W_enc (d_model, d_sae), b_enc, W_dec (d_sae, d_model), b_dec
+    - nn.Linear format:   keys W_enc.weight (d_sae, d_model), W_enc.bias,
+                               W_dec.weight (d_model, d_sae), W_dec.bias
+      nn.Linear stores weight as (out, in), i.e. transposed relative to the matmul
+      convention used by nn.Parameter SAEs. Colab-trained checkpoints use this layout.
+    - encoder/decoder format: keys encoder.weight (d_sae, d_model), encoder.bias,
+                               decoder.weight (d_model, d_sae), decoder.bias
+      Used by EleutherAI sparsify SAEs and qresearch community SAEs.
+    """
+    state = torch.load(str(path), map_location="cpu", weights_only=True)
     if architecture == "topk":
         if k is None:
             raise ValueError("topk architecture requires k")
         sae = TopKSAE(d_model, d_sae, k)
-    elif architecture == "jumprelu":
+    elif architecture in ("jumprelu", "relu"):
+        # "relu" = L1-trained ReLU SAE (no learned threshold); load as JumpReLU threshold=0
         threshold = state.get("threshold", None)
+        if threshold is None and architecture == "relu":
+            threshold = torch.zeros(d_sae)
         sae = JumpReLUSAE(d_model, d_sae, threshold=threshold)
     else:
         raise ValueError(f"unsupported architecture: {architecture}")
 
-    missing_keys = []
-    for key in ("W_enc", "W_dec", "b_enc", "b_dec"):
-        if key in state:
-            getattr(sae, key).data.copy_(state[key])
-        else:
-            missing_keys.append(key)
-    if missing_keys:
-        raise ValueError(f"state dict missing keys: {missing_keys}")
+    if "W_enc.weight" in state:
+        # nn.Linear layout — transpose weights to match nn.Parameter convention.
+        # W_enc.weight: (d_sae, d_model) → adapter W_enc: (d_model, d_sae)
+        # W_dec.weight: (d_model, d_sae) → adapter W_dec: (d_sae, d_model)
+        sae.W_enc.data.copy_(state["W_enc.weight"].T.float())
+        sae.b_enc.data.copy_(state["W_enc.bias"].float())
+        sae.W_dec.data.copy_(state["W_dec.weight"].T.float())
+        sae.b_dec.data.copy_(state["W_dec.bias"].float())
+    elif "encoder.weight" in state:
+        # EleutherAI/qresearch encoder/decoder format.
+        # encoder.weight: (d_sae, d_model) → W_enc: (d_model, d_sae)
+        # decoder.weight: (d_model, d_sae) → W_dec: (d_sae, d_model)
+        sae.W_enc.data.copy_(state["encoder.weight"].T.float())
+        sae.b_enc.data.copy_(state["encoder.bias"].float())
+        sae.W_dec.data.copy_(state["decoder.weight"].T.float())
+        sae.b_dec.data.copy_(state["decoder.bias"].float())
+    else:
+        missing_keys = []
+        for key in ("W_enc", "W_dec", "b_enc", "b_dec"):
+            if key in state:
+                getattr(sae, key).data.copy_(state[key])
+            else:
+                missing_keys.append(key)
+        if missing_keys:
+            raise ValueError(f"state dict missing keys: {missing_keys}")
+
     sae.eval()
     return sae
 
@@ -247,6 +295,16 @@ def load_sae(source: str, repo_or_path: str, layer: int, **kwargs) -> LoadedSAE:
     direct HF .npz loader when sae_lens is unusable (segfaults on import
     under torch 2.6 + Py 3.13 were observed on Windows 2026-04-22).
     """
+    if source == "none":
+        return LoadedSAE(
+            source="none",
+            name="null-sae",
+            d_model=1,
+            d_sae=1,
+            architecture="none",
+            hook_layer=layer,
+            sae_module=_NullSAE(),
+        )
     if source in {"gemma_scope_1", "gemma_scope_2"}:
         # Direct HF .npz loader — bypasses sae_lens entirely.
         # sae_lens 6.39.0 segfaults on import under torch 2.6 + Py 3.13 on

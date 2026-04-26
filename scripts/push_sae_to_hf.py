@@ -68,7 +68,14 @@ CONFIGS = {
     "gemma4": {
         "repo_id": "Solshine/gemma4-e2b-bio-sae-v1",
         "local_dir": Path("runs/sae-training-gemma4-e2b-5000steps"),
-        "files": ["sae_weights.pt", "sae_weights_final.pt", "training_log.jsonl"],
+        "files": [
+            "sae_weights.pt",
+            "checkpoint_01000.pt",
+            "checkpoint_02000.pt",
+            "checkpoint_03000.pt",
+            "checkpoint_04000.pt",
+            "training_log.jsonl",
+        ],
         "readme": Path("hf_assets/gemma4-e2b-bio-sae-v1/README.md"),
     },
 }

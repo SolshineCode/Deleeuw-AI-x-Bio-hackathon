@@ -238,15 +238,72 @@ Full formalization in [docs/METHOD.md](docs/METHOD.md).
 
 ### SAE infrastructure
 
-BioRefusalAudit uses three SAE sources:
+BioRefusalAudit supports four SAE sources via a unified `sae_adapter.py`:
 
 | Source | Models covered | SAE type | Key advantage |
 |---|---|---|---|
 | [Gemma Scope 2](https://deepmind.google/models/gemma/gemma-scope/) (Dec 2025) | Gemma 3: 270M, 1B, 4B, 12B, 27B (PT + IT) | JumpReLU SAEs, transcoders, CLTs | Explicit focus on jailbreaks and refusal mechanisms; all layers covered |
-| [Llama Scope](https://arxiv.org/abs/2410.20526) | Llama-3.1-8B | TopK SAEs, 32K/128K features | Cross-architecture comparison |
-| Custom quantized Gemma SAEs | Gemma 3 4B (quantized) | Trained on local hardware | Demonstrates methodology portability to community-trained SAEs |
+| [Llama Scope](https://arxiv.org/abs/2410.20526) | Llama 3.1 8B | TopK SAEs, 32K/128K features | Cross-architecture comparison |
+| [Solshine/gemma4-e2b-bio-sae-v1](https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1) | Gemma 4 E2B-IT | TopK(k=32), 4× expansion, mean contrastive | Our own domain-tuned SAE; trained on WMDP corpus + hackathon eval set |
+| Custom `.pt` / `.safetensors` | Any supported model | TopK | Load any community-trained SAE by local path or HF repo ID |
 
-Gemma Scope 2 is the primary infrastructure. The Dec 2025 release explicitly enables analysis of "jailbreaks, refusal mechanisms, and chain-of-thought faithfulness" — BioRefusalAudit is the first bio-safety application of this capability.
+Gemma Scope 2 is the primary infrastructure for Gemma 3 family models. The Dec 2025 release
+explicitly enables analysis of "jailbreaks, refusal mechanisms, and chain-of-thought
+faithfulness" — BioRefusalAudit is the first bio-safety application of this capability.
+
+For Gemma 4 E2B-IT, we trained our own domain-specific SAE (`Solshine/gemma4-e2b-bio-sae-v1`,
+2000-step mean-contrastive fine-tune on the WMDP bio-retain corpus) since no community Gemma 4
+SAE existed at hackathon submission time. See the [model card](https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1)
+for full training details and loading instructions.
+
+#### Running with a specific SAE source
+
+```bash
+# Gemma Scope 2 (Gemma 2 2B, layer 12, width 16k) — primary eval path
+python -m biorefusalaudit.cli run \
+    --model google/gemma-2-2b-it \
+    --eval-set data/eval_set_public/eval_set_public_v1.jsonl \
+    --out runs/gemma2-gemma-scope \
+    --sae-source gemma_scope_1 \
+    --sae-release gemma-scope-2b-pt-res \
+    --sae-id "layer_12/width_16k/average_l0_82" \
+    --layer 12 \
+    --catalog data/feature_catalog/gemma-2-2b-it.json \
+    --calibration configs/calibration_gemma2_2b.yaml
+
+# Our trained Gemma 4 E2B bio SAE (HF repo, auto-downloaded)
+python -m biorefusalaudit.cli run \
+    --model google/gemma-4-E2B-it \
+    --eval-set data/eval_set_public/eval_set_public_v1.jsonl \
+    --out runs/gemma4-our-sae \
+    --sae-source custom \
+    --sae-release Solshine/gemma4-e2b-bio-sae-v1 \
+    --k 32 --d-model 1536 --d-sae 6144 --architecture topk --layer 17 \
+    --quantize 4bit --no-llm-judges --max-new-tokens 80 --dump-activations
+
+# Local .pt checkpoint (any model)
+python -m biorefusalaudit.cli run \
+    --model google/gemma-4-E2B-it \
+    --eval-set data/eval_set_public/eval_set_public_v1.jsonl \
+    --out runs/gemma4-local-sae \
+    --sae-source custom \
+    --sae-release runs/sae-training-local/sae_weights.pt \
+    --k 32 --d-model 1536 --d-sae 6144 --architecture topk --layer 17 \
+    --quantize 4bit --no-llm-judges --max-new-tokens 80
+```
+
+#### Training your own domain-specific SAE
+
+`notebooks/colab_gemma4_sae_training.ipynb` runs end-to-end on a free Colab T4 in ~35 minutes.
+It trains a TopK SAE on Gemma 4 E2B-IT layer 17 using the WMDP bio-retain corpus as benign
+data and the BioRefusalAudit eval set as hazard-adjacent data, with a mean-contrastive loss
+objective. The notebook auto-uploads the final checkpoint to your HuggingFace account.
+
+Key design choices that make it work on Colab (documented in the notebook):
+- `pick_layer()` with 5-path fallback handles Gemma 4's multimodal architecture
+- `normalize_decoder()` + `project_grad()` enforce unit-sphere decoder constraint
+- Chat template formatting puts inputs in-distribution for the RLHF safety circuit
+- Hook overwrites a single slot (not a list) to avoid VRAM accumulation during generation
 
 ### Judge consortium
 
@@ -293,14 +350,19 @@ Each tier is split across: direct, educational, roleplay, obfuscated framings. T
 
 | Model | Size | SAE source | Min VRAM | Notes |
 |---|---|---|---|---|
-| `google/gemma-3-270m-it` | 270M | Gemma Scope 2 | 2GB | Recommended for local dev |
+| `google/gemma-2-2b-it` | 2B | Gemma Scope 1 | 4GB (4-bit) | Primary result model; 5K-step contrastive SAE also available |
+| `google/gemma-4-E2B-it` | 2B | [Solshine/gemma4-e2b-bio-sae-v1](https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1) | 4GB (4-bit) | Our own domain-tuned SAE; multimodal architecture (hook at layer 17) |
+| `google/gemma-3-270m-it` | 270M | Gemma Scope 2 | 2GB | Fastest local dev option |
 | `google/gemma-3-1b-it` | 1B | Gemma Scope 2 | 4GB (4-bit) | Good calibration reference |
-| `google/gemma-3-4b-it` | 4B | Gemma Scope 2 | 10GB | Primary production model |
+| `google/gemma-3-4b-it` | 4B | Gemma Scope 2 | 10GB | Main Gemma 3 production model |
 | `google/gemma-3-12b-it` | 12B | Gemma Scope 2 | 24GB | Scaling story upper bound |
-| `meta-llama/Llama-3.1-8B-Instruct` | 8B | Llama Scope | 16GB | Cross-architecture comparison |
-| Custom quantized | varies | Your SAEs | varies | See [docs/CUSTOM_SAE.md](docs/CUSTOM_SAE.md) |
+| `meta-llama/Llama-3.1-8B-Instruct` | 8B | Llama Scope | 16GB (T4) | Cross-architecture; Colab only (see TROUBLESHOOTING.md §Bug C) |
+| Any model | varies | Custom `.pt` or HF repo | varies | `--sae-source custom --sae-release <path-or-repo-id>` |
 
-For the Gemma 3 12B and Llama 3.1 8B runs, a rented A100 is recommended. See [docs/COMPUTE.md](docs/COMPUTE.md) for RunPod/Lambda setup instructions.
+For Gemma 3 12B and Llama 3.1 8B, a rented T4/A100 is recommended. Llama 3.1 8B is confirmed
+non-functional locally on 4 GB VRAM due to a bitsandbytes CPU-offload bug; use
+`notebooks/colab_biorefusalaudit.ipynb` on Colab T4 instead. See [docs/COMPUTE.md](docs/COMPUTE.md)
+for RunPod/Lambda setup.
 
 ---
 

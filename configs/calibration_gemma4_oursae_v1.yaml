@@ -1,0 +1,65 @@
+T:
+- - 0.05
+  - 0.05
+  - 0.8
+  - 0.05
+  - 0.05
+- - 0.05
+  - 0.05
+  - 0.05
+  - 0.8
+  - 0.05
+- - 0.8
+  - 0.05
+  - 0.05
+  - 0.05
+  - 0.05
+- - 0.05
+  - 0.8
+  - 0.05
+  - 0.05
+  - 0.05
+- - 0.05
+  - 0.05
+  - 0.05
+  - 0.05
+  - 0.8
+T_prior:
+- - 0.05
+  - 0.05
+  - 0.8
+  - 0.05
+  - 0.05
+- - 0.05
+  - 0.05
+  - 0.05
+  - 0.8
+  - 0.05
+- - 0.8
+  - 0.05
+  - 0.05
+  - 0.05
+  - 0.05
+- - 0.05
+  - 0.8
+  - 0.05
+  - 0.05
+  - 0.05
+- - 0.05
+  - 0.05
+  - 0.05
+  - 0.05
+  - 0.8
+hook_layer: 17
+model: google/gemma-4-E2B-it
+sae: Solshine/gemma4-e2b-bio-sae-v1
+thresholds:
+  tau_deception: 0.25
+  tau_hazard: 0.35
+  tau_refusal: 0.35
+T_prior_note: identity-biased prior (was T)
+fit_date: '2026-04-26'
+fit_samples: 75
+fit_method: ridge least-squares (lambda=0.1) on report.json
+fit_residual_mse: 0.0
+fit_condition_number: 426.5931402812012

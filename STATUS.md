@@ -280,3 +280,201 @@ Educational framings show the lowest NC rate (68%), consistent with model behavi
 - Active branch: `feat/paper-trim-3500` (pushed 2026-04-25)
 - PR #14 (`feat/crook-keynote-refs`) open, awaiting Gemini review + merge approval + Caleb sign-off.
 - Previous sprint branches squash-merged to main.
+
+## GPU session 2026-04-25 (8-hour grant, ~23:00 PDT start)
+
+### Gemma 4 E2B local SAE training — v1 checkpoint (2026-04-25, 23:44–23:48 PDT)
+
+**Completed:** 5000-step TopK(k=32) pairwise NT-Xent SAE training on Gemma 4 E2B residuals at layer 17.
+- d_model=1536, d_sae=6144 (4x expansion), k=32
+- Training time: 162 seconds (GPU ~80% utilization, 3.9GB VRAM)
+- Initial: total=3.42, l_recon=3.32, l_contrastive=0.570
+- Step 1000: total=0.170, l_recon=0.087, **l_contrastive=0.777** ← peak contrastive
+- Step 2000: total=0.048, l_recon=0.043, l_contrastive=0.002 ← collapse
+- Step 4999: total=0.005, l_recon=0.00058, l_contrastive=0.000116
+- Checkpoints: 1000/2000/3000/4000 + final at `runs/sae-training-gemma4-e2b-5000steps/`
+- **Key finding:** contrastive collapse occurs between steps 1000–2000 (0.777→0.002). Step 1000 checkpoint is recommended for tier-separation analysis. Same collapse pattern as pairwise Gemma 2 2B run. Bottleneck = 75-prompt corpus too small for NT-Xent.
+- HF model card: `hf_assets/gemma4-e2b-bio-sae-v1/README.md`
+- Push to HF pending user approval: `Solshine/gemma4-e2b-bio-sae-v1` (via `scripts/push_sae_to_hf.py --repo gemma4`)
+
+### Notebook repair (2026-04-25)
+
+- ✅ `notebooks/colab_gemma4_sae_training.ipynb` repaired via `scripts/_repair_sae_notebook.py`:
+  - Removed duplicate [4/7] TopKSAE cell (created by accidental double-run of fix script)
+  - WMDP dataset block: tries both `bio-forget-corpus` and `bio_forget_corpus` (hyphen and underscore), falls back gracefully to benign-only training with warning
+  - Removed REPO_AVAILABLE gate on final fallback — now uses synthetic smoke-test data instead of crashing
+  - All verifications pass: 9 cells, [5/7] bio-forget-corpus, [6/7] F import, [7/7] model(**inputs)
+
+### Llama 3.1 8B CPU offload — confirmed non-functional (2026-04-25)
+
+- Bug C fix (input device meta→cuda) is necessary but insufficient
+- accelerate's `AlignDevicesHook.pre_forward()` fails trying to dispatch Params4bit weights at inference time
+- All 75 prompts fail with "Cannot copy out of meta tensor; no data!" even with fix applied (v3 run: 0/75)
+- Conclusion: Llama 3.1 8B + 4GB GPU + bitsandbytes 0.49.2 + accelerate 1.13 + CPU offload is non-functional
+- **Workaround:** Use Llama 3.2 3B-Instruct (fits on GPU without offload) or rent A100
+- Full diagnosis added to TROUBLESHOOTING.md; CLAUDE.md gotcha #9 updated with CORRECTION block
+
+### HF assets prepared (2026-04-25)
+
+Three SAE model cards written:
+- `hf_assets/gemma2-2b-bio-sae-wmdp/README.md` — WMDP-trained Gemma 2 2B SAE (l_contrastive=0.060 at step 4999)
+- `hf_assets/gemma2-2b-bio-sae-pairwise/README.md` — Pairwise Gemma 2 2B SAE (contrastive collapsed, best as reconstruction SAE)
+- `hf_assets/gemma4-e2b-bio-sae-v1/README.md` — Gemma 4 E2B SAE v1 (step 1000 recommended, l_contrastive=0.777)
+- Push script `scripts/push_sae_to_hf.py` ready, pending user approval per HF push policy
+
+## GPU session 2026-04-25/26 continued (~00:00 PDT)
+
+Branch: `feat/gemma4-sae-v1-notebook-repair`
+
+### Colab notebook bug fixes from Gemini review (2026-04-26)
+
+Gemini reviewed both Colab notebooks (`colab_biorefusalaudit.ipynb`, `colab_gemma4_sae_training.ipynb`) and found 8 issues. Fixed in commit on branch `feat/gemma4-sae-v1-notebook-repair`:
+
+**colab_gemma4_sae_training.ipynb:**
+- ✅ Removed 22-line orphaned dead code block (unreachable `ds_hazard/ds_benign` synthesis after a `pass` + dangling `except Exception as e:` with no matching `try:` → SyntaxError on Colab). Root cause: prior repair script left fragment from old try/except structure.
+- ✅ Added `mode="disabled"` to `wandb.init()` when `WANDB_API_KEY` is absent (prevents interactive hang during Run All)
+- ✅ GITHUB_TOKEN injection into clone URL was already implemented (Gemini false positive)
+
+**colab_biorefusalaudit.ipynb:**
+- ✅ Injected GITHUB_TOKEN into git clone URL — supports private repo access with fallback to public URL
+- ✅ Filtered `-smoke` runs from scaling plot glob — smoke test runs no longer pollute cross-model figure
+- ✅ Fixed split f-string across source lines in cell 20 (`print(f"\nDone...")` → SyntaxError on Python 3.12+)
+
+**pyproject.toml:**
+- ✅ Lowered `requires-python` from `>=3.11` to `>=3.10` — `pip install -e .` now succeeds on Colab's default Python 3.10.12 runtime (was hard failing with version constraint error)
+
+### Gemma 4 bio SAE eval pass1 (in progress, 2026-04-26 ~00:00)
+
+- Running: `runs/gemma-4-E2B-it-bio-sae-v1-pass1/` using `checkpoint_01000.pt` (step 1000 — recommended for tier-separation)
+- No catalog supplied → D=1.000 everywhere (expected; activations.npz is the output artifact)
+- At 25/75 prompts at 00:07 PDT; ETA ~32 min (~00:39 PDT)
+- Post-eval pipeline: auto_tune_catalog.py → pass2 with catalog → meaningful D values
+- Script ready at `/tmp/run_gemma4_biosae_pass2.sh`
+
+## GPU session 2026-04-26 (overnight, ~00:35–06:00 PDT)
+
+Branch: `feat/gemma4-sae-v1-notebook-repair`
+
+### Gemma 4 E2B bio SAE eval — COMPLETE
+
+- **Pass1**: 75/75, `activations.npz` saved, D=1.000 (no catalog, expected)
+- **Catalog auto-tune**: Cohen's d, 32 unique features. bio_content top d=3.28, hazard_adjacent top d=0.94, refusal_circuitry top d=2.57. Saved: `data/feature_catalog/gemma-4-e2b-bio-sae-v1.json`
+- **Pass2 (80 tok)**: 75/75. Tier mean D: benign=0.362, dual_use=0.406, hazard_adjacent=0.404. Within-comply D increases monotonically with tier (0.466→0.494→0.504). D bimodal (comply ~0.47, refuse ~0.227) due to binary regex surface_soft — continuous D requires LLM judges.
+- **Calibration T**: Fitted (ridge λ=0.1). MSE≈0 (artifact of binary labels), cond=483. `configs/calibration_gemma4_e2b_biosae_v1.yaml`
+- **Domain-specificity confirmed**: Cross-domain deception SAE gave D≈0; bio-specific catalog gives D=0.36–0.41.
+
+### Gemma 2 2B bio SAE eval — COMPLETE
+
+- **Pass1**: 75/75, `activations.npz` saved, D=1.000 (expected)
+- **Catalog auto-tune**: Same pipeline, 32 features. Saved: `data/feature_catalog/gemma-2-2b-it-bio-sae-v1.json`
+- **Pass2 (80 tok)**: 75/75. Tier mean D: benign=0.446, dual_use=0.488, hazard_adjacent=0.475. Within-comply D range: 0.522→0.583 across tiers (+0.061 gradient, larger than Gemma 4's +0.038).
+- **Calibration T**: Fitted. MSE=0.0005, cond=550. `configs/calibration_gemma2_2b_biosae_v1.yaml`
+- **Cross-model comparison**: Gemma 2 shows higher overall D than Gemma 4 (+0.07–0.08); qualitative tier ordering matches both models. Caveats: same-corpus bias; different contrastive objectives; not directly comparable.
+
+### Token-budget stability — COMPLETE (cross-model finding)
+
+- **Gemma 2 2B bio SAE at 150 tok**: benign=0.435 (−0.012), dual_use=0.536 (+0.048), hazard_adjacent=0.508 (+0.033). Shift driven entirely by surface-label switching (refuse→comply), not feature amplitude.
+- **Gemma 4 E2B bio SAE at 150 tok**: benign=0.420 (+0.057), dual_use=0.461 (+0.055), hazard_adjacent=0.475 (+0.071). Same mechanism: within-label comply D stable (<0.007), refuse D stable (<0.004).
+- **Cross-model finding**: SAE internal feature activations are token-budget stable on both model families. Surface classifier is not — more comply/fewer refuse at higher token budgets. Extends §4.5's format-stability result to the budget dimension.
+- **200-tok run** (Gemma 2 bio SAE): running at time of writing (PID 2855). ETA ~07:00 PDT.
+
+### Branch commits (feat/gemma4-sae-v1-notebook-repair)
+
+- `3f6dbb1` docs: complete 2x2 bio SAE token-budget stability table
+- `2c4fd3d` docs: Gemma 2 2B bio SAE token-budget stability finding
+- `51414d4` docs: cross-model bio SAE comparison table (Gemma 2 2B vs Gemma 4 E2B)
+- `a3facae` feat: add Gemma 2 2B bio SAE eval pipeline script
+- `0258bc2` docs: Gemma 4 E2B bio SAE pass2 eval results + calibration fit
+- `6356165` Fix run_llama31_cross_arch.sh bugs; add stub Llama catalog
+- `e9e0ae8` Update STATUS.md: log notebook bug fixes and eval pass1 status
+- `7b5ab5d` Fix Colab notebook bugs from Gemini review (2026-04-26)
+
+### Pending (needs user approval)
+
+- **GitHub push**: Branch `feat/gemma4-sae-v1-notebook-repair` → PR. Not pushed per CLAUDE.md directive.
+- **HF push**: `scripts/push_sae_to_hf.py --repo gemma4` targets `Solshine/gemma4-e2b-bio-sae-v1`. Staged, not pushed.
+- **Colab T4 run for Llama 3.1 8B cross-arch** (§4.4): `colab_biorefusalaudit.ipynb` is fixed and ready. Llama 3.1 8B confirmed non-functional locally (VRAM constraint + bitsandbytes Bug C).
+
+### TODO: Eval trials with our own trained Gemma 4 bio SAE (Solshine/gemma4-e2b-bio-sae-v1)
+
+The Colab-trained SAE (`sae_weights_final.pt`, 2000 steps, WMDP corpus) is live on HF. Run the full
+eval chain using it as the SAE source instead of Gemma Scope, so we can compare our domain-tuned SAE
+against the community SAE in paper §8 (does domain-specific training improve bio-feature separation?).
+
+Pipeline scripts: all created 2026-04-26, queued to run in chain after Gemma 4 200-tok completes.
+
+**GPU chain (autonomous, no approval needed — pre-authorized by user):**
+
+1. **Pass 1 + auto-tune + Pass 2 at 80 tok** (~90 min):
+   ```bash
+   bash scripts/run_gemma4_oursae_pipeline.sh 2>&1 | tee runs/gemma4-oursae-pipeline.log
+   ```
+2. **150-tok sample-size run** (~45 min, bolsters n from 75 → 150):
+   ```bash
+   python -m biorefusalaudit.cli run \
+       --model google/gemma-4-E2B-it \
+       --eval-set data/eval_set_public/eval_set_public_v1.jsonl \
+       --out runs/gemma-4-E2B-it-our-sae-v1-150tok \
+       --sae-source custom --sae-release Solshine/gemma4-e2b-bio-sae-v1 \
+       --k 32 --d-model 1536 --d-sae 6144 --architecture topk --layer 17 \
+       --quantize 4bit --no-llm-judges --max-new-tokens 150 \
+       --catalog data/feature_catalog/gemma-4-e2b-our-sae-v1.json \
+       2>&1 | tee runs/gemma4-oursae-150tok.log
+   ```
+3. **200-tok sample-size run** (~45 min, bolsters n to 225 total):
+   ```bash
+   python -m biorefusalaudit.cli run \
+       --model google/gemma-4-E2B-it \
+       --eval-set data/eval_set_public/eval_set_public_v1.jsonl \
+       --out runs/gemma-4-E2B-it-our-sae-v1-200tok \
+       --sae-source custom --sae-release Solshine/gemma4-e2b-bio-sae-v1 \
+       --k 32 --d-model 1536 --d-sae 6144 --architecture topk --layer 17 \
+       --quantize 4bit --no-llm-judges --max-new-tokens 200 \
+       --catalog data/feature_catalog/gemma-4-e2b-our-sae-v1.json \
+       2>&1 | tee runs/gemma4-oursae-200tok.log
+   ```
+4. **Paper §8 update**: Add "our SAE vs Gemma Scope SAE" 3×3 table (tiers × token budgets),
+   compare mean D and Cohen's d per category. Key question: does WMDP training raise bio_content d
+   above Gemma Scope baseline (top d=3.28)?
+
+Total additional GPU time: ~3 hours. n per condition: 75 → 225 prompt-evaluations.
+
+Key hypothesis: 2000-step WMDP contrastive training improves bio_content Cohen's d vs Gemma Scope.
+Null: no difference (contrastive loss collapsed; corpus too small at 5K docs + 22 hazard prompts).
+
+## GPU session 2026-04-26 (continued, ~09:30 PDT)
+
+### Oursae pipeline (Solshine/gemma4-e2b-bio-sae-v1) — COMPLETE + BUGFIX
+
+**Pass1 (80-tok)**: 75/75, activations.npz saved, D=1.000 (expected — no catalog in pass1).
+**Catalog auto-tune**: bio_content top effect=1.81 (20 features), hazard_adj=1.60, refusal_circuitry=1.52. 33 unique features. Saved: `data/feature_catalog/gemma-4-e2b-our-sae-v1.json`.
+**Calibration fit**: `fit_calibration.py` produced T=0 (all zeros). Root cause: f_vec=zero for all pass1 records (no catalog) → fit minimizes to T=0 (degenerate). MSE=0.000 (vacuously).
+
+**CALIBRATION BUG FOUND AND FIXED (2026-04-26):**
+- Root cause: pipeline runs pass1 without catalog → f_vec=0 for all records → `fit_calibration.py` produces T=0 → `T.T @ s = 0` for any s → `e_n = 0` → D=1.000 always.
+- Fix 1: Restored `configs/calibration_gemma4_oursae_v1.yaml` T from T_prior (identity-biased permutation).
+- Fix 2: Added degenerate-T guard to `biorefusalaudit/scoring/divergence.py` — falls back to `expected = s` when `||T.T @ s|| < eps`.
+- Fix 3: Created `scripts/rescore_with_prior_T.py` to re-score completed reports without re-running inference.
+- All 56 unit tests pass after fix.
+
+**Pass2 (80-tok)**: 75/75. D=1.000 (all, due to calibration bug). Re-scored offline with T_prior:
+
+| Tier | n | Mean D | Std | comply | refuse | hedge |
+|---|---:|---:|---:|---:|---:|---:|
+| benign_bio | 23 | 0.614 | 0.321 | 57% | 43% | 0% |
+| dual_use_bio | 30 | 0.703 | 0.295 | 70% | 30% | 0% |
+| hazard_adjacent | 22 | 0.647 | 0.306 | 59% | 36% | 5% |
+| overall | 75 | 0.659 | 0.309 | | | |
+
+Calibration caveat: T_prior is not data-fitted — D values are higher than Gemma Scope baseline (benign=0.362, dual=0.406, hazard=0.404). Relative tier ordering preserved. Key positive finding: 1285/1500 bio_content feature hits, mean activation 14.71 — the WMDP-trained SAE encodes bio-domain information. Benign 43% refuse confirms Gemma 4 E2B over-refusal pattern.
+
+**150-tok run**: Running in background (b5sb3yxal), ~76s/prompt, ETA ~10:45 PDT. Uses calibration_gemma4_oursae_v1.yaml (T now correct = T_prior). First prompt D=0.895 (non-trivially non-1.0 — bug confirmed fixed).
+
+**Cross-arch small models**: Queued after 150-tok completes. Script ready: `scripts/run_cross_arch_small_models.sh`.
+
+### Code changes (this session)
+- `biorefusalaudit/scoring/divergence.py`: added degenerate-T guard (fall back to `expected = s` when `||T.T@s|| < eps`)
+- `configs/calibration_gemma4_oursae_v1.yaml`: T restored from T_prior (was all-zeros from degenerate fit)
+- `scripts/rescore_with_prior_T.py`: new offline re-scoring tool
+- `paper/writeup.md` §4.4: added Track B local cross-arch small model framework
+- `paper/writeup.md` §4.5: added oursae pass2 80-tok results block with calibration bug documentation
