@@ -157,6 +157,7 @@ Full diagnoses live in `TROUBLESHOOTING.md`. One-line reminders:
 7. **Catalog quantization must match eval** — same `--quantize` for all passes or features won't fire. See `docs/METHOD.md §Required chain ordering`.
 8. **`device_map={"": "cuda"}` (string) falls to CPU on WDDM** — use integer index. See `TROUBLESHOOTING.md`.
 9. **CPU offload is broken for models that exceed local VRAM** — choose models that fit on GPU directly. See `TROUBLESHOOTING.md §Cannot copy out of meta tensor`.
+10. **`--architecture relu` is invalid for CLI** — CLI only accepts `topk`/`jumprelu`; community ReLU SAEs (e.g. `qresearch/Llama-3.2-1B-Instruct-SAE-l9`) require `--sae-source none` (NullSAE) until Option B is implemented. See `TROUBLESHOOTING.md §--architecture relu invalid`.
 
 ---
 
