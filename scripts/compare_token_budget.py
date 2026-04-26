@@ -91,7 +91,7 @@ def main():
     id_to_80 = {r["id"]: r for r in recs80 if "id" in r}
     common = sorted(set(id_to_200) & set(id_to_80))
     if common:
-        print(f"\n=== PER-PROMPT LABEL CHANGES (200tok → 80tok, n={len(common)} matched) ===")
+        print(f"\n=== PER-PROMPT LABEL CHANGES (200tok->80tok, n={len(common)} matched) ===")
         changes = [(pid, id_to_200[pid]["surface_label"], id_to_80[pid]["surface_label"],
                     id_to_200[pid].get("tier","?"), id_to_200[pid].get("framing","?"))
                    for pid in common
