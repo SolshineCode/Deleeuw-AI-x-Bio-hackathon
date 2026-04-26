@@ -68,9 +68,9 @@ And here's the part that should concern deployers: at an 80-token generation cap
 
 The activation layer is format-robust where a surface completion classifier is not. That's the whole point.
 
-**Finding Four: The divergence metric separates refusal posture from compliance posture with near-zero within-class variance.** We ran Gemma 4 E2B-IT through our domain-trained bio-SAE with a 150-token budget — enough room for the safety circuit to actually fire. Across 57 prompts completed at time of submission: comply responses show D=0.896 (±0.001). Refuse responses show D=0.247 (±0.005). Zero overlap. 0.649-point separation.
+**Finding Four: The divergence metric separates refusal posture from compliance posture with near-zero within-class variance.** We ran Gemma 4 E2B-IT through our domain-trained bio-SAE with a 150-token budget — enough room for the safety circuit to actually fire. Across all 75 prompts: comply responses show D=0.896 (±0.001). Refuse responses show D=0.249 (±0.004). Zero overlap. 0.647-point separation.
 
-What that means concretely: D=0.247 on a refusal says the internal SAE feature activations are consistent with the refusal direction — the model is not just saying no, it's not activating bio-hazard feature space. D=0.896 on a compliance says bio-relevant features remain active even when the surface output is compliant — expected for educational biology content, and exactly what a well-calibrated audit should surface. The metric is tracking the thing it was designed to track. And the within-class variance is low enough that this is not a noise artifact.
+What that means concretely: D=0.249 on a refusal says the internal SAE feature activations are consistent with the refusal direction — the model is not just saying no, it's not activating bio-hazard feature space. D=0.896 on a compliance says bio-relevant features remain active even when the surface output is compliant — expected for educational biology content, and exactly what a well-calibrated audit should surface. The metric is tracking the thing it was designed to track. And the within-class variance is low enough that this is not a noise artifact.
 
 Findings One and Four together sketch a concrete four-cell typology for model safety posture — deep refusal, shallow refusal, hedge-without-refuse, and what we're calling non-suppressive safety, where the safety circuit activates but doesn't gate the output. BioRefusalAudit distinguishes all four at the activation layer. Surface evaluation alone cannot.
 
@@ -130,7 +130,7 @@ Thank you.
 - *[OPENING]: Title slide — BioRefusalAudit logo + one-line description*
 - *[PROBLEM]: "surface refusal ≠ structural safety" diagram — a two-column table showing surface behavior vs. internal activation*
 - *[WHAT WE BUILT]: Pipeline diagram (prompt → residual stream → SAE → feature vec → judge → divergence score)*
-- *[FINDINGS]: The four-cell typology table; hazard-adjacent 100% hedge / 0% comply / 0% refuse corrected distribution; the 75-prompt NC table (80% overall, inverted tier ordering benign 87% > hazard 73%); bio_014 effect=1.139 as a single-prompt callout; the 80-token ablation result; D label-split two-cluster chart (comply D=0.896 vs refuse D=0.247, zero overlap)*
+- *[FINDINGS]: The four-cell typology table; hazard-adjacent 100% hedge / 0% comply / 0% refuse corrected distribution; the 75-prompt NC table (80% overall, inverted tier ordering benign 87% > hazard 73%); bio_014 effect=1.139 as a single-prompt callout; the 80-token ablation result; D label-split two-cluster chart (comply D=0.896 vs refuse D=0.249, zero overlap)*
 - *[HL3]: The three-tier data release table; the measurement-enforcement two-layer diagram*
 - *[NEXT]: Roadmap slide — v2 SAE training (bio-forget-corpus, 5K steps, in progress) / behavioral sampling from base+RLHF pairs / institutional data partners for paired activation corpora*
 - *[CLOSE]: GitHub URL + QR code*
