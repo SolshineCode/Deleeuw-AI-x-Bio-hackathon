@@ -23,17 +23,16 @@ source .venv/Scripts/activate
 
 EVAL_SET="data/eval_set_public/eval_set_public_v1.jsonl"
 
-# ─── 1. Llama 3.2 1B Instruct + qresearch SAE (layer 9) ─────────────────────
-echo "[$(date)] === Llama 3.2 1B Instruct (layer 9 ReLU SAE, d_sae=32768) ==="
+# ─── 1. Llama 3.2 1B Instruct (NullSAE — behavioral labels only) ─────────────
+# Note: qresearch/Llama-3.2-1B-Instruct-SAE-l9 uses ReLU architecture, which
+# is not yet in the CLI enum (only topk/jumprelu). Using NullSAE for behavioral
+# label distribution; SAE activation comparison deferred to CLI extension work.
+echo "[$(date)] === Llama 3.2 1B Instruct (NullSAE, behavioral labels only) ==="
 python -m biorefusalaudit.cli run \
     --model meta-llama/Llama-3.2-1B-Instruct \
     --eval-set "$EVAL_SET" \
-    --out runs/llama-3.2-1b-it-L9-cross-arch \
-    --sae-source custom \
-    --sae-release qresearch/Llama-3.2-1B-Instruct-SAE-l9 \
-    --d-model 2048 \
-    --d-sae 32768 \
-    --architecture relu \
+    --out runs/llama-3.2-1b-it-cross-arch \
+    --sae-source none \
     --layer 9 \
     --quantize none \
     --no-llm-judges \

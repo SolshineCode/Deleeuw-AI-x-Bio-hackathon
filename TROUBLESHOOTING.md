@@ -564,3 +564,37 @@ If `degen > 0`, LLM judges failed for those records. Any finding that depends on
 **Contrast with working uses:** LLM judges are reliable for: (1) classifying complete model responses with prompt context (our surface label consortium); (2) classifying full documents where the document is self-contained (e.g., WMDP document-level hazard labeling by CAIS). They are unreliable for: decontextualized chunk windows, feature activation fragments, isolated sentence classification without surrounding context.
 
 **First observed:** 2026-04-25.
+
+---
+
+## `--architecture relu` invalid for CLI run command (Llama community SAEs)
+
+**Symptom:** Running `python -m biorefusalaudit.cli run ... --architecture relu` fails immediately with:
+
+```
+Error: Invalid value for '--architecture': 'relu' is not one of 'topk', 'jumprelu'.
+```
+
+**Root cause:** The `--architecture` CLI flag is constrained to `topk` and `jumprelu` — the two architectures supported by Gemma Scope SAEs and our custom training pipeline. Several community-contributed SAEs (including `qresearch/Llama-3.2-1B-Instruct-SAE-l9`) use a standard ReLU activation rather than TopK or JumpReLU. This hits the Click enum validator before any model code runs.
+
+**Recurring pattern:** This has bitten the cross-arch pipeline at least three times when adding new model/SAE combinations sourced from the community (non-Gemma Scope repos).
+
+**Fix — Option A (immediate, behavioral labels only):** Drop `--sae-source custom` and use `--sae-source none` instead. This activates NullSAE (D=1.0 for all prompts) but preserves full surface label collection — sufficient for the "does the hedging pattern replicate across architectures?" question in §4.4.
+
+```bash
+python -m biorefusalaudit.cli run \
+    --model meta-llama/Llama-3.2-1B-Instruct \
+    --eval-set data/eval_set_public/eval_set_public_v1.jsonl \
+    --out runs/llama-3.2-1b-it-cross-arch \
+    --sae-source none \
+    --layer 9 \
+    --quantize none \
+    --no-llm-judges \
+    --max-new-tokens 80
+```
+
+**Fix — Option B (if SAE activations are needed):** Add `relu` to the architecture enum in `biorefusalaudit/cli.py` and implement a ReLU SAE forward pass in `sae_adapter.py`. The ReLU forward is trivial (`F.relu(x @ W_enc + b_enc)` without the TopK sparsity step). Wire it into `_load_custom_sae()`. This is a 20-line addition but requires a test against the qresearch checkpoint to confirm weight key names match.
+
+**Note on `scripts/run_cross_arch_small_models.sh`:** The script was updated 2026-04-26 to use Option A (NullSAE) for Llama 3.2 1B. The original `--architecture relu` invocation is preserved in git history for reference.
+
+**First observed:** 2026-04-22 (silently). Caught and documented: 2026-04-26.
