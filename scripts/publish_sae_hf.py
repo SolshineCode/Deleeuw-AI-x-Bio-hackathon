@@ -30,10 +30,9 @@ def main():
             for line in env_file.read_text().splitlines():
                 if line.startswith("HF_TOKEN="):
                     token = line.split("=", 1)[1].strip().strip('"')
-    if not token:
-        raise SystemExit("HF_TOKEN not found. Set it in env or .env file.")
 
-    api = HfApi(token=token)
+    # Fall back to cached huggingface-cli credentials (from `huggingface-cli login`)
+    api = HfApi(token=token if token else None)
 
     print(f"Creating repo: {args.repo} (private={args.private})")
     api.create_repo(

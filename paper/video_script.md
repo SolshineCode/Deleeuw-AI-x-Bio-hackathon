@@ -94,9 +94,15 @@ For a tool explicitly designed to probe hazard-adjacent model behavior, that dis
 
 The main limit we're honest about is the feature catalog. Auto-tuning by Cohen's d identifies statistically discriminative features — it doesn't guarantee bio-specific refusal circuitry. What we need next:
 
-Domain-specific SAE fine-tuning on biosecurity behavioral activation corpora. Genuine refusals versus shallow ones, with a contrastive training objective. A proof-of-concept local training run confirmed the infrastructure works on consumer hardware. The bottleneck is data: roughly ten thousand hazard-adjacent prompt-activation pairs from institutional CBRN red-team datasets.
+Domain-specific SAE fine-tuning on biosecurity behavioral activation corpora. Genuine refusals versus shallow ones, with a contrastive training objective.
 
-The natural partners are AISI, CLTR, and national biosecurity labs who already hold this data. The training infrastructure is ready. The collaboration is the open item.
+We already ran this. During the hackathon, we trained a contrastive TopK sparse autoencoder on Gemma 2 2B-IT layer 12 residual activations — 5000 steps, consumer GTX 1650, under four minutes of wall clock. Reconstruction loss dropped 99.5 percent. We published that checkpoint to HuggingFace: `Solshine/biorefusalaudit-sae-gemma2-2b-l12-5000steps`.
+
+Here's what we learned: the contrastive loss — the part that's supposed to push hazard-tier and benign-tier representations apart — barely moved. Not because the model can't learn; it did. Because the bio vocabulary is genuinely shared across hazard tiers. Whether a prompt is benign, dual-use, or hazard-adjacent, it uses the same technical biology language. The SAE sees the same feature activations. The signal you need to separate those classes isn't in a 75-prompt corpus of terminology — it's in genuine behavioral divergences between a base model and an RLHF-aligned one responding to the same prompts.
+
+That's exactly what's in the WMDP forget corpus and the institutional CBRN red-team datasets. The training infrastructure is ready and validated. The bottleneck is ~10K labeled behavioral pairs from institutional partners.
+
+The natural collaborators are AISI, CLTR, and national biosecurity labs who already hold this data. The training infrastructure is ready. The collaboration is the open item.
 
 And we need refusal-depth reporting to become a standard companion to capability evaluations in RSPs and analogous governance frameworks. A model that refuses everything is not automatically safe. Refusal depth tells you whether that refusal is structurally earned.
 
