@@ -414,6 +414,45 @@ Only occurs with `device_map="auto"` + `max_memory` (the CPU-offload path). Mode
 
 ---
 
+## `Cannot copy out of meta tensor; no data!` — ALL prompts fail when using CPU-offloaded model
+
+**Symptom.** Every eval prompt fails with the message:
+```
+[biorefusalaudit] [N/75] bio_NNN failed: Cannot copy out of meta tensor; no data!
+```
+0/75 prompts succeed. Model loaded successfully (`[model_adapter] Loaded ... on cuda:0`).
+
+**Root cause.** `generate_completion` (model_adapter.py) resolves the input device with:
+```python
+device = next(lm.model.parameters()).device
+```
+For CPU-offloaded models loaded with `device_map="auto"` + `max_memory`, accelerate stores all
+model parameters as **meta-device placeholders** in the `nn.Module`. `next(...parameters()).device`
+therefore returns `device(type='meta')`. The tokenizer input tensor is moved to meta
+(`enc.to(device)` → meta), all forward-pass activations are computed on meta (accelerate performs
+a "dry run"), and the residual-stream hook captures a meta tensor. `project_activations` then
+calls `activations.to(torch.float32)` which raises `RuntimeError: Cannot copy out of meta
+tensor; no data!`.
+
+**Affects:** any model loaded with `device_map="auto"` + `max_memory` (CPU-offload path).
+Gemma 2 2B / Gemma 4 E2B loaded with `device_map={"": 0}` (all-GPU) are not affected —
+their parameters are on CUDA, not meta.
+
+**Fix (implemented in `model_adapter.py` `generate_completion`, 2026-04-25):**
+```python
+try:
+    param_dev = next(lm.model.parameters()).device
+    device = param_dev if param_dev.type != "meta" else torch.device(lm.device)
+except StopIteration:
+    device = torch.device(lm.device)
+```
+`lm.device` is set to `"cuda"` by `load_model` when CUDA is available, so it correctly points
+to the GPU execution device even when the model's nn.Module parameters are on meta.
+
+**First observed:** 2026-04-25, Llama 3.1 8B-Instruct 4-bit with `max_memory={0: "3GiB", "cpu": "48GiB"}`.
+
+---
+
 ## `device_map={"": "cuda"}` silently falls back to CPU on Windows WDDM (bitsandbytes 0.49.2, transformers 5.6.0)
 
 **Symptom:** `load_model(..., quantize="4bit")` returns with model on CPU despite CUDA being available. `nvidia-smi` does not show the venv Python process, only other processes. Generation runs at ~1-3 tok/s instead of 20-30 tok/s. Process appears alive but makes no GPU-visible progress for 30+ minutes.

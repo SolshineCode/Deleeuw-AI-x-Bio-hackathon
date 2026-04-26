@@ -286,7 +286,17 @@ def generate_completion(
 ) -> str:
     """Generate a model completion for a single prompt. Returns the decoded text."""
     formatted = _apply_chat_template(lm, prompt)
-    device = next(lm.model.parameters()).device
+    # For CPU-offloaded models (device_map="auto" + max_memory), accelerate stores
+    # parameters as meta-device placeholders in the nn.Module. next(model.parameters())
+    # then returns a meta tensor and .to(meta) moves inputs to meta, which causes
+    # all subsequent activations to be meta tensors (no data) — hook.last becomes meta,
+    # project_activations fails with "Cannot copy out of meta tensor; no data!".
+    # Fix: use lm.device (the requested execution device) when parameters are on meta.
+    try:
+        param_dev = next(lm.model.parameters()).device
+        device = param_dev if param_dev.type != "meta" else torch.device(lm.device)
+    except StopIteration:
+        device = torch.device(lm.device)
     enc = lm.tokenizer(formatted, return_tensors="pt").to(device)
     input_len = enc["input_ids"].shape[1]
     with torch.no_grad():
