@@ -9,12 +9,12 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 - [x] Tuned feature catalog committed (`data/feature_catalog/gemma-2-2b-it.json` with `catalog_version: 0.2-auto-tuned`) — Cohen's-d top-20 per category from `runs/gemma-2-2b-it-L12-activations/activations.npz`
 - [x] Fitted T in `configs/calibration_gemma2_2b.yaml` with `fit_method: ridge least-squares (lambda=0.1) on report.json` and `fit_samples: 75`
 - [x] Pass-2 real-numbers report at `runs/gemma-2-2b-it-L12-tuned/report.{md,json}` with non-zero per-tier mean divergence — benign 0.467, dual-use 0.655, hazard-adj 0.669
-- [x] At least one intervention record at `runs/interventions/*.json` where `qualifies_as_named_circuit: true` — 15/19 intervened prompts qualify (19 total: 6 benign_bio, 9 dual_use_bio, 4 hazard_adjacent; 4 below-threshold; batch completed 2026-04-25)
+- [x] At least one intervention record at `runs/interventions/*.json` where `qualifies_as_named_circuit: true` — 60/75 prompts qualify (80%; benign 87%, dual-use 80%, hazard-adjacent 73%; dose-proportionality at 4 boost levels complete 2026-04-25)
 
 ### Paper
 
 - [x] §4.2 per-tier table filled with real pass-2 numbers — in `paper/writeup.md`
-- [x] §4.3 intervention table filled with at least one real row — 12 representative rows with real ΔD; full 19-prompt results at `runs/interventions/` (batch completed 2026-04-25)
+- [x] §4.3 intervention table filled with at least one real row — 4-row per-tier summary with 60/75 (80%) NC qualification; full per-prompt results at `runs/interventions/`; dose-proportionality at 4 boost levels; framing NC breakdown; inverted tier ordering finding
 - [x] Every "named circuit" claim cross-references a specific intervention JSON — cross-refs `runs/interventions/*.json`
 - [x] Limitations section states catalog + T origin + what was NOT attempted — §4.5 caveats block
 - [ ] §4.4 cross-architecture table filled — **BLOCKING: Colab T4 run not yet executed** — requires user to run `notebooks/colab_biorefusalaudit.ipynb` on Colab T4 (~90 min). Acknowledged as deferred in paper §5 Limitations ("Cross-architecture comparison deferred"). Cannot be completed autonomously — requires user GPU time.
@@ -36,7 +36,7 @@ Per specialist review, no claim should survive into the README, paper, or demo u
 
 - [x] README opens with: problem / method / evidence (real numbers) / limitations / demo — fabricated Gemma 3 4B numbers replaced with real Gemma 2 2B-IT results 2026-04-23
 - [x] Branch state: all work on `main` via squash-merged PRs; no orphan branches
-- [x] `paper/writeup.md` word count ≤ 3 500 — 3 471 words (confirmed 2026-04-25; §4.3 19-prompt batch complete 15/19 NC, §5/§1 framing-sensitivity caveat, §8 WMDP + held-out findings)
+- [x] `paper/writeup.md` word count ≤ 3 500 — 3 496 words (2026-04-25; §4.3 60/75 NC, dose-prop, framing breakdown; §4.2 judge failure corrected with 0 genuine refusals + 100% hazard-adjacent hedge; §4.6 typology; §5 caveats updated)
 
 ## Submission gate
 
@@ -89,6 +89,14 @@ Each of these gets a one-paragraph "planned" entry in the paper's §8 Future Wor
   - Multimodal architecture fix in place (`pick_layer` handles both CausalLM and ImageTextToText)
   - Public eval set fallback if gated dataset unavailable
   - Full spec: `docs/METHOD.md §Colab SAE Training Notebook`
+
+## Judge failure correction (2026-04-25)
+
+- [x] **Judge failure detected and documented** — 29/75 records in flagship G2 run had degenerate soft judgments (uniform prior → dict-order "refuse"). Full diagnosis in `TROUBLESHOOTING.md §Judge consortium silently returns uniform prior`.
+- [x] **`scripts/rejudge_stored_completions.py`** — regex re-judge of stored completions without model re-run. Output: `runs/gemma-2-2b-it-L12-tuned-rejudged/report.json`.
+- [x] **Corrected surface labels in paper** — 0 genuine refusals; 40 comply (53%); 35 hedge (47%). Hazard-adjacent 100% hedge / 0% comply / 0% refuse. §4.2 table footnote added, CORRECTED block updated, §4.6 Finding B revised, §5 judge failure bullet updated with corrected numbers.
+- [x] **Video script and policy brief updated** with corrected finding (hedge-without-refuse replaces retracted over-refusal statistic).
+- [ ] **80-token corrected run** — `runs/gemma-2-2b-it-80tok-rejudge/` (`--quantize 4bit --no-llm-judges`). In progress. Will update §4.5 token-budget finding from 24-prompt format-ablation subset to full 75-prompt corrected data.
 
 ## Nice-to-have before submission (not blocking)
 
