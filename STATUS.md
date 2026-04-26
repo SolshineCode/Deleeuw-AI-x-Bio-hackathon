@@ -401,19 +401,43 @@ The Colab-trained SAE (`sae_weights_final.pt`, 2000 steps, WMDP corpus) is live 
 eval chain using it as the SAE source instead of Gemma Scope, so we can compare our domain-tuned SAE
 against the community SAE in paper §8 (does domain-specific training improve bio-feature separation?).
 
-Pipeline script: `scripts/run_gemma4_oursae_pipeline.sh` (created 2026-04-26, not yet run).
+Pipeline scripts: all created 2026-04-26, queued to run in chain after Gemma 4 200-tok completes.
 
-Steps:
-1. **Pass 1 + activation dump** (~45 min local GPU):
+**GPU chain (autonomous, no approval needed — pre-authorized by user):**
+
+1. **Pass 1 + auto-tune + Pass 2 at 80 tok** (~90 min):
    ```bash
    bash scripts/run_gemma4_oursae_pipeline.sh 2>&1 | tee runs/gemma4-oursae-pipeline.log
    ```
-2. **Auto-tune catalog** from pass-1 activations → `data/feature_catalog/gemma-4-e2b-our-sae-v1.json`
-3. **Pass 2** with tuned catalog
-4. **Fit calibration T** → `configs/calibration_gemma4_oursae_v1.yaml`
-5. **Token-budget stability** (80/150/200 tok) to match the Gemma Scope comparison table
-6. **Paper §8 update**: Add "our SAE vs Gemma Scope SAE" column comparing mean D, Cohen's d per category, and whether WMDP-corpus training actually increases bio_content feature separation
+2. **150-tok sample-size run** (~45 min, bolsters n from 75 → 150):
+   ```bash
+   python -m biorefusalaudit.cli run \
+       --model google/gemma-4-E2B-it \
+       --eval-set data/eval_set_public/eval_set_public_v1.jsonl \
+       --out runs/gemma-4-E2B-it-our-sae-v1-150tok \
+       --sae-source custom --sae-release Solshine/gemma4-e2b-bio-sae-v1 \
+       --k 32 --d-model 1536 --d-sae 6144 --architecture topk --layer 17 \
+       --quantize 4bit --no-llm-judges --max-new-tokens 150 \
+       --catalog data/feature_catalog/gemma-4-e2b-our-sae-v1.json \
+       2>&1 | tee runs/gemma4-oursae-150tok.log
+   ```
+3. **200-tok sample-size run** (~45 min, bolsters n to 225 total):
+   ```bash
+   python -m biorefusalaudit.cli run \
+       --model google/gemma-4-E2B-it \
+       --eval-set data/eval_set_public/eval_set_public_v1.jsonl \
+       --out runs/gemma-4-E2B-it-our-sae-v1-200tok \
+       --sae-source custom --sae-release Solshine/gemma4-e2b-bio-sae-v1 \
+       --k 32 --d-model 1536 --d-sae 6144 --architecture topk --layer 17 \
+       --quantize 4bit --no-llm-judges --max-new-tokens 200 \
+       --catalog data/feature_catalog/gemma-4-e2b-our-sae-v1.json \
+       2>&1 | tee runs/gemma4-oursae-200tok.log
+   ```
+4. **Paper §8 update**: Add "our SAE vs Gemma Scope SAE" 3×3 table (tiers × token budgets),
+   compare mean D and Cohen's d per category. Key question: does WMDP training raise bio_content d
+   above Gemma Scope baseline (top d=3.28)?
 
-Key hypothesis to test: does 2000-step WMDP contrastive training produce higher Cohen's d on
-bio_content features vs the Gemma Scope SAE (top d=3.28)? Null hypothesis: no difference (corpus too
-small at 5K docs, contrastive loss collapsed to 0 by step ~1000).
+Total additional GPU time: ~3 hours. n per condition: 75 → 225 prompt-evaluations.
+
+Key hypothesis: 2000-step WMDP contrastive training improves bio_content Cohen's d vs Gemma Scope.
+Null: no difference (contrastive loss collapsed; corpus too small at 5K docs + 22 hazard prompts).
