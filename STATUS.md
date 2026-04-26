@@ -350,3 +350,47 @@ Gemini reviewed both Colab notebooks (`colab_biorefusalaudit.ipynb`, `colab_gemm
 - At 25/75 prompts at 00:07 PDT; ETA ~32 min (~00:39 PDT)
 - Post-eval pipeline: auto_tune_catalog.py → pass2 with catalog → meaningful D values
 - Script ready at `/tmp/run_gemma4_biosae_pass2.sh`
+
+## GPU session 2026-04-26 (overnight, ~00:35–06:00 PDT)
+
+Branch: `feat/gemma4-sae-v1-notebook-repair`
+
+### Gemma 4 E2B bio SAE eval — COMPLETE
+
+- **Pass1**: 75/75, `activations.npz` saved, D=1.000 (no catalog, expected)
+- **Catalog auto-tune**: Cohen's d, 32 unique features. bio_content top d=3.28, hazard_adjacent top d=0.94, refusal_circuitry top d=2.57. Saved: `data/feature_catalog/gemma-4-e2b-bio-sae-v1.json`
+- **Pass2 (80 tok)**: 75/75. Tier mean D: benign=0.362, dual_use=0.406, hazard_adjacent=0.404. Within-comply D increases monotonically with tier (0.466→0.494→0.504). D bimodal (comply ~0.47, refuse ~0.227) due to binary regex surface_soft — continuous D requires LLM judges.
+- **Calibration T**: Fitted (ridge λ=0.1). MSE≈0 (artifact of binary labels), cond=483. `configs/calibration_gemma4_e2b_biosae_v1.yaml`
+- **Domain-specificity confirmed**: Cross-domain deception SAE gave D≈0; bio-specific catalog gives D=0.36–0.41.
+
+### Gemma 2 2B bio SAE eval — COMPLETE
+
+- **Pass1**: 75/75, `activations.npz` saved, D=1.000 (expected)
+- **Catalog auto-tune**: Same pipeline, 32 features. Saved: `data/feature_catalog/gemma-2-2b-it-bio-sae-v1.json`
+- **Pass2 (80 tok)**: 75/75. Tier mean D: benign=0.446, dual_use=0.488, hazard_adjacent=0.475. Within-comply D range: 0.522→0.583 across tiers (+0.061 gradient, larger than Gemma 4's +0.038).
+- **Calibration T**: Fitted. MSE=0.0005, cond=550. `configs/calibration_gemma2_2b_biosae_v1.yaml`
+- **Cross-model comparison**: Gemma 2 shows higher overall D than Gemma 4 (+0.07–0.08); qualitative tier ordering matches both models. Caveats: same-corpus bias; different contrastive objectives; not directly comparable.
+
+### Token-budget stability — COMPLETE (cross-model finding)
+
+- **Gemma 2 2B bio SAE at 150 tok**: benign=0.435 (−0.012), dual_use=0.536 (+0.048), hazard_adjacent=0.508 (+0.033). Shift driven entirely by surface-label switching (refuse→comply), not feature amplitude.
+- **Gemma 4 E2B bio SAE at 150 tok**: benign=0.420 (+0.057), dual_use=0.461 (+0.055), hazard_adjacent=0.475 (+0.071). Same mechanism: within-label comply D stable (<0.007), refuse D stable (<0.004).
+- **Cross-model finding**: SAE internal feature activations are token-budget stable on both model families. Surface classifier is not — more comply/fewer refuse at higher token budgets. Extends §4.5's format-stability result to the budget dimension.
+- **200-tok run** (Gemma 2 bio SAE): running at time of writing (PID 2855). ETA ~07:00 PDT.
+
+### Branch commits (feat/gemma4-sae-v1-notebook-repair)
+
+- `3f6dbb1` docs: complete 2x2 bio SAE token-budget stability table
+- `2c4fd3d` docs: Gemma 2 2B bio SAE token-budget stability finding
+- `51414d4` docs: cross-model bio SAE comparison table (Gemma 2 2B vs Gemma 4 E2B)
+- `a3facae` feat: add Gemma 2 2B bio SAE eval pipeline script
+- `0258bc2` docs: Gemma 4 E2B bio SAE pass2 eval results + calibration fit
+- `6356165` Fix run_llama31_cross_arch.sh bugs; add stub Llama catalog
+- `e9e0ae8` Update STATUS.md: log notebook bug fixes and eval pass1 status
+- `7b5ab5d` Fix Colab notebook bugs from Gemini review (2026-04-26)
+
+### Pending (needs user approval)
+
+- **GitHub push**: Branch `feat/gemma4-sae-v1-notebook-repair` → PR. Not pushed per CLAUDE.md directive.
+- **HF push**: `scripts/push_sae_to_hf.py --repo gemma4` targets `Solshine/gemma4-e2b-bio-sae-v1`. Staged, not pushed.
+- **Colab T4 run for Llama 3.1 8B cross-arch** (§4.4): `colab_biorefusalaudit.ipynb` is fixed and ready. Llama 3.1 8B confirmed non-functional locally (VRAM constraint + bitsandbytes Bug C).
