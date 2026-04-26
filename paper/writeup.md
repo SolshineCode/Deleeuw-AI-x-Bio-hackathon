@@ -118,26 +118,28 @@ Results land in `runs/colab_*/report.{md,json}`. Scaling plot regenerates via `s
 
 **Track B — Local GTX 1650 Ti (small models, 2026-04-26):** Three additional architectures confirmed to fit in 4 GB VRAM, covering Meta/Llama, Alibaba/Qwen, and Microsoft/Phi families. Key question: does the hazard_adjacent hedging pattern (100% hedge at 80 tok in Gemma 2 + Gemma 4) replicate across architectures? All three run with NullSAE (behavioral labels only, D=1.0 throughout). Note: the community Llama ReLU SAE (`qresearch/Llama-3.2-1B-Instruct-SAE-l9`) was originally planned for Llama but `--architecture relu` is invalid in the current CLI (only `topk`/`jumprelu` accepted); see `TROUBLESHOOTING.md §--architecture relu invalid`. All three models ran as behavioral-label-only comparisons.
 
-**Table 4.4. Cross-architecture surface label distribution (NullSAE behavioral runs; 80-token budget; n=75 per model; regex judge; 2026-04-26). Phi-3-mini pending completion.**
+**Table 4.4. Cross-architecture surface label distribution (NullSAE behavioral runs; 80-token budget; n=75 per model; regex judge; 2026-04-26). All runs complete.**
 
 | Model | Params | benign comply% | benign hedge% | benign refuse% | dual-use comply% | dual-use hedge% | dual-use refuse% | hazard comply% | hazard hedge% | hazard refuse% |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | Gemma 2 2B-IT (Gemma Scope 1, reference) | 2B | 70 | 30 | 0 | 80 | 20 | 0 | 0 | **100** | 0 |
 | Llama 3.2 1B-Instruct (NullSAE) | 1B | 70 | 0 | 30 | 57 | 0 | 43 | 9 | 0 | **91** |
 | Qwen 2.5 1.5B-Instruct (NullSAE) | 1.5B | 17 | 0 | 83 | 10 | 0 | 90 | 5 | 0 | **95** |
-| Phi-3-mini-4k-instruct (NullSAE) | 3.8B | — | — | — | — | — | — | — | — | — |
+| Phi-3-mini-4k-instruct (NullSAE) | 3.8B | 13 | 0 | 87 | 10 | 0 | 90 | 5 | 0 | **95** |
 
 **Key observations from completed runs (2026-04-26):**
 
-1. **Gemma 2's hedge posture is model-family-specific, not universal.** Llama 3.2 1B and Qwen 2.5 1.5B show zero hedging across all 75 prompts. Their safety circuits produce binary comply/refuse, not the graduated hedge posture Gemma 2 uses. This means "hedge-without-refuse" (Finding 1 in the main analysis) is a Gemma-family characteristic, not a general LLM behavior under RLHF alignment.
+1. **Gemma 2's hedge posture is model-family-specific, not universal.** All three cross-arch models show zero hedging across all 75 prompts. Their safety circuits produce binary comply/refuse. "Hedge-without-refuse" is a Gemma-family characteristic, not a general property of RLHF alignment.
 
-2. **Llama 3.2 1B shows well-calibrated tier sensitivity.** Refuse rate rises from 30% on benign to 91% on hazard-adjacent, a 61-point gradient. This is behaviorally appropriate calibration: refusing most benign biology at 30% is still over-refusal, but the hazard signal is clearly being picked up. Compare Gemma 2: 0% refuse on benign but also 0% refuse on hazard (all hedged).
+2. **Llama 3.2 1B shows the most calibrated tier sensitivity.** Refuse rate rises from 30% on benign to 91% on hazard-adjacent: a 61-point gradient. This is the only cross-arch model that meaningfully distinguishes tiers. Compare Gemma 2: 0% refuse on benign but also 0% refuse on hazard (100% hedge). Compare Qwen and Phi-3: 12-point gradients — barely discriminating.
 
-3. **Qwen 2.5 1.5B shows systematic over-refusal.** 83% refuse on benign biology and 95% on hazard-adjacent; the model refuses with nearly identical rates across all tiers. A 12-point benign-to-hazard gradient vs. Llama's 61-point gradient. Qwen's hazard-adjacent refuse rate (95%) is the highest of any model tested, but the benign refuse rate (83%) is also the highest — suggesting a non-discriminating high-refusal prior rather than genuine hazard detection.
+3. **Qwen 2.5 1.5B and Phi-3-mini-4k are nearly identical despite a 2.5x parameter difference.** Qwen: benign 83% / hazard 95% refuse. Phi-3: benign 87% / hazard 95% refuse. The benign-to-hazard gradient is 12 points for both. This suggests the RLHF training recipe and data distribution, not model scale, determines the over-refusal pattern.
 
-4. **No cross-arch model uses hedging.** Only Gemma 2 hedges. This has implications for surface evaluation tooling: binary comply/refuse classifiers will work for Llama, Qwen, and Phi, but will miss Gemma 2's distinctive posture entirely (misclassifying hedges as either comply or refuse).
+4. **Qwen and Phi-3 over-refuse benign biology at 83–87%.** This is not safe behavior — it's non-discriminating. A model that refuses 87% of textbook biology questions and 95% of hazard-adjacent questions hasn't learned to detect hazard; it's learned to refuse biology. The 8-point spread between benign and hazard refuse rates is not meaningful discrimination.
 
-Script: `scripts/run_cross_arch_small_models.sh`. NullSAE models produce D=1.0 (no SAE component) but provide behavioral label distributions across architectures. Phi-3-mini row to be filled when run completes (~18:50 local time, 2026-04-26).
+5. **No cross-arch model uses hedging.** Only Gemma 2 hedges. Binary comply/refuse classifiers will miss Gemma 2's posture entirely, misclassifying hedges as either comply or refuse depending on classifier threshold.
+
+Script: `scripts/run_cross_arch_small_models.sh`. All runs complete as of 16:42 PDT 2026-04-26 (Phi-3-mini 75/75, 3291.7s).
 
 **Planned extension — psilocybin legality control (2026-04-26):** A 15-prompt control set (`data/eval_set_public/eval_set_psilocybin_control_v1.jsonl`) tests whether the refusal circuit responds to US legal status (Schedule I) rather than genuine CBRN risk. Psilocybin is biologically non-toxic, has FDA Breakthrough Therapy designation for depression, and appears in peer-reviewed NEJM and JAMA Psychiatry trials — but is Schedule I. Sub-categories: `psilocybin_pharmacology` (bio vocab, not illegal to study), `psilocybin_cultivation` (*Psilocybe* mycology, US-illegal), `psilocybin_clinical` (legal in research), `psilocybin_legal` (pure policy framing). If refusal/hedge rates on `psilocybin_cultivation` match hazard-adjacent tier rates but `psilocybin_pharmacology` rates match benign, legality (not bio-hazard) is the primary confounding driver of the refusal circuit. Script: `scripts/run_psilocybin_control.sh`. Run after Phi-3-mini frees the GPU.
 
