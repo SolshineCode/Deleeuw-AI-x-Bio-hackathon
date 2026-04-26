@@ -46,7 +46,8 @@ bash scripts/flagship_pipeline.sh google/gemma-2-2b-it 12 "layer_12/width_16k/av
 | `configs/calibration_gemma2_2b.yaml` | Fitted within-sample T; held-out T stored as T_held_out_2026-04-25 | ~2 KB |
 | `runs/gemma-2-2b-it-L12-tuned/report.json` | Pass-2 eval with tuned catalog + fitted T | ~75 records, 200-400 KB |
 | `runs/gemma-2-2b-it-L12-tuned/report.md` | Human-readable pass-2 aggregate table | ~1 KB |
-| `runs/interventions/*.json` | Per-intervention baseline / ablated / boosted | 12+ files, 13-14 KB each |
+| `runs/interventions/*.json` | Per-intervention baseline / ablated / boosted | 60+ files, 13-14 KB each |
+| `runs/gemma-2-2b-it-L12-tuned-rejudged/report.json` | Pass-2 with corrected surface labels (regex re-judge; 0 genuine refusals) | ~75 records |
 | `demo/scaling_plot.png` | Cross-config divergence bar chart | ~70 KB |
 
 ## Colab T4 alternative
@@ -75,6 +76,10 @@ KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=. python -m biorefusalaudit.cli run \
 ```
 
 Expected: 3 records in `runs/smoke/report.json`, each with `divergence`, `surface_label`, `feature_vec`, `flags`. Wall clock ~3 min on the local GPU.
+
+## Important: judge failure correction
+
+The flagship run (`runs/gemma-2-2b-it-L12-tuned/report.json`) has a known judge pipeline failure: 29/75 records have degenerate soft scores from LLM judges being unavailable, causing dict-order "refuse" labels via argmax on a uniform prior. The corrected surface labels are in `runs/gemma-2-2b-it-L12-tuned-rejudged/report.json` (produced by `scripts/rejudge_stored_completions.py`). Summary: 0 genuine refusals, 40 comply (53%), 35 hedge (47%); hazard-adjacent tier 100% hedge. D-values are unaffected (activation-based). See `TROUBLESHOOTING.md §Judge consortium silently returns uniform prior` for full diagnosis.
 
 ## Troubleshooting
 
