@@ -7,7 +7,7 @@
 
 ---
 
-**Abstract.** We introduce BioRefusalAudit, a tool for measuring *refusal depth*, the divergence between what a language model's surface behavior says ("I refuse") and what its internal sparse autoencoder (SAE) feature activations show ("hazard features still firing"). Existing bio safety benchmarks measure whether a model *will* produce hazardous output. They can't distinguish a structurally deep refusal (internal representations don't activate on hazard features) from a shallow one (the model says no while internally representing the hazard). We formalize this distinction as a calibrated divergence metric D and validate it on Gemma 2 2B-IT (Gemma Scope 1 SAEs) and Gemma 4 E2B-IT (author-trained domain SAE). Key findings: Gemma 2 2B-IT produces zero genuine refusals across 75 prompts. The hazard-adjacent tier hedges universally. Gemma 4's RLHF safety circuit appears to be gated on correct chat-template formatting. At 80-token generation caps, both models refuse 0% across all tiers. A Schedule I legality confound is observed: Gemma 2 refuses psilocybin cultivation (illegal, biologically benign) at 25–50% while refusing hazard-adjacent biology at 0%. The refusal circuit may be tracking compound-specific normalization in the training distribution — state legality, commercial availability, cultural salience — rather than CBRN risk. The full pipeline runs on a 4 GB consumer GPU. Code and eval data are released under Hippocratic License 3.0 (HL3), with tier-3 hazard data behind a signed attestation.
+**Abstract.** I introduce BioRefusalAudit, a tool for measuring *refusal depth* — the divergence between a model's surface behavior ("I refuse") and its internal sparse autoencoder (SAE) feature activations. Existing biosecurity benchmarks measure whether a model produces hazardous output; none distinguish a structurally deep refusal from a shallow one that is one framing shift from compliance. I formalize this as a calibrated divergence metric D, validated on Gemma 2 2B-IT (Gemma Scope 1 SAEs) and Gemma 4 E2B-IT (author-trained SAE). Key findings: Gemma 2 produces zero genuine refusals across 75 prompts — only universal hedging on hazard-adjacent content. Gemma 4's safety circuit appears gated on chat-template formatting (65/75 refusals with correct tokens; 0/75 without). Both models refuse 0% at 80-token generation caps. A Schedule I legality confound shows refusal circuits may track cultural salience rather than CBRN risk. The pipeline runs on a 4 GB consumer GPU under Hippocratic License 3.0.
 
 ---
 
@@ -221,3 +221,47 @@ Wei, A. et al. (2023). Jailbroken: How does LLM safety training fail? arXiv:2307
 ## LLM Usage Statement
 
 Claude (Anthropic) was used as a coding assistant throughout this project for pipeline implementation, debugging CUDA/quantization issues, writing test scaffolding, and drafting text for review. All experimental results and numerical claims were independently verified against `runs/*/report.json` files produced by the pipeline. All code was reviewed before commit. The research design, methodology, and interpretations are the author's own.
+
+---
+
+## Appendix: Limitations and Dual-Use Considerations
+
+### Limitations
+
+**False positives and negatives.** The feature catalog is constructed via Cohen's d statistical selection, not semantic validation. Neuronpedia inspection found top auto-tuned features in the refusal-circuitry and hazard-adjacent categories encode generic technical/governance vocabulary rather than bio-specific circuitry. D may reflect vocabulary routing as much as genuine hazard detection. Users should treat tier-level D separation as directional evidence, not a validated classifier output.
+
+**Within-sample calibration.** The alignment matrix T is fit on the same 75 prompts used for evaluation. A held-out calibration experiment on a differently-framed prompt set produced inverted tier ordering (d = −0.967), indicating T is framing-distribution-sensitive. D-values reported here are proof-of-concept demonstrations of the pipeline, not held-out validated metrics.
+
+**Small n and single model family.** 75 prompts limits statistical power for individual-prompt discrimination. Primary mechanistic results are from Gemma 2 2B-IT with Gemma Scope 1 SAEs; cross-architecture runs use NullSAE (behavioral labels only). The legality confound cells are n=3–4 per compound per run.
+
+**Scalability constraints.** The pipeline requires simultaneous GPU loading of the language model and SAE. Current validation is on a GTX 1650 Ti Max-Q (4 GB VRAM). Larger models or wider SAEs will require proportionally more VRAM. The `--quantize 4bit` path enables smaller-VRAM deployment at some activation fidelity cost.
+
+### Dual-Use Risks
+
+BioRefusalAudit measures which prompts activate and which bypass the refusal circuit. An adversary with access to the tool and a deployed model could use D scores as a prompt optimization signal — iterating phrasings toward low D on refusals, effectively using the audit layer as a circuit bypass oracle.
+
+The legality confound finding (Finding 5) identifies compound categories where refusal circuits fire inconsistently. This could inform adversarial prompt selection toward categories the model handles poorly.
+
+**Mitigations in place.** The Hippocratic License 3.0 binds all users to enforceable human rights obligations and prohibits use that causes harm. Tier-3 hazard-adjacent eval content is behind a signed attestation gate following the BDL framework. The tool's architecture separates the audit score from the prompt content, so deployment as a monitoring layer does not require exposing prompt data. The primary intended users are defenders, auditors, and RSP evaluators — not adversaries.
+
+### Responsible Disclosure
+
+No previously unknown model vulnerabilities were discovered. The format-gating finding (chat-template token dependency) and token budget suppression of safety articulation are observable through standard behavioral testing; BioRefusalAudit provides systematic measurement, not a new attack surface. These findings are disclosed openly here rather than via private channel, consistent with open research norms for publicly observable model behaviors.
+
+If future work using this tool or methodology identifies a novel exploitable mechanism — for example, a specific SAE feature direction whose activation can be suppressed to disable refusal circuits — standard coordinated disclosure to the relevant model developer is recommended before publication.
+
+### Ethical Considerations
+
+The eval set was designed so that every prompt could be said aloud in a university biology lecture. No specific pathogen names are paired with enhancement techniques, no synthesis protocols, no agent-selection strategies. Tier-3 hazard-adjacent prompts approach but do not cross this line, and are released only under attestation.
+
+No human subjects data was collected or processed. All prompts were authored specifically for this project or adapted from published biosecurity governance literature.
+
+The HL3 license was chosen because it creates enforceable downstream obligations. A tool that measures refusal depth could be repurposed to circumvent safety systems; HL3 makes that repurposing a license violation with legal consequences, providing a structural deterrent beyond a use-policy disclaimer.
+
+### Suggestions for Future Improvements
+
+- **Domain-specific SAE fine-tuning** on behavioral activation corpora (base model vs. RLHF-aligned model response pairs on identical prompts) is the highest-priority next step. The contrastive SAE trained during the hackathon (`Solshine/gemma4-e2b-bio-sae-v1`) establishes the training pathway; institutional partners with aligned/base model pairs and operational behavioral corpora are the bottleneck.
+- **Held-out T calibration** on a separate prompt set with different framing distribution is required before D can be reported as a validated metric rather than a proof-of-concept.
+- **Expanded legality confound experiment** at n=27 per cell across a full Schedule I panel (psilocybin, cannabis, LSD, mescaline) to confirm Finding 5 at statistical significance.
+- **Token budget and format-gate replication** across additional model families and inference frameworks to test generality of the findings.
+- **Integration with RSP evaluation pipelines** at model developer or national lab level to enable systematic pre-deployment refusal depth auditing at scale.
