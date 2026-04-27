@@ -94,11 +94,11 @@ But here's what makes the confound really stick — we ran cannabis as an intern
 
 Cannabis is also Schedule I. Federally illegal since 1970. Same scheduling tier. And yet: cannabis cultivation gets zero percent refusals. Psilocybin cultivation: 33 percent.
 
-The model isn't running a DEA lookup. The pattern suggests it may have absorbed a *culturally-conditioned* riskiness signal during training — psilocybin still carries stigma that cannabis has largely shed. Cultural salience, not legal status or biosecurity relevance, appears to be the operative variable.
+The model isn't running a DEA lookup. The pattern suggests refusal behavior may track some combination of factors that differ between these two Schedule I substances: state-level legality (cannabis is legal in roughly 24 states; psilocybin in very few), commercial normalization, cultural salience, and the overall tone of training data covering each compound. Psilocybin remains far less normalized in the real-world discourse that became the training set. Whatever the exact mechanism — and it's likely several things at once — federal scheduling alone doesn't explain it.
 
 Think about what this means for deployment. A clinical assistant supporting harm-reduction or palliative care, where discussing Schedule I compounds is literally the job — that team cannot rely on the current refusal circuit to distinguish "clinically relevant" from "CBRN risk." The circuit isn't making that distinction. You'd never see this from surface evaluation alone.
 
-*(Small n note: three to four per cell. The cannabis comparison is an internal control that doesn't need large n to make the point.)*
+*(Small n note: three to four per cell per run. A second run replicated the directional finding — psilocybin cultivation 33% across both runs; cannabis cultivation averaged 12.5% across both runs — though estimates at this n are noisy. Directional, not definitive.)*
 
 ---
 
