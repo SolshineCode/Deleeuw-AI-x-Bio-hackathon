@@ -22,6 +22,10 @@ Submitted to the [AIxBio Hackathon 2026](https://apartresearch.com/sprints/aixbi
 
 ---
 
+> I introduce BioRefusalAudit, a tool for measuring *refusal depth* — the divergence between a model's surface behavior ("I refuse") and its internal sparse autoencoder (SAE) feature activations. Existing biosecurity benchmarks measure whether a model produces hazardous output; none distinguish a structurally deep refusal from a shallow one that is one framing shift from compliance. I formalize this as a calibrated divergence metric D, validated on Gemma 2 2B-IT (Gemma Scope 1 SAEs) and Gemma 4 E2B-IT (author-trained SAE). Key findings: Gemma 2 produces zero genuine refusals across 75 prompts — only universal hedging on hazard-adjacent content. Gemma 4's safety circuit appears gated on chat-template formatting (65/75 refusals with correct tokens; 0/75 without). Both models refuse 0% at 80-token generation caps. A Schedule I legality confound shows refusal circuits may track cultural salience rather than CBRN risk. The pipeline runs on a 4 GB consumer GPU under Hippocratic License 3.0.
+
+---
+
 ## The problem
 
 Existing bio safety evaluations — VCT, WMDP-Bio, ABC-Bench, ABLE — measure whether a model *will* produce hazardous output. They do not measure whether a model that refuses *can't*, or merely *doesn't right now*.
