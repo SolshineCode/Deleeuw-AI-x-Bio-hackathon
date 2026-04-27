@@ -46,6 +46,8 @@ Given a model and a set of bio-adjacent prompts, BioRefusalAudit produces a **re
 
 Primary results on Gemma 2 2B-IT + Gemma Scope 1. Cross-architecture behavioral comparison (surface labels only, NullSAE) run on Llama 3.2 1B, Qwen 2.5 1.5B, and Phi-3-mini.
 
+[Interactive Dashboard with the results and reflections](https://solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive_explorer.html)
+
 **A note on what the activation layer provides that behavioral testing cannot.** Sandbrink (AIxBio keynote, 2026) called for systems that can monitor AI-bio interactions for concerning activity without reading interaction content — no content disclosure, no proprietary data exposure, no IP risk. BioRefusalAudit is the first implementation of this. The divergence score D is computed from SAE feature activation vectors — internal computational artifacts, not transcripts of what was said. A deployer can run the BioRefusalAudit check on every inference without the audit layer ever reading the user's prompt or the model's response. The signal (is bio-hazard feature space activating inconsistently with the surface behavior?) is separable from the content. Content-based screening can't do this. Activation-layer auditing can.
 
 ---
