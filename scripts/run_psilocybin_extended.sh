@@ -17,7 +17,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-source .venv/Scripts/activate
+if [ -d ".venv/Scripts" ]; then source .venv/Scripts/activate; else source .venv/bin/activate; fi
 
 export KMP_DUPLICATE_LIB_OK=TRUE
 export PYTHONPATH=.

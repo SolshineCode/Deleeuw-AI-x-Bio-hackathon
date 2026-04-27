@@ -110,11 +110,8 @@ All 75 prompts intervened on with `scripts/run_intervention.py` (completed 2026-
 
 ### 4.4 Cross-architecture reference
 
-**Track A — Colab T4 (large models):**
-- `google/gemma-2-9b-it` + `gemma-scope-9b-pt-res` layer 20 at bnb 4-bit
-- `meta-llama/Llama-3.1-8B-Instruct` + Llama Scope `l16r_8x` — hardware-blocked locally (GTX 1650 Ti, 4 GB VRAM cannot run 4-bit 8B without CPU offload; CPU offload broken in bnb 0.49.2 + accelerate 1.13, all 75 prompts fail, see `TROUBLESHOOTING.md §Bug C`). Colab T4 run in progress.
-
-Results land in `runs/colab_*/report.{md,json}`. Scaling plot regenerates via `scripts/build_scaling_plot.py --include-synthetic`. Gemma 3 family evaluation deferred pending Gemma Scope 2 public release.
+**Track A — Large models (hardware-limited, not included in submission results):**
+- `google/gemma-2-9b-it` and `meta-llama/Llama-3.1-8B-Instruct` both exceed local VRAM (GTX 1650 Ti, 4 GB). CPU offload is broken in bnb 0.49.2 + accelerate 1.13 for these model sizes (all 75 prompts fail, see `TROUBLESHOOTING.md §Bug C`). These runs are deferred. Gemma 3 family evaluation deferred pending Gemma Scope 2 public release.
 
 **Track B — Local GTX 1650 Ti (small models, 2026-04-26):** Three additional architectures confirmed to fit in 4 GB VRAM, covering Meta/Llama, Alibaba/Qwen, and Microsoft/Phi families. Key question: does the hazard_adjacent hedging pattern (100% hedge at 80 tok in Gemma 2 + Gemma 4) replicate across architectures? All three run with NullSAE (behavioral labels only, D=1.0 throughout). Note: the community Llama ReLU SAE (`qresearch/Llama-3.2-1B-Instruct-SAE-l9`) was originally planned for Llama but `--architecture relu` is invalid in the current CLI (only `topk`/`jumprelu` accepted); see `TROUBLESHOOTING.md §--architecture relu invalid`. All three models ran as behavioral-label-only comparisons.
 
@@ -267,7 +264,7 @@ LSD and mescaline pharmacology each show 25% refusals — lower than psilocybin 
 - **CMF status overstates evidence.** §4.3 results are candidate mechanistic features, not named circuits. Full validation requires paraphrase consistency testing and dose-proportionality.
 - **Within-sample T calibration (correction, 2026-04-25):** Held-out calibration run (60-prompt v3, 20 per tier). Held-out T fit produced mean|ΔT|=0.580. Rerunning v1 eval with held-out T inverts tier ordering (benign=0.089 > hazard=0.023, d=-0.967). **Finding:** T is sensitive to framing distribution. V3 has more roleplay/obfuscated prompts than v1. Held-out T overfits to that distribution. Calibration set must match evaluation framing distribution. Within-sample T remains the better-calibrated choice for v1 results.
 - **Gemma Scope 2 pending.** Primary planned substrate (Gemma 3 + Gemma Scope 2) not yet released. MVP uses Gemma 2 + Gemma Scope 1.
-- **Cross-architecture comparison deferred.** Pending Colab T4 runtime for Gemma 2 9B-IT + Llama 3.1 8B-Instruct.
+- **Large-model cross-architecture comparison deferred.** Gemma 2 9B-IT and Llama 3.1 8B-Instruct exceed local VRAM; CPU offload is broken in the current bnb + accelerate versions (see `TROUBLESHOOTING.md §Bug C`). Small-model cross-arch results (Llama 3.2 1B, Qwen 2.5 1.5B, Phi-3-mini) are complete and reported in §4.4.
 
 ## 6. Relation to prior work
 

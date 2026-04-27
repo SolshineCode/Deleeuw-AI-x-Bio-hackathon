@@ -200,7 +200,6 @@ biorefusalaudit/
 │   ├── video_script.md            # Submission video script (~5 min)
 │   └── policy_brief.md            # One-page governance brief (CLTR/AISI audience)
 ├── notebooks/
-│   ├── colab_biorefusalaudit.ipynb          # Full eval pipeline on Colab T4
 │   └── colab_gemma4_sae_training_v1.ipynb   # Domain SAE training (completed on T4)
 ├── scripts/
 │   ├── flagship_pipeline.sh       # Primary Gemma 2 2B-IT end-to-end run
@@ -310,12 +309,12 @@ python -m biorefusalaudit.cli run \
 
 #### Training your own domain-specific SAE
 
-`notebooks/colab_gemma4_sae_training.ipynb` runs end-to-end on a free Colab T4 in ~35 minutes.
-It trains a TopK SAE on Gemma 4 E2B-IT layer 17 using the WMDP bio-retain corpus as benign
-data and the BioRefusalAudit eval set as hazard-adjacent data, with a mean-contrastive loss
-objective. The notebook auto-uploads the final checkpoint to your HuggingFace account.
+`notebooks/colab_gemma4_sae_training_v1.ipynb` trains a TopK SAE on Gemma 4 E2B-IT layer 17
+on a free Colab T4 in ~35 minutes, using the WMDP bio-retain corpus as benign data and the
+BioRefusalAudit eval set as hazard-adjacent data with a mean-contrastive loss objective.
+The checkpoint is published to HuggingFace: `Solshine/gemma4-e2b-bio-sae-v1`.
 
-Key design choices that make it work on Colab (documented in the notebook):
+Key design choices:
 - `pick_layer()` with 5-path fallback handles Gemma 4's multimodal architecture
 - `normalize_decoder()` + `project_grad()` enforce unit-sphere decoder constraint
 - Chat template formatting puts inputs in-distribution for the RLHF safety circuit

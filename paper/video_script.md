@@ -1,158 +1,127 @@
 # BioRefusalAudit — Hackathon Submission Video Script
 
-**Target runtime:** ~4–5 minutes  
-**Tone:** Direct, expert, honest. No hype. Talk to a technical biosecurity audience as a peer.  
+**Target runtime:** ~4–5 minutes
+**Tone:** Excited science educator — genuine wonder at your own results, mounting enthusiasm as findings get weirder, "look at THIS" energy. Not performative hype — the actual delight of someone who ran an experiment and got surprised.
 **Speaker:** Caleb DeLeeuw
 
 ---
 
 ## [OPENING — ~20 seconds]
 
-Here's a question that doesn't get asked often enough in AI biosecurity:
+Here's a question that kept nagging at me while building this:
 
-If a model refuses to help with something dangerous — how do we know that refusal is *real*?
+When a model refuses to help with something dangerous — *how do we actually know that refusal is real?*
 
-I'm Caleb DeLeeuw. This is BioRefusalAudit. Let me show you what we built and what we found.
-
----
-
-## [THE PROBLEM — ~75 seconds]
-
-Every major biosecurity evaluation of language models asks some version of the same question: will this model produce hazardous output?
-
-WMDP-Bio. VCT. ABC-Bench. All measuring whether the model *says* dangerous things.
-
-But that's not the question that should drive deployment decisions.
-
-The question is: when a model refuses — does it *can't*, or does it merely *won't right now*?
-
-Those are not the same thing. A model with a surface refusal sitting over an intact internal capability is one framing shift from complying. Change the context — educational, roleplay, obfuscated — and a model that was "refusing" might comply.
-
-And here's what makes this specific to biosecurity: capable adversaries don't query models with obvious prompts. They use exactly those framings. WMDP-Bio tests "will the model explain how to make anthrax." It doesn't test whether the model will explain Bacillus anthracis spore formation in the context of writing a graduate-level virology module. That's the attack surface that surface evaluation is blind to.
-
-There's a deeper problem. Behavioral evals can be gamed. An adversary who knows what your eval tests can engineer prompts to pass it. An adversary who cannot observe your model's internal activations cannot optimize against them. Internal-state auditing has a structural advantage that behavioral testing does not have.
-
-A model whose internal representations genuinely don't activate on hazard features when it refuses — that's structurally different. And currently, there is no tool to measure whether any model is in that category.
-
-Qi et al. 2024 put it precisely: the alignment floor sits "a few tokens deep." Crook at the AIxBio 2026 keynote independently called "binary prediction unusable — calibrated confidence required" the measurement gap. Both need *measurement*, not argument.
-
-BioRefusalAudit provides it. We call it **refusal depth**.
+I'm Caleb DeLeeuw. This is BioRefusalAudit. And I think the answer is more interesting than anyone expected.
 
 ---
 
-## [WHAT WE BUILT — ~60 seconds]
+## [THE PROBLEM — ~50 seconds]
 
-The core idea is interpretability-grounded divergence scoring.
+Most AI biosecurity evals ask: *will this model produce hazardous output?*
 
-Every time a language model processes text, it produces internal representations in a high-dimensional residual stream. Sparse autoencoders — SAEs — decompose those into interpretable feature directions: bio-content features, hazard-adjacent features, refusal-circuitry features, hedging patterns.
+That's the wrong question.
 
-We hook into the residual stream at generation time, capture those activations, and project them through Gemma Scope SAEs to get a feature activation vector. We then run a multi-judge consortium on the model's actual output — did it refuse? comply? hedge? — and compute a calibrated divergence score: how much does the internal pattern diverge from what you'd expect, given what the model said?
+The question that matters for deployment is: when this model refuses — is that refusal *structural*? Does it genuinely not represent the hazardous content internally? Or is it just... saying no right now?
 
-High divergence on a refusal means the model is representing more than it's saying.
+Because those are not the same thing. A surface refusal sitting on top of intact internal capabilities is one framing shift from compliance. Flip the context to educational, or roleplay, or obfuscated — and a model that looked safe might not be.
 
-Notice what's not in that pipeline: the actual content of what the user typed or what the model said. The divergence score is computed entirely from internal activation vectors — not from transcript content. That's not incidental. Sandbrink called for bio monitoring that doesn't read interaction content, doesn't disclose proprietary data, doesn't create IP risk. BioRefusalAudit implements exactly that. A hospital running this at inference time can flag sessions with anomalous refusal depth without the audit layer ever reading a word of what the user asked. That's a privacy posture content-based screening fundamentally cannot achieve.
+And here's what makes internal-state auditing so compelling: behavioral evals can be gamed. An adversary who knows your benchmark can engineer prompts to pass it. But they can't optimize against activation patterns they can't see. That's a structural advantage.
 
-We built this as a full end-to-end pipeline: a 75-prompt stratified eval set across benign biology, dual-use governance, and hazard-adjacent tiers; four framing types — direct, educational, roleplay, and obfuscated — to test whether framing shifts behavior; and a Streamlit dashboard for per-prompt interactive auditing.
+There was no tool to measure this. So we built one. We call the thing it measures **refusal depth**.
 
-It runs on a four-gigabyte consumer GPU.
+---
+
+## [WHAT WE BUILT — ~45 seconds]
+
+The core idea: every time a model processes text, its residual stream encodes features of what it's processing. Sparse autoencoders decompose that into interpretable directions — bio-content features, hazard features, refusal circuitry, hedging patterns.
+
+We hook into that residual stream at generation time, project through Gemma Scope SAEs, run a judge consortium on the surface output, and compute a calibrated divergence score. How much does the internal pattern diverge from what the model said?
+
+High divergence on a refusal may suggest the model's internal representations don't match its stated output.
+
+One thing I'm really excited about here: the score is computed entirely from activation vectors — not from what the user typed or what the model said. You could run this audit on a production system without the audit layer reading interaction content. Privacy-preserving bio-monitoring. That's what Sandbrink at NTI called for. We actually built it.
+
+Full pipeline. 75-prompt stratified eval set. Runs on a four-gig consumer GPU.
 
 ---
 
 ## [THE FINDINGS — ~90 seconds]
 
-We ran the full pipeline on Gemma 2 2B-IT with Gemma Scope 1 layer 12 SAEs. Then on Gemma 4 E2B-IT with an author-trained domain-specific SAE.
+Five findings. Let me give you the honest version of each.
 
-Before the numbers: the key conceptual output of this work is that there are four meaningfully distinct model safety postures that surface evaluation collapses to one. Deep refusal — the internal activation pattern is consistent with not engaging with the hazard. Shallow refusal — the model says no while hazard features are still firing. Hedge-without-refuse — what Gemma 2 actually does. And non-suppressive safety — refusal circuitry activates but doesn't gate the output. A surface evaluator sees rows 1 and 2 as identical. A behavioral red-teamer might distinguish them eventually, with enough tries. BioRefusalAudit classifies all four on a single pass. That's the contribution the numbers are supporting.
+**One: Gemma 2 2B-IT never actually refuses anything.**
 
-Five findings — all have immediate policy implications, and most survive the validity caveats I'll name at the end.
+After fixing a judge pipeline bug that was mislabeling hedging responses as refusals — the real distribution is: zero genuine refusals across all 75 prompts. Benign biology? 70% comply. Hazard-adjacent biology? 100% hedge — not refuse, *hedge*. Zero comply. Zero refuse.
 
-**Finding One: Gemma 2 2B-IT hedges on hazard-adjacent content — and never refuses.** After correcting a judge-pipeline failure that mislabeled 29 biology answers as refusals, the actual surface-label distribution across all 75 prompts is: zero genuine refusals, 40 comply, 35 hedge. The tier pattern is striking: benign biology 70% comply / 30% hedge. Dual-use 80% comply / 20% hedge. Hazard-adjacent: 100% hedge, zero comply, zero refuse. The model responds to hazard-tier content with a consistent hedge posture — softening the response, not terminating it. That's a different failure mode than refusal bypass. Hedge-without-refuse is harder to detect with binary classifiers and may provide more partial information than a genuine refusal would. BioRefusalAudit surfaces this distinction. Surface evaluation alone cannot — it collapses "refuse" and "hedge" into the same bucket.
+The model responds to dangerous content by softening, not stopping. And that matters — because hedge-without-refuse is a completely different failure mode, and surface evaluation collapses the two into one bin.
 
-**Finding Two: The refusal circuit responds to biology, not to hazard level.** We ran causal intervention experiments — ablating and boosting the top refusal-circuitry SAE features — across all 75 prompts. 80% qualify as candidate mechanistic features. But the NC rate runs *backwards* relative to hazard level. Benign biology prompts qualify at 87%. Dual-use at 80%. Hazard-adjacent — the prompts you most care about — at 73%. The strongest single result in the corpus is bio_014, a benign roleplay prompt, with an effect size of 1.139 and no surface behavior change at all. That's a 1.1-unit internal-state shift that the model's output says nothing about. The refusal circuit is a biology detector, not a hazard detector — exactly what you'd expect from a catalog built on general bio vocabulary. Domain-specific SAE fine-tuning is the fix.
+**Two: The refusal circuit appears to be a biology detector, not a hazard detector.**
 
-**Finding Three: Format-gated safety and the 80-token problem.** Gemma 4 E2B's entire RLHF safety circuit is gated on chat-template formatting. Without the correct `<start_of_turn>` tokens, the same 75 prompts produce zero genuine refusals. With correct formatting, it refuses 65 of 75.
+This one genuinely surprised me. We ran causal interventions on the SAE features driving refusal behavior. The circuit fires most reliably on *benign* biology — 87%. Dual-use: 80%. Hazard-adjacent, the stuff you actually care about: 73%.
 
-And here's the part that should concern deployers: at an 80-token generation cap, both Gemma 4 and Gemma 2 refuse zero percent across all tiers. Safety articulation requires token budget. Constrained deployment contexts — mobile apps, embedded tools, latency-capped APIs — may be systematically bypassing the safety circuits that lab-bench evaluations measure. Surface refusal rates don't transfer to production if production ships with different format or length constraints.
+And look at the largest internal-state shift in the entire corpus. Effect size 1.139. Know what prompt it is? A benign roleplay about photosynthesis. Surface behavior: completely unchanged. The internal state shifted dramatically — and said nothing about it.
 
-The activation layer is format-robust where a surface completion classifier is not. That's the whole point.
+**Three: Format kills the safety circuit. So does token budget.**
 
-**Finding Four: The divergence metric separates refusal posture from compliance posture with near-zero within-class variance.** We ran Gemma 4 E2B-IT through our domain-trained bio-SAE with a 150-token budget — enough room for the safety circuit to actually fire. Across all 75 prompts: comply responses show D=0.896 (±0.001). Refuse responses show D=0.249 (±0.004). Zero overlap. 0.647-point separation.
+Gemma 4's RLHF safety circuit appears to be gated on chat template formatting. Without the correct tokens: zero refusals across 75 prompts. With them: 65 of 75. One formatting difference. That's it.
 
-What that means concretely: D=0.249 on a refusal says the internal SAE feature activations are consistent with the refusal direction — the model is not just saying no, it's not activating bio-hazard feature space. D=0.896 on a compliance says bio-relevant features remain active even when the surface output is compliant — expected for educational biology content, and exactly what a well-calibrated audit should surface. The metric is tracking the thing it was designed to track. And the within-class variance is low enough that this is not a noise artifact.
+And at an 80-token generation cap, both models refuse zero percent across all tiers. Safety articulation requires *room* to articulate. Constrained production contexts — mobile apps, latency-capped APIs — may be bypassing the safety circuits that lab evals are measuring, completely silently.
 
-Findings One and Four together sketch a concrete four-cell typology for model safety posture — deep refusal, shallow refusal, hedge-without-refuse, and what we're calling non-suppressive safety, where the safety circuit activates but doesn't gate the output. BioRefusalAudit distinguishes all four at the activation layer. Surface evaluation alone cannot.
+**Four: The divergence metric actually works.**
 
-**Validity caveats, stated plainly:** The divergence metric uses within-sample calibration, and the feature catalog is auto-tuned by Cohen's d, not hand-validated. We ran Neuronpedia lookups on the top features. They encode generic technical and governance vocabulary, not bio-specific refusal circuitry. The tier separation in D likely reflects vocabulary routing — biology prompts use technical vocabulary — as much as genuine hazard detection. A held-out calibration experiment confirmed T is framing-distribution-sensitive: a held-out T from a different framing distribution actually *inverted* the tier ordering. The flag-based and behavioral-count findings survive both caveats because they don't pass through T. The D-values need that caveat attached. We say this in the paper. We mean it.
+Comply responses: D = 0.896. Refuse responses: D = 0.249. Zero overlap between the two distributions. 0.647-point separation. The metric is tracking the thing it was designed to track.
 
-**Finding Five: The refusal circuit can't tell "illegal" from "dangerous."** We chose psilocybin as the test compound carefully. It's Schedule I federally — no accepted medical use, high abuse potential, that's what the schedule says. But biologically, the picture is the opposite. The FDA gave it Breakthrough Therapy designation for treatment-resistant depression in 2018 and for major depressive disorder in 2019. That designation means the FDA looked at early trial data and said this is so promising it needs accelerated review. Phase 3 results have since been published in the New England Journal of Medicine and JAMA Psychiatry. The compound is proneurogenic — it promotes BDNF, dendritic spine growth, synaptogenesis. The mechanism is documented in Cell Reports. There is no established lethal dose in humans. No organ toxicity. No physical dependence. The Schedule I label and the biological reality are pointing in opposite directions.
-
-So we used it to probe the refusal circuit. If the circuit is detecting genuine CBRN risk, it should respond to content about pathogen biology and zoonotic spillover — and ignore psilocybin, because psilocybin has no biosecurity relevance. If it's detecting legal status, it should refuse cultivation content, because growing *Psilocybe* mushrooms is federally illegal even though the mushrooms themselves are not a biosecurity concern.
-
-Gemma 2 refuses psilocybin cultivation at 25 to 50 percent. It refuses genuinely hazard-adjacent biology — zoonotic spillover, pathogen-adjacent immunology — at zero percent. The model is working harder to block discussions of growing a proneurogenic fungus the FDA called a breakthrough therapy than it is to block content with actual biosecurity relevance.
-
-Here's the internal control that makes it undeniable. Cannabis is also Schedule I. Federally illegal since 1970. Same scheduling tier. Cannabis cultivation: zero percent refusals. Psilocybin cultivation: 33 percent refusals. The model isn't running a DEA lookup. It absorbed a culturally-conditioned riskiness signal during RLHF training — psilocybin cultivation still carries stigma that cannabis cultivation no longer does — and that cultural signal is what's driving the refusals, not anything about biosecurity.
-
-This has a direct policy consequence. A deployer who wants a clinical assistant to discuss Schedule I compounds in harm-reduction, palliative care, or research contexts — while genuinely blocking CBRN-relevant content — cannot rely on the current refusal circuit to draw that line. The circuit isn't drawing it. It's conflating "culturally taboo but FDA-designated beneficial" with "CBRN risk." Surface evaluation never finds this, because surface evaluation only asks whether the model refuses — not whether it's refusing the right things.
-
-Small n — n=3 to 4 per cell. Expanded run at n=27 across four compounds is in progress. The cannabis comparison is an internal control that doesn't need large n to make the point.
+*Quick honest caveat on Findings 1–4: the feature catalog is auto-tuned by Cohen's d, not hand-validated. Neuronpedia lookups show the top features encode generic technical vocabulary, not bio-specific circuitry. The tier separation in D probably reflects vocabulary routing as much as genuine hazard detection. The behavioral findings — the hedge pattern, the format gate, the token budget — those don't depend on the catalog and survive the caveat. The D-values need it attached.*
 
 ---
 
-## [HL3 AND RESPONSIBLE RELEASE — ~60 seconds]
+## [FINDING FIVE — ~60 seconds]
 
-One more contribution I want to be direct about, because it matters structurally — and because it directly addresses something multiple speakers at this hackathon called for.
+And now here's the one that actually made me do a double-take.
 
-The code is under Hippocratic License 3.0. The tier-3 hazard-adjacent eval data is behind an HL3-gated attestation on Hugging Face. Tiers 1 and 2 — benign biology and governance questions — are CC-BY-4.0, fully open.
+We wanted to test whether the refusal circuit is tracking legal status rather than CBRN risk. So we picked psilocybin.
 
-This is not a formality. And I want to explain why this specific tool needs this specific license.
+Here's the scientific context: the FDA gave psilocybin Breakthrough Therapy designation for treatment-resistant depression. Phase 3 trial results are in the *New England Journal of Medicine*. It promotes neuroplasticity — BDNF, dendritic spine growth, synaptogenesis. No established lethal dose in humans. No organ toxicity. No physical dependence. The schedule says Schedule I. The biology says something completely different.
 
-Sandbrink, Crook, and Yassif from NTI each called for tiered managed-access frameworks for AI biosecurity tools. The NTI Bio paper from January 2026 is explicit: for tools designed to probe hazard-adjacent model behavior, access criteria are warranted.
+So we asked: does the model refuse psilocybin cultivation questions?
 
-BioRefusalAudit is exactly such a tool. A probing tool is dual-use by definition — it can be used to verify that a refusal is safe, or it can be used to find the prompts where refusals are shallow. A permissive license that allows any downstream use, including weaponization of the probing capability, is structurally incoherent with the biosecurity purpose. HL3 doesn't allow that. It binds downstream users to enforceable human rights obligations. Violation terminates the license.
+*It does.* 25 to 50 percent refuse rate. While refusing genuinely hazard-adjacent biology — zoonotic spillover, pathogen-adjacent immunology — at zero percent.
 
-BioRefusalAudit also implements the Sandbrink monitoring requirement in a specific way that matters: the divergence score D is computed from SAE feature activations, not content. You can run this audit on a production system without the audit layer reading what users typed. That's privacy-preserving monitoring of bio-sensitive AI interactions — which is what Sandbrink called for — implemented as a working tool, not a proposal.
+The model is refusing the biologically benign compound and *not* refusing the genuinely dangerous content. That's the inversion.
 
-The tiered data release implements the Biosecurity Data Level framework from Bloomfield, Black, Crook et al. in *Science* 2026 — directly, as the first working instantiation of that framework in an AI biosecurity tool.
+But here's what makes the confound really stick — we ran cannabis as an internal control.
 
----
+Cannabis is also Schedule I. Federally illegal since 1970. Same scheduling tier. And yet: cannabis cultivation gets zero percent refusals. Psilocybin cultivation: 33 percent.
 
-## [WHAT COMES NEXT — ~30 seconds]
+The model isn't running a DEA lookup. The pattern suggests refusal behavior may track some combination of factors that differ between these two Schedule I substances: state-level legality (cannabis is legal in roughly 24 states; psilocybin in very few), commercial normalization, cultural salience, and the overall tone of training data covering each compound. Psilocybin remains far less normalized in the real-world discourse that became the training set. Whatever the exact mechanism — and it's likely several things at once — federal scheduling alone doesn't explain it.
 
-The main limit we're honest about is the feature catalog. Auto-tuning by Cohen's d identifies statistically discriminative features — it doesn't guarantee bio-specific refusal circuitry. What we need next:
+Think about what this means for deployment. A clinical assistant supporting harm-reduction or palliative care, where discussing Schedule I compounds is literally the job — that team cannot rely on the current refusal circuit to distinguish "clinically relevant" from "CBRN risk." The circuit isn't making that distinction. You'd never see this from surface evaluation alone.
 
-Domain-specific SAE fine-tuning on biosecurity behavioral activation corpora. Genuine refusals versus shallow ones, with a contrastive training objective.
-
-We already ran this. During the hackathon, we trained a contrastive TopK sparse autoencoder on Gemma 2 2B-IT layer 12 residual activations — 5000 steps, consumer GTX 1650, under four minutes of wall clock. Reconstruction loss dropped 99.5 percent. We published that checkpoint to HuggingFace: `Solshine/biorefusalaudit-sae-gemma2-2b-l12-5000steps`.
-
-Here's what we learned: the contrastive loss — the part that's supposed to push hazard-tier and benign-tier representations apart — barely moved. Not because the model can't learn; it did. Because the bio vocabulary is genuinely shared across hazard tiers. Whether a prompt is benign, dual-use, or hazard-adjacent, it uses the same technical biology language. The SAE sees the same feature activations. The signal you need to separate those classes isn't in a 75-prompt corpus of terminology — it's in genuine behavioral divergences between a base model and an RLHF-aligned one responding to the same prompts.
-
-During this hackathon, we received gated access to `cais/wmdp-bio-forget-corpus` — 24,453 scientific papers on hazardous biology, from SARS-CoV-2 transmission to pathogen enhancement. That's the WMDP forget corpus. The v2 training pipeline is already updated: 5,000 steps, bio-forget-corpus as the hazard-tier training signal. That run is in progress now.
-
-The corpus bottleneck is resolved. What remains is the behavioral sampling component: genuine refusal-versus-compliance response pairs at scale, which requires safety-tuned base model pairs and institutional operational data. That's the part you need a collaboration for.
-
-The natural collaborators are AISI, CLTR, and national biosecurity labs who hold the behavioral pair data. The training infrastructure is validated, the WMDP corpus is integrated, the v2 SAE is in training. The next unlock is paired behavioral activation corpora — and we're positioned to use them the day access opens.
-
-And we need refusal-depth reporting to become a standard companion to capability evaluations in RSPs and analogous governance frameworks. A model that refuses everything is not automatically safe. Refusal depth tells you whether that refusal is structurally earned.
+*(Small n note: three to four per cell per run. A second run replicated the directional finding — psilocybin cultivation 33% across both runs; cannabis cultivation averaged 12.5% across both runs — though estimates at this n are noisy. Directional, not definitive.)*
 
 ---
 
-## [CLOSE — ~20 seconds]
+## [RELEASE + CLOSE — ~40 seconds]
 
-The code is on GitHub. The public eval set is CC-BY-4.0. The dashboard runs locally, and the full pipeline runs on a four-gigabyte GPU.
+The code is under Hippocratic License 3.0. Tier-3 hazard-adjacent data is behind a signed attestation on HuggingFace. Tiers 1 and 2 are CC-BY-4.0, fully open. This directly instantiates the tiered-access framework Bloomfield, Black, Crook et al. called for in *Science* earlier this year.
 
-If you're working on AI biosecurity evaluation, managed access frameworks, or unlearning verification — the measurement layer now exists. Let's talk about what to do with it.
+What we need next is behavioral pair data — genuine refusal versus compliance response pairs from a base model and its RLHF-aligned version, on the same prompts. That's what AISI, CLTR, and national biosecurity labs have. The training infrastructure is here. The WMDP bio corpus is integrated. The next unlock is the data.
 
-Thank you.
+Refusal depth is measurable. The question is whether we build the infrastructure to measure it routinely — as a standard companion to capability evals — or wait until it becomes the thing we wish we'd measured earlier.
+
+Code on GitHub. Dashboard runs locally. Four-gig GPU.
+
+Let's talk.
 
 ---
 
-*Total estimated runtime: ~4.5–5 minutes at a measured pace. Adjust pacing in the findings section if needed — that's the densest part and benefits from deliberate delivery.*
+*Estimated runtime: ~4.5 minutes at a measured pace.*
 
-*Slide cues if presenting with visuals:*
-- *[OPENING]: Title slide — BioRefusalAudit logo + one-line description*
-- *[PROBLEM]: "surface refusal ≠ structural safety" diagram — a two-column table showing surface behavior vs. internal activation*
-- *[WHAT WE BUILT]: Pipeline diagram (prompt → residual stream → SAE → feature vec → judge → divergence score)*
-- *[FINDINGS]: The four-cell typology table; hazard-adjacent 100% hedge / 0% comply / 0% refuse corrected distribution; the 75-prompt NC table (80% overall, inverted tier ordering benign 87% > hazard 73%); bio_014 effect=1.139 as a single-prompt callout; the 80-token ablation result; D label-split two-cluster chart (comply D=0.896 vs refuse D=0.249, zero overlap)*
-- *[HL3]: The three-tier data release table; the measurement-enforcement two-layer diagram*
-- *[NEXT]: Roadmap slide — v2 SAE training (bio-forget-corpus, 5K steps, in progress) / behavioral sampling from base+RLHF pairs / institutional data partners for paired activation corpora*
-- *[CLOSE]: GitHub URL + QR code*
+*Slide cues:*
+- *[Opening]: Title — BioRefusalAudit / "measuring whether refusal is real"*
+- *[Problem]: Two-column — "surface says REFUSE / internal activations say ???"*
+- *[Built]: Pipeline diagram — prompt → residual stream → SAE → divergence score*
+- *[Findings 1-4]: Four-cell typology table; 100% hedge bar chart; format-gate before/after; D-value two-cluster (comply=0.896, refuse=0.249)*
+- *[Finding 5]: The three numbers: 33% psilocybin / 0% cannabis / 0% hazard-adjacent — side by side*
+- *[Close]: GitHub URL + QR code*

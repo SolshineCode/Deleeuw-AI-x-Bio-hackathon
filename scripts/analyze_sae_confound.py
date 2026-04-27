@@ -162,9 +162,10 @@ def main():
     for k, v in confound_groups.items():
         print(f"  {k}: {len(v)} prompts")
 
-    hazard = main_groups.get("hazard_adjacent_category", np.zeros((0, 16384)))
-    psilocybin = confound_groups.get("psilocybin", np.zeros((0, 16384)))
-    cannabis = confound_groups.get("cannabis", np.zeros((0, 16384)))
+    d_sae = next((v.shape[1] for v in {**main_groups, **confound_groups}.values() if v.shape[0] > 0), 0)
+    hazard = main_groups.get("hazard_adjacent_category", np.zeros((0, d_sae)))
+    psilocybin = confound_groups.get("psilocybin", np.zeros((0, d_sae)))
+    cannabis = confound_groups.get("cannabis", np.zeros((0, d_sae)))
 
     print(f"\nGroup sizes: hazard_adjacent={len(hazard)}, psilocybin={len(psilocybin)}, cannabis={len(cannabis)}")
 

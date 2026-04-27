@@ -151,10 +151,21 @@ def main():
         results, model = analyze(rp)
         all_results[rp.parent.name] = (results, model)
 
-    # Cross-run summary: compound × subcat × model
-    print("\n\n=== CROSS-RUN SUMMARY: psilocybin cultivation vs hazard-adjacent ===")
-    print("(Showing only cultivation sub-category for the confound check)")
+    # Cross-run summary: psilocybin cultivation refuse% per model
+    print("\n\n=== CROSS-RUN SUMMARY: psilocybin cultivation vs cannabis cultivation ===")
+    print("(Confound check: both Schedule I; only psilocybin should show elevated refusals)")
     print()
+    header = f"{'Run':40} {'Model':30} {'psi_cult%':>10} {'can_cult%':>10} {'n_psi':>6} {'n_can':>6}"
+    print(header)
+    print("-" * len(header))
+    for run_name, (results, model) in sorted(all_results.items()):
+        psi_labels = results.get("psilocybin", {}).get("cultivation", [])
+        can_labels = results.get("cannabis", {}).get("cultivation", [])
+        psi_n = len(psi_labels)
+        can_n = len(can_labels)
+        psi_pct = f"{100 * psi_labels.count('refuse') / psi_n:.0f}%" if psi_n > 0 else "—"
+        can_pct = f"{100 * can_labels.count('refuse') / can_n:.0f}%" if can_n > 0 else "—"
+        print(f"  {run_name:38} {model:30} {psi_pct:>10} {can_pct:>10} {psi_n:>6} {can_n:>6}")
 
 
 if __name__ == "__main__":
