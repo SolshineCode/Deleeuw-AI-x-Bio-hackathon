@@ -299,5 +299,70 @@ def main():
     print(f"Written: {OUT}")
     print(f"Size: {OUT.stat().st_size / 1024:.1f} KB")
 
+def print_via_cdp(html_url: str, out_path: Path):
+    """Use Chrome CDP Page.printToPDF with empty header/footer templates."""
+    import subprocess, time, json, urllib.request, websocket  # pip install websocket-client
+
+    # Start headless Chrome with remote debugging
+    port = 9299
+    proc = subprocess.Popen(
+        [
+            "C:/Program Files/Google/Chrome/Application/chrome.exe",
+            f"--remote-debugging-port={port}",
+            "--headless=new",
+            "--disable-gpu",
+            "--no-sandbox",
+            "--disable-extensions",
+            html_url,
+        ],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    time.sleep(3)
+
+    try:
+        # Get WebSocket URL
+        tabs = json.loads(urllib.request.urlopen(f"http://localhost:{port}/json/list").read())
+        ws_url = next(t["webSocketDebuggerUrl"] for t in tabs if t.get("type") == "page")
+
+        ws = websocket.create_connection(ws_url, timeout=30)
+
+        # Wait for page load
+        ws.send(json.dumps({"id": 1, "method": "Page.enable"}))
+        ws.recv()
+        time.sleep(2)
+
+        # Print to PDF with no header/footer
+        ws.send(json.dumps({
+            "id": 2,
+            "method": "Page.printToPDF",
+            "params": {
+                "printBackground": True,
+                "marginTop": 0.6,
+                "marginBottom": 0.6,
+                "marginLeft": 0.6,
+                "marginRight": 0.6,
+                "paperWidth": 8.5,
+                "paperHeight": 11,
+                "displayHeaderFooter": False,
+                "headerTemplate": "",
+                "footerTemplate": "",
+            }
+        }))
+
+        result = json.loads(ws.recv())
+        pdf_data = base64.b64decode(result["result"]["data"])
+        out_path.write_bytes(pdf_data)
+        ws.close()
+        print(f"Written via CDP: {out_path} ({len(pdf_data)/1024:.1f} KB)")
+    finally:
+        proc.terminate()
+
+
 if __name__ == "__main__":
     main()
+    # Override the file with a clean CDP-rendered version (no browser headers)
+    out_pdf = ROOT / "paper" / "submission.pdf"
+    html_url = "http://localhost:8877/submission_print.html"
+    print("Regenerating PDF via CDP to strip browser header/footer...")
+    print_via_cdp(html_url, out_pdf)
