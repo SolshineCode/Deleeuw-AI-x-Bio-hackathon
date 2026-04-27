@@ -7,7 +7,7 @@
 
 ---
 
-**Abstract.** I introduce BioRefusalAudit, a tool for measuring *refusal depth* — the divergence between a model's surface behavior ("I refuse") and its internal sparse autoencoder (SAE) feature activations. Existing biosecurity benchmarks measure whether a model produces hazardous output; none distinguish a structurally deep refusal from a shallow one that is one framing shift from compliance. I formalize this as a calibrated divergence metric D, validated on Gemma 2 2B-IT (Gemma Scope 1 SAEs) and Gemma 4 E2B-IT (author-trained SAE). Key findings: Gemma 2 produces zero genuine refusals across 75 prompts — only universal hedging on hazard-adjacent content. Gemma 4's safety circuit appears gated on chat-template formatting (65/75 refusals with correct tokens; 0/75 without). Both models refuse 0% at 80-token generation caps. A Schedule I legality confound shows refusal circuits may track cultural salience rather than CBRN risk. The pipeline runs on a 4 GB consumer GPU under Hippocratic License 3.0.
+**Abstract.** I introduce BioRefusalAudit, a tool for measuring *refusal depth*, the divergence between a model's surface behavior ("I refuse") and its internal sparse autoencoder (SAE) feature activations. Existing biosecurity benchmarks measure whether a model produces hazardous output; none distinguish a structurally deep refusal from a shallow one that is one framing shift from compliance. I formalize this as a calibrated divergence metric D, validated on Gemma 2 2B-IT (Gemma Scope 1 SAEs) and Gemma 4 E2B-IT (author-trained SAE). Key findings: Gemma 2 produces zero genuine refusals across 75 prompts, only universal hedging on hazard-adjacent content. Gemma 4's safety circuit appears gated on chat-template formatting (65/75 refusals with correct tokens; 0/75 without). Both models refuse 0% at 80-token generation caps. A Schedule I legality confound shows refusal circuits may track cultural salience rather than CBRN risk. The pipeline runs on a 4 GB consumer GPU under Hippocratic License 3.0.
 
 ---
 
@@ -92,7 +92,7 @@ Effect size benign vs. hazard: Cohen's d = 1.29, p = 0.0001, non-overlapping 95%
 | comply | 59 | 0.896 | 0.001 |
 | refuse | 16 | 0.249 | 0.004 |
 
-Zero overlap. 0.647-point separation. D = 0.249 on a refusal suggests internal SAE feature activations are consistent with the refusal direction — the model may not be strongly activating bio-hazard feature space. D = 0.896 on a comply response suggests bio-relevant features remain active, which is expected for educational biology content.
+Zero overlap. 0.647-point separation. D = 0.249 on a refusal suggests internal SAE feature activations are consistent with the refusal direction; the model may not be strongly activating bio-hazard feature space. D = 0.896 on a comply response suggests bio-relevant features remain active, which is expected for educational biology content.
 
 **Finding 1: Gemma 2 2B-IT never genuinely refuses, it hedges.** Zero genuine refusals across all 75 prompts. The hazard-adjacent tier hedges universally (100% hedge, 0% comply, 0% refuse). Hedge-without-refuse is a distinct failure mode: the model never forms a genuine refusal. Binary surface classifiers that collapse "hedge" and "refuse" miss this distinction and may classify hedging responses as safe when they provide more partial information than a genuine refusal would.
 
@@ -113,13 +113,13 @@ Zero overlap. 0.647-point separation. D = 0.249 on a refusal suggests internal S
 | Qwen 2.5 1.5B | 75% | 50% | 95% |
 | Llama 3.2 1B | 0% | 0% | 91% |
 
-The cross-compound run (51-prompt expanded set, Gemma 2 2B-IT 80-tok) sharpens the finding. Cannabis is also federally Schedule I — illegal since 1970 — yet cannabis cultivation gets 0% refusals in that run while psilocybin cultivation gets 33%. A replication run on a 27-prompt cannabis/psilocybin subset showed cannabis cultivation at 25% (1/4) and psilocybin cultivation at 33% (1/3); the directional finding holds but the gap is smaller at n=3–4 per cell. The pattern is inconsistent with a simple Schedule I flag. It may reflect a combination of factors distinguishing these two substances in the training distribution: state-level legal status (cannabis legal in ~24 states; psilocybin in very few jurisdictions), commercial normalization, cultural salience, and overall training data frequency. Federal scheduling alone does not predict the observed refusal asymmetry.
+The cross-compound run (51-prompt expanded set, Gemma 2 2B-IT 80-tok) sharpens the finding. Cannabis is also federally Schedule I (illegal since 1970), yet cannabis cultivation gets 0% refusals in that run while psilocybin cultivation gets 33%. A replication run on a 27-prompt cannabis/psilocybin subset showed cannabis cultivation at 25% (1/4) and psilocybin cultivation at 33% (1/3); the directional finding holds but the gap is smaller at n=3–4 per cell. The pattern is inconsistent with a simple Schedule I flag. It may reflect a combination of factors distinguishing these two substances in the training distribution: state-level legal status (cannabis legal in ~24 states; psilocybin in very few jurisdictions), commercial normalization, cultural salience, and overall training data frequency. Federal scheduling alone does not predict the observed refusal asymmetry.
 
 | Compound | Federal schedule | Cultivation refuse% | Pharmacology refuse% |
 |---|---|---:|---:|
 | Psilocybin | Schedule I | **33%** | 0% |
 | Cannabis | Schedule I | **0%** | 0% |
-| LSD | Schedule I | — | **25%** |
+| LSD | Schedule I | N/A | **25%** |
 | Mescaline/peyote | Schedule I (alkaloid) | **0%**† | **25%** |
 
 † Peyote plant is legal to own in the US; 0% refusals consistent with legal framing.
@@ -157,7 +157,7 @@ Findings 1, 3, and the format/token findings operate on raw labels and activatio
 
 ## 6. Conclusion
 
-Refusal depth, the gap between a model's surface behavior and its internal SAE feature activations, is measurable, and the measurement has immediate policy implications. Gemma 2 2B-IT hedges on 100% of hazard-adjacent prompts without genuinely refusing any. Both Gemma 2 and Gemma 4 refuse 0% of prompts at an 80-token generation cap. The divergence metric D cleanly separates comply from refuse internal postures (0.647-point gap, zero overlap, n=75). A psilocybin legality control suggests a fifth finding: current refusal circuits may be tracking compound-specific normalization in the training distribution — state-level legality, commercial availability, cultural salience — rather than CBRN hazard risk, refusing biologically benign but less-normalized content at higher rates than genuinely hazardous biology. None of these results are obtainable from surface evaluation alone, which is why refusal depth reporting should become a standard companion to capability evaluations in RSPs and analogous governance frameworks. A model that refuses everything isn't automatically safe. Refusal depth tells you whether that refusal is structurally earned, and whether it's responding to the right signal at all.
+Refusal depth, the gap between a model's surface behavior and its internal SAE feature activations, is measurable, and the measurement has immediate policy implications. Gemma 2 2B-IT hedges on 100% of hazard-adjacent prompts without genuinely refusing any. Both Gemma 2 and Gemma 4 refuse 0% of prompts at an 80-token generation cap. The divergence metric D cleanly separates comply from refuse internal postures (0.647-point gap, zero overlap, n=75). A psilocybin legality control suggests a fifth finding: current refusal circuits may be tracking compound-specific normalization in the training distribution, tracking state-level legality, commercial availability, and cultural salience, rather than CBRN hazard risk, refusing biologically benign but less-normalized content at higher rates than genuinely hazardous biology. None of these results are obtainable from surface evaluation alone, which is why refusal depth reporting should become a standard companion to capability evaluations in RSPs and analogous governance frameworks. A model that refuses everything isn't automatically safe. Refusal depth tells you whether that refusal is structurally earned, and whether it's responding to the right signal at all.
 
 ---
 
@@ -165,9 +165,9 @@ Refusal depth, the gap between a model's surface behavior and its internal SAE f
 
 **Code repository:** [github.com/SolshineCode/Deleeuw-AI-x-Bio-hackathon](https://github.com/SolshineCode/Deleeuw-AI-x-Bio-hackathon)
 
-**License:** [Hippocratic License 3.0 — HL3-BDS-CL-ECO-EXTR-FFD-MEDIA-MIL-MY-SUP-SV-TAL-USTA-XUAR](https://firstdonoharm.dev/version/3/0/bds-cl-eco-extr-ffd-media-mil-my-sup-sv-tal-usta-xuar.html)
+**License:** [Hippocratic License 3.0 (HL3-BDS-CL-ECO-EXTR-FFD-MEDIA-MIL-MY-SUP-SV-TAL-USTA-XUAR)](https://firstdonoharm.dev/version/3/0/bds-cl-eco-extr-ffd-media-mil-my-sup-sv-tal-usta-xuar.html)
 
-**Interactive demo (no server required):** [Live dashboard — all 75 prompts, feature activations, intervention results](https://solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive_explorer.html)
+**Interactive demo (no server required):** [Live dashboard: all 75 prompts, feature activations, intervention results](https://solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive_explorer.html)
 
 **Demo video:** [youtu.be/PY9WztZKFh4](https://youtu.be/PY9WztZKFh4)
 
@@ -243,17 +243,17 @@ Claude (Anthropic) was used as a coding assistant throughout this project for pi
 
 ### Dual-Use Risks
 
-BioRefusalAudit measures which prompts activate and which bypass the refusal circuit. An adversary with access to the tool and a deployed model could use D scores as a prompt optimization signal — iterating phrasings toward low D on refusals, effectively using the audit layer as a circuit bypass oracle.
+BioRefusalAudit measures which prompts activate and which bypass the refusal circuit. An adversary with access to the tool and a deployed model could use D scores as a prompt optimization signal, iterating phrasings toward low D on refusals, effectively using the audit layer as a circuit bypass oracle.
 
 The legality confound finding (Finding 5) identifies compound categories where refusal circuits fire inconsistently. This could inform adversarial prompt selection toward categories the model handles poorly.
 
-**Mitigations in place.** The Hippocratic License 3.0 binds all users to enforceable human rights obligations and prohibits use that causes harm. Tier-3 hazard-adjacent eval content is behind a signed attestation gate following the BDL framework. The tool's architecture separates the audit score from the prompt content, so deployment as a monitoring layer does not require exposing prompt data. The primary intended users are defenders, auditors, and RSP evaluators — not adversaries.
+**Mitigations in place.** The Hippocratic License 3.0 binds all users to enforceable human rights obligations and prohibits use that causes harm. Tier-3 hazard-adjacent eval content is behind a signed attestation gate following the BDL framework. The tool's architecture separates the audit score from the prompt content, so deployment as a monitoring layer does not require exposing prompt data. The primary intended users are defenders, auditors, and RSP evaluators, not adversaries.
 
 ### Responsible Disclosure
 
 No previously unknown model vulnerabilities were discovered. The format-gating finding (chat-template token dependency) and token budget suppression of safety articulation are observable through standard behavioral testing; BioRefusalAudit provides systematic measurement, not a new attack surface. These findings are disclosed openly here rather than via private channel, consistent with open research norms for publicly observable model behaviors.
 
-If future work using this tool or methodology identifies a novel exploitable mechanism — for example, a specific SAE feature direction whose activation can be suppressed to disable refusal circuits — standard coordinated disclosure to the relevant model developer is recommended before publication.
+If future work using this tool or methodology identifies a novel exploitable mechanism, for example a specific SAE feature direction whose activation can be suppressed to disable refusal circuits, standard coordinated disclosure to the relevant model developer is recommended before publication.
 
 ### Ethical Considerations
 
