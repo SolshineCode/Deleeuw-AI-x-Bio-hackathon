@@ -309,6 +309,7 @@ def print_via_cdp(html_url: str, out_path: Path):
         [
             "C:/Program Files/Google/Chrome/Application/chrome.exe",
             f"--remote-debugging-port={port}",
+            "--remote-allow-origins=*",
             "--headless=new",
             "--disable-gpu",
             "--no-sandbox",
