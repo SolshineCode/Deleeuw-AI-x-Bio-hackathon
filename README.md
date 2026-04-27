@@ -21,7 +21,7 @@ Submitted to the [AIxBio Hackathon 2026](https://apartresearch.com/sprints/aixbi
 
 **Live dashboard:** [https://solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive_explorer.html](https://solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive_explorer.html)
 
-**Biosecurity Domain Specific SAEs Published:** [https://huggingface.co/collections/Solshine/aixbio-2026-biosecurity-domain-trained-saes-for-gemma-models](Hugging Face Collection)
+**Biosecurity Domain Specific SAEs Published:** [Hugging Face Collection](https://huggingface.co/collections/Solshine/aixbio-2026-biosecurity-domain-trained-saes-for-gemma-models)
 
 
 ---
