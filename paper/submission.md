@@ -1,4 +1,4 @@
-# BioRefusalAudit: Auditing the Depth of LLM Biosecurity Refusals Using Sparse Autoencoder Interpretability
+# BioRefusalAudit: Auditing Biosecurity Refusal Depth Using General and Domain-Fine-Tuned Sparse Autoencoders
 
 **Author:** Caleb DeLeeuw  
 **Affiliation:** Independent researcher  
