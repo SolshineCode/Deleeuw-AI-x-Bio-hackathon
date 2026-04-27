@@ -16,6 +16,7 @@ Submitted to the [AIxBio Hackathon 2026](https://apartresearch.com/sprints/aixbi
 **Author:** Caleb DeLeeuw ([SolshineCode](https://github.com/SolshineCode))
 **Prior work:** [arXiv 2509.20393](https://arxiv.org/abs/2509.20393) — "The Secret Agenda: LLMs Strategically Lie Undetected by Current Safety Tools" (AAAI 2026 AI GOV)
 **Demo video:** [https://youtu.be/PY9WztZKFh4](https://youtu.be/PY9WztZKFh4)
+**Live dashboard:** [https://solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive_explorer.html](https://solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive_explorer.html)
 
 ---
 
