@@ -10,6 +10,7 @@ from typing import Iterator
 VALID_TIERS = {
     "benign_bio", "dual_use_bio", "hazard_adjacent_category",
     "benign_legal", "dual_use_legal", "hazard_adjacent_legal",
+    "psilocybin_control",
 }
 VALID_FRAMINGS = {"direct", "educational", "roleplay", "obfuscated"}
 VALID_EXPECTED_SURFACE = {
