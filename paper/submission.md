@@ -102,7 +102,7 @@ Zero overlap. 0.647-point separation. D = 0.249 on a refusal suggests internal S
 
 **Figure 1** (see `demo/scaling_plot.png`): Per-tier mean D comparison across Gemma 2 2B-IT (Gemma Scope 1, 80-tok) and Gemma 4 E2B-IT (author SAE, 150-tok). The Gemma 4 label-split (comply vs. refuse) shows the metric cleanly discriminates posture classes. The Gemma 2 tier separation shows tier-level ordering within the eval set.
 
-**Cross-architecture behavioral comparison (NullSAE, 80-tok, n=75 each, Table 4.4 in full writeup).** We ran behavioral-label-only comparisons on three additional architectures to test whether Gemma 2's hedge posture generalizes. It does not. Llama 3.2 1B, Qwen 2.5 1.5B, and Phi-3-mini-4k all show zero hedging across 75 prompts: binary comply/refuse only. Llama shows a 61-point benign-to-hazard refuse gradient (30% benign, 91% hazard), indicating real tier sensitivity despite over-refusal on benign content. Qwen and Phi-3 are nearly identical despite a 2.5x parameter difference: 83–87% refuse on benign biology, 95% on hazard-adjacent, a 12-point gradient that indicates a non-discriminating high-refusal prior rather than genuine hazard detection. The surface evaluation consequence: a binary classifier applied to Gemma 2 will misclassify 100% of hazard-adjacent prompts (all hedged, none refused), while the same classifier applied to Qwen or Phi-3 will correctly flag 95% but generate an 83–87% false-positive rate on benign biology. Neither outcome is what evaluators want.
+**Finding 4: Cross-architecture behavioral comparison reveals no universal hedge posture.** We ran behavioral-label-only comparisons (NullSAE, 80-tok, n=75 each) on three additional architectures to test whether Gemma 2's hedge posture generalizes. It does not. Llama 3.2 1B, Qwen 2.5 1.5B, and Phi-3-mini-4k all show zero hedging across 75 prompts: binary comply/refuse only. Llama shows a 61-point benign-to-hazard refuse gradient (30% benign, 91% hazard), indicating real tier sensitivity despite over-refusal on benign content. Qwen and Phi-3 are nearly identical despite a 2.5x parameter difference: 83–87% refuse on benign biology, 95% on hazard-adjacent, a 12-point gradient that indicates a non-discriminating high-refusal prior rather than genuine hazard detection. The surface evaluation consequence: a binary classifier applied to Gemma 2 will misclassify 100% of hazard-adjacent prompts (all hedged, none refused), while the same classifier applied to Qwen or Phi-3 will correctly flag 95% but generate an 83–87% false-positive rate on benign biology. Neither outcome is what evaluators want.
 
 **Finding 5: The Schedule I legality confound.** A psilocybin control set tests whether refusal circuits track legal status rather than CBRN risk. Psilocybin is Schedule I federally but biologically non-toxic and FDA-designated Breakthrough Therapy for depression. Four sub-categories probe the legality/hazard axis: pharmacology vocabulary (not illegal to study), cultivation (*Psilocybe* mycology, US-illegal), clinical (within legal research framing), and legal/policy framing. Across four models on the 15-prompt psilocybin-only set:
 
@@ -163,16 +163,21 @@ Refusal depth, the gap between a model's surface behavior and its internal SAE f
 
 ## Code and Data
 
-**Code repository:** https://github.com/SolshineCode/Deleeuw-AI-x-Bio-hackathon  
-**License:** Hippocratic License 3.0 (HL3)
+**Code repository:** [github.com/SolshineCode/Deleeuw-AI-x-Bio-hackathon](https://github.com/SolshineCode/Deleeuw-AI-x-Bio-hackathon)
+
+**License:** [Hippocratic License 3.0 — HL3-BDS-CL-ECO-EXTR-FFD-MEDIA-MIL-MY-SUP-SV-TAL-USTA-XUAR](https://firstdonoharm.dev/version/3/0/bds-cl-eco-extr-ffd-media-mil-my-sup-sv-tal-usta-xuar.html)
+
+**Interactive demo (no server required):** [Live dashboard — all 75 prompts, feature activations, intervention results](https://solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive_explorer.html)
+
+**Demo video:** [youtu.be/PY9WztZKFh4](https://youtu.be/PY9WztZKFh4)
 
 **Datasets:**
-- Tiers 1–2 (CC-BY-4.0, public): `SolshineCode/biorefusalaudit-public` on HuggingFace
-- Tier 3 (HL3-gated, attestation required): `SolshineCode/biorefusalaudit-gated` on HuggingFace
+- Tiers 1–2 (CC-BY-4.0, public): [SolshineCode/biorefusalaudit-public](https://huggingface.co/datasets/SolshineCode/biorefusalaudit-public) on HuggingFace
+- Tier 3 (HL3-gated, attestation required): [SolshineCode/biorefusalaudit-gated](https://huggingface.co/datasets/SolshineCode/biorefusalaudit-gated) on HuggingFace
 
-**Published SAE checkpoint:** `Solshine/gemma4-e2b-bio-sae-v1` on HuggingFace (2000-step contrastive SAE, Gemma 4 E2B-IT layer 17, trained on WMDP bio-retain corpus)
+**Published SAE checkpoint:** [Solshine/gemma4-e2b-bio-sae-v1](https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1) on HuggingFace (2000-step contrastive SAE, Gemma 4 E2B-IT layer 17, trained on WMDP bio-retain corpus)
 
-**Demo:** `demo/interactive_explorer.html`, no server required. Browse all 75 pre-run prompts, feature activations, and intervention results in browser. Also: `demo/scaling_plot.png` for per-tier D comparison.
+**SAE collection (all biosecurity-domain SAEs):** [Solshine AIxBio 2026 collection](https://huggingface.co/collections/Solshine/aixbio-2026-biosecurity-domain-trained-saes-for-gemma-models) on HuggingFace
 
 ---
 
