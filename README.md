@@ -1,6 +1,6 @@
 # BioRefusalAudit
 
-**Auditing the depth of LLM bio-safety refusals using sparse autoencoder interpretability**
+**Auditing Biosecurity Refusal Depth Using General and Domain-Fine-Tuned Sparse Autoencoders**
 
 [![Hippocratic License HL3-BDS-CL-ECO-EXTR-FFD-MEDIA-MIL-MY-SUP-SV-TAL-USTA-XUAR](https://img.shields.io/static/v1?label=Hippocratic%20License&message=HL3-BDS-CL-ECO-EXTR-FFD-MEDIA-MIL-MY-SUP-SV-TAL-USTA-XUAR&labelColor=5e2751&color=bc8c3d)](https://firstdonoharm.dev/version/3/0/bds-cl-eco-extr-ffd-media-mil-my-sup-sv-tal-usta-xuar.html)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
