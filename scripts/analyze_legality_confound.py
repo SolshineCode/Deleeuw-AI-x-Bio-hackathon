@@ -10,15 +10,8 @@ from pathlib import Path
 from collections import defaultdict
 
 
-COMPOUND_PREFIXES = {
-    "psilocybin": ["psi_"],
-    "mescaline": ["mescaline_"],
-    "lsd": ["lsd_"],
-    "cannabis": ["can_"],
-}
-
+# Fallback map for psilocybin_control_v1 records without category field
 CATEGORY_MAP = {
-    # psilocybin_control_v1 IDs (legacy mapping from index)
     "psi_001": "pharmacology", "psi_002": "pharmacology",
     "psi_003": "pharmacology", "psi_004": "pharmacology",
     "psi_005": "cultivation",  "psi_006": "cultivation",
@@ -29,24 +22,57 @@ CATEGORY_MAP = {
     "psi_015": "legal",
 }
 
+# Loaded at startup from JSONL: id → category string
+_JSONL_CATEGORY: dict[str, str] = {}
+
+
+def load_jsonl_categories(*paths: Path) -> None:
+    """Populate _JSONL_CATEGORY from one or more eval-set JSONL files."""
+    for p in paths:
+        if not p.exists():
+            continue
+        with p.open("r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                    pid = obj.get("id", "")
+                    cat = obj.get("category", "")
+                    if pid and cat:
+                        _JSONL_CATEGORY[pid] = cat
+                except json.JSONDecodeError:
+                    pass
+
 
 def get_subcategory(record: dict) -> str:
-    """Extract sub-category from category field or ID-based fallback."""
+    """Extract sub-category: JSONL lookup → report field → ID fallback."""
+    pid = record.get("id", "")
+    # 1. JSONL join (most reliable)
+    if pid in _JSONL_CATEGORY:
+        cat = _JSONL_CATEGORY[pid]
+        parts = cat.split("_")
+        return parts[-1] if len(parts) >= 2 else cat
+    # 2. category field in report record
     cat = record.get("category") or ""
     if cat:
-        # Strip compound prefix: "psilocybin_cultivation" → "cultivation"
         parts = cat.split("_")
-        if len(parts) >= 2:
-            return parts[-1]
-        return cat
-    # Fallback for psilocybin_control_v1 records without category field
-    pid = record.get("id", "")
+        return parts[-1] if len(parts) >= 2 else cat
+    # 3. static ID map for psilocybin_control_v1
     return CATEGORY_MAP.get(pid, "unknown")
 
 
 def get_compound(record: dict) -> str:
-    cat = record.get("category") or ""
     pid = record.get("id", "")
+    # JSONL join first
+    if pid in _JSONL_CATEGORY:
+        cat = _JSONL_CATEGORY[pid]
+        for compound in ("mescaline", "lsd", "cannabis", "psilocybin"):
+            if cat.startswith(compound):
+                return compound
+    # Fallback: field + ID heuristics
+    cat = record.get("category") or ""
     if "mescaline" in cat or "mescaline" in pid:
         return "mescaline"
     if "lsd" in cat or pid.startswith("lsd_"):
@@ -100,7 +126,17 @@ def main():
                         help="Glob for report.json files")
     parser.add_argument("--also-psilocybin", action="store_true",
                         help="Include psilocybin control runs from runs/psilocybin-*/report.json")
+    parser.add_argument("--eval-sets", nargs="*",
+                        default=[
+                            "data/eval_set_public/eval_set_legality_confound_v1.jsonl",
+                            "data/eval_set_public/eval_set_public_v1.jsonl",
+                        ],
+                        help="JSONL eval sets to join for category lookup")
     args = parser.parse_args()
+
+    # Pre-load category lookup from eval set JSONLs
+    load_jsonl_categories(*[Path(p) for p in args.eval_sets])
+    print(f"[info] JSONL category lookup: {len(_JSONL_CATEGORY)} prompt IDs loaded")
 
     reports = sorted(Path(".").glob(args.runs_glob))
     if args.also_psilocybin:

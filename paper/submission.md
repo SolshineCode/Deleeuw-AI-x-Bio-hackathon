@@ -104,7 +104,7 @@ Zero overlap. 0.647-point separation. D = 0.249 on a refusal means internal SAE 
 
 **Cross-architecture behavioral comparison (NullSAE, 80-tok, n=75 each, Table 4.4 in full writeup).** We ran behavioral-label-only comparisons on three additional architectures to test whether Gemma 2's hedge posture generalizes. It does not. Llama 3.2 1B, Qwen 2.5 1.5B, and Phi-3-mini-4k all show zero hedging across 75 prompts: binary comply/refuse only. Llama shows a 61-point benign-to-hazard refuse gradient (30% benign, 91% hazard), indicating real tier sensitivity despite over-refusal on benign content. Qwen and Phi-3 are nearly identical despite a 2.5x parameter difference: 83–87% refuse on benign biology, 95% on hazard-adjacent, a 12-point gradient that indicates a non-discriminating high-refusal prior rather than genuine hazard detection. The surface evaluation consequence: a binary classifier applied to Gemma 2 will misclassify 100% of hazard-adjacent prompts (all hedged, none refused), while the same classifier applied to Qwen or Phi-3 will correctly flag 95% but generate an 83–87% false-positive rate on benign biology. Neither outcome is what evaluators want.
 
-**Finding 5: The Schedule I legality confound.** A 15-prompt psilocybin control set tests whether refusal circuits track legal status rather than CBRN risk. Psilocybin is Schedule I federally but biologically non-toxic and FDA-designated Breakthrough Therapy for depression. Four sub-categories probe the legality/hazard axis: pharmacology vocabulary (not illegal to study), cultivation (*Psilocybe* mycology, US-illegal), clinical (within legal research framing), and legal/policy framing. Across four models:
+**Finding 5: The Schedule I legality confound.** A psilocybin control set tests whether refusal circuits track legal status rather than CBRN risk. Psilocybin is Schedule I federally but biologically non-toxic and FDA-designated Breakthrough Therapy for depression. Four sub-categories probe the legality/hazard axis: pharmacology vocabulary (not illegal to study), cultivation (*Psilocybe* mycology, US-illegal), clinical (within legal research framing), and legal/policy framing. Across four models on the 15-prompt psilocybin-only set:
 
 | Model | Pharmacology refuse% | Cultivation refuse% | Hazard-adjacent refuse% |
 |---|---:|---:|---:|
@@ -113,7 +113,18 @@ Zero overlap. 0.647-point separation. D = 0.249 on a refusal means internal SAE 
 | Qwen 2.5 1.5B | 75% | 50% | 95% |
 | Llama 3.2 1B | 0% | 0% | 91% |
 
-Gemma 2 refuses psilocybin cultivation at 25–50% while refusing hazard-adjacent biology at 0%. The refusal circuit fires harder on "illegal but benign" than on "genuinely dangerous." This is the legality confound: RLHF training conflates Schedule I legal status with CBRN hazard risk. Qwen shows a different failure: topic-level detection (refuses all psilocybin vocabulary regardless of legality angle). Llama shows no confound: it refuses genuinely hazardous biology and freely discusses psilocybin. All three patterns are invisible to surface-only evaluation. (n=4 per sub-category, pilot estimates, expanded n=27 run in progress)
+The cross-compound run (51-prompt expanded set, Gemma 2 2B-IT 80-tok) sharpens the finding. Cannabis is also federally Schedule I — illegal since 1970 — yet cannabis cultivation gets 0% refusals while psilocybin cultivation gets 33%. The confound is not a Schedule I flag. It is a culturally-conditioned signal: psilocybin cultivation carries stigma absorbed during RLHF training that cannabis cultivation no longer does.
+
+| Compound | Federal schedule | Cultivation refuse% | Pharmacology refuse% |
+|---|---|---:|---:|
+| Psilocybin | Schedule I | **33%** | 0% |
+| Cannabis | Schedule I | **0%** | 0% |
+| LSD | Schedule I | — | **25%** |
+| Mescaline/peyote | Schedule I (alkaloid) | **0%**† | **25%** |
+
+† Peyote plant is legal to own in the US; 0% refusals consistent with legal framing.
+
+Gemma 2 refuses psilocybin cultivation at 25–50% while refusing hazard-adjacent biology at 0%. The refusal circuit fires harder on "culturally taboo but benign" than on "genuinely dangerous." Qwen shows a different failure: topic-level detection (refuses all psilocybin vocabulary regardless of legality angle). Llama shows no confound: it refuses genuinely hazardous biology and freely discusses psilocybin. None of these patterns are visible to surface-only evaluation. (Psilocybin-only table: n=4 per sub-category. Cross-compound table: n=3–4 per cell. Expanded n=27 run in progress.)
 
 ---
 

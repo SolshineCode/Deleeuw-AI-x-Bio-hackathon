@@ -219,7 +219,7 @@ BioRefusalAudit distinguishes all four cells at the activation layer. Surface ev
 
 The cross-arch behavioral comparison (§4.4) raised an alternative explanation for Qwen and Phi-3's high refuse rates: models may be routing refusals based on US legal status rather than genuine CBRN hazard detection. To test this, we designed a 15-prompt control set of psilocybin-adjacent biology — a compound that is Schedule I federally but biologically non-toxic, carries FDA Breakthrough Therapy designation for depression, and appears in peer-reviewed NEJM and JAMA Psychiatry trials. Four sub-categories probe distinct dimensions of legality vs. biology: `psilocybin_pharmacology` (technical biological discussion, not illegal to study), `psilocybin_cultivation` (*Psilocybe* mycology, US-illegal), `psilocybin_clinical` (framed within legal research contexts), and `psilocybin_legal` (pure policy/law framing). If refusal rates track cultivation > pharmacology — illegality of activity, not bio-hazard — the refusal circuit responds to legal status as a proxy for danger.
 
-**Results (n=4 per category; legality confound confirmed for Gemma 2):**
+**Results — psilocybin-only control (n=4 per category; 4 models):**
 
 | Model | Pharmacology refuse% | Cultivation refuse% | Clinical refuse% | Legal refuse% | Hazard-adjacent refuse% (main eval) |
 |---|---:|---:|---:|---:|---:|
@@ -228,7 +228,26 @@ The cross-arch behavioral comparison (§4.4) raised an alternative explanation f
 | Qwen 2.5 1.5B (80-tok) | 75% | 50% | 100% | 100% | 95% |
 | Llama 3.2 1B (80-tok) | 0% | 0% | 50% | 33% | 91% |
 
-**Per-model interpretation:**
+**Results — cross-compound legality confound (Gemma 2 2B-IT, 80-tok, n=3–4 per cell; 2026-04-26):**
+
+To test whether the Gemma 2 confound is Schedule I-general or compound-specific, we ran the expanded 51-prompt legality confound eval set across four Schedule I compounds — all biologically benign, all lacking meaningful CBRN uplift potential. Cannabis was included as a critical internal control: federally Schedule I since 1970, but cannabis cultivation information is culturally normalized and legal in 24 states.
+
+| Compound | Legal status | Cultivation refuse% | Pharmacology refuse% | Clinical refuse% | Legal refuse% |
+|---|---|---:|---:|---:|---:|
+| Psilocybin (Sch I) | Fully illegal | **33%** | 0% | 0% | 0% |
+| Cannabis (Sch I) | Federally illegal, 24 states legal | **0%** | 0% | 0% | 0% |
+| LSD (Sch I) | Fully illegal | — | **25%** | 0% | 0% |
+| Mescaline/peyote (Sch I†) | Alkaloid illegal; plant legal to own | **0%**‡ | **25%** | — | 0% |
+
+† Mescaline is Schedule I; peyote plant (*Lophophora williamsii*) is legal to purchase and cultivate ornamentally in the US.  
+‡ Mescaline "cultivation" prompts cover peyote plant ecology and botany (legal activity) — 0% refusals, consistent with legal framing of the plant.  
+LSD cultivation cell absent from 51-prompt set (ergot biology prompts added in expanded 432-prompt set running separately).
+
+The cannabis result is the key comparison. Cannabis cultivation gets 0% refusals despite identical federal Schedule I status. The confound is not "this compound is Schedule I → refuse cultivation." It is compound-specific. Psilocybin cultivation carries a cultural salience and stigma that cannabis cultivation no longer does, and RLHF fine-tuning has absorbed that distinction. The refusal circuit is not running a DEA database lookup; it is recovering a culturally-conditioned riskiness signal from training data.
+
+LSD and mescaline pharmacology each show 25% refusals — lower than psilocybin cultivation but above zero, suggesting partial pharmacology confounds for classical psychedelics that do not extend to their plant-source or legal framing. The three-way mescaline legal paradox (alkaloid illegal, plant legal, Native American Church exemption) produces 0% refusals across all framings — the model answers the legal policy framing without flagging it as hazardous.
+
+**Per-model interpretation (psilocybin-only control):**
 
 *Gemma 2 (legality confound confirmed):* Cultivation refuse rate (25–50%) exceeds pharmacology refuse rate (0–25%) AND substantially exceeds hazard-adjacent refuse rate (0%). The model refuses discussing how to grow *Psilocybe* mushrooms — US-illegal — at higher rates than it refuses genuinely hazard-adjacent biology prompts (zoonotic spillover, pathogen-adjacent immunology). The refusal circuit is doing something more like "this activity is federally illegal" than "this content is CBRN-hazardous." A biosecurity evaluator relying on surface refusal rates from Gemma 2 would measure *negative* hazard specificity: the model refuses psilocybin cultivation more readily than actual biosecurity risks.
 
@@ -236,9 +255,9 @@ The cross-arch behavioral comparison (§4.4) raised an alternative explanation f
 
 *Llama 3.2 1B (no confound):* Refuses 0% on pharmacology and cultivation sub-categories, with moderate refuse rates on clinical/legal sub-categories (50% and 33%). Hazard-adjacent refuse rate from main eval is 91%. Llama complies freely on psilocybin but refuses genuinely hazardous biology — the opposite of the legality confound pattern. This is arguably the most discriminating posture of the four models tested, even though Llama was initially flagged for over-refusal in the cross-arch comparison.
 
-**Policy implication.** Current RLHF safety training does not reliably separate "this is federally illegal" from "this is a CBRN risk." For two of the four models tested, the refusal circuit conflates them. A deployment context that wants to allow discussion of Schedule I compounds in clinical, research, or harm-reduction contexts — while genuinely blocking CBRN-hazardous biology — cannot rely on these refusal circuits to make that distinction. The circuits aren't making it. BioRefusalAudit provides the measurement layer that makes this conflation auditable.
+**Policy implication.** Current RLHF safety training does not reliably separate "this is federally illegal" from "this is a CBRN risk." For two of the four models tested, the refusal circuit conflates them — but the confound is not a simple Schedule I flag. It reflects cultural salience encoded during RLHF: psilocybin cultivation is refused; cannabis cultivation (same legal status) is not. A deployment context that wants to allow discussion of Schedule I compounds in clinical, research, or harm-reduction contexts — while genuinely blocking CBRN-hazardous biology — cannot rely on these refusal circuits to make that distinction. BioRefusalAudit provides the measurement layer that makes this conflation auditable.
 
-**Caveat:** n=4 per sub-category for the results above. All effect sizes are pilot estimates. An expanded eval set at n=27 per sub-category across 4 compounds and 4 sub-categories (psilocybin, mescaline/peyote, LSD, cannabis — all Schedule I, all biologically benign) has been built and is running as of 2026-04-26: `data/eval_set_public/eval_set_legality_confound_v1.jsonl` (432 prompts, 16 sub-categories × 27 prompts each; `scripts/run_legality_confound.sh`). Mescaline/peyote replaced MDMA as the fourth compound; MDMA has documented serotonergic neurotoxicity and hyponatremia risk and does not satisfy the biologically benign design requirement.
+**Caveat and expanded run.** The cross-compound table above has n=3–4 per cell — pilot estimates only. An expanded eval set at n=27 per sub-category across 4 compounds and 4 sub-categories (psilocybin, mescaline/peyote, LSD, cannabis) was built and is running as of 2026-04-26: `data/eval_set_public/eval_set_legality_confound_v1.jsonl` (432 prompts, 16 sub-categories × 27 prompts each; `scripts/run_legality_confound.sh`). Full results pending completion. Mescaline/peyote replaced MDMA as the fourth compound; MDMA has documented serotonergic neurotoxicity and hyponatremia risk and does not satisfy the biologically benign design requirement.
 
 ## 5. Limitations
 
