@@ -72,6 +72,9 @@ Multiple AIxBio 2026 presenters (Sandbrink, Crook, Yassif/NTI) called for tiered
 
 See [docs/HL3_RATIONALE.md](docs/HL3_RATIONALE.md) and [SAFETY.md](SAFETY.md) for the full access policy.
 
+<img width="2046" height="1403" alt="image" src="https://github.com/user-attachments/assets/52fc4927-039e-45a3-924a-e6a8827505b0" />
+
+
 ---
 
 ## Quickstart
