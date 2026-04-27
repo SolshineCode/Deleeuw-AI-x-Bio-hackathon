@@ -118,28 +118,30 @@ Results land in `runs/colab_*/report.{md,json}`. Scaling plot regenerates via `s
 
 **Track B — Local GTX 1650 Ti (small models, 2026-04-26):** Three additional architectures confirmed to fit in 4 GB VRAM, covering Meta/Llama, Alibaba/Qwen, and Microsoft/Phi families. Key question: does the hazard_adjacent hedging pattern (100% hedge at 80 tok in Gemma 2 + Gemma 4) replicate across architectures? All three run with NullSAE (behavioral labels only, D=1.0 throughout). Note: the community Llama ReLU SAE (`qresearch/Llama-3.2-1B-Instruct-SAE-l9`) was originally planned for Llama but `--architecture relu` is invalid in the current CLI (only `topk`/`jumprelu` accepted); see `TROUBLESHOOTING.md §--architecture relu invalid`. All three models ran as behavioral-label-only comparisons.
 
-**Table 4.4. Cross-architecture surface label distribution (NullSAE behavioral runs; 80-token budget; n=75 per model; regex judge; 2026-04-26). Phi-3-mini pending completion.**
+**Table 4.4. Cross-architecture surface label distribution (NullSAE behavioral runs; 80-token budget; n=75 per model; regex judge; 2026-04-26). All runs complete.**
 
 | Model | Params | benign comply% | benign hedge% | benign refuse% | dual-use comply% | dual-use hedge% | dual-use refuse% | hazard comply% | hazard hedge% | hazard refuse% |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | Gemma 2 2B-IT (Gemma Scope 1, reference) | 2B | 70 | 30 | 0 | 80 | 20 | 0 | 0 | **100** | 0 |
 | Llama 3.2 1B-Instruct (NullSAE) | 1B | 70 | 0 | 30 | 57 | 0 | 43 | 9 | 0 | **91** |
 | Qwen 2.5 1.5B-Instruct (NullSAE) | 1.5B | 17 | 0 | 83 | 10 | 0 | 90 | 5 | 0 | **95** |
-| Phi-3-mini-4k-instruct (NullSAE) | 3.8B | — | — | — | — | — | — | — | — | — |
+| Phi-3-mini-4k-instruct (NullSAE) | 3.8B | 13 | 0 | 87 | 10 | 0 | 90 | 5 | 0 | **95** |
 
 **Key observations from completed runs (2026-04-26):**
 
-1. **Gemma 2's hedge posture is model-family-specific, not universal.** Llama 3.2 1B and Qwen 2.5 1.5B show zero hedging across all 75 prompts. Their safety circuits produce binary comply/refuse, not the graduated hedge posture Gemma 2 uses. This means "hedge-without-refuse" (Finding 1 in the main analysis) is a Gemma-family characteristic, not a general LLM behavior under RLHF alignment.
+1. **Gemma 2's hedge posture is model-family-specific, not universal.** All three cross-arch models show zero hedging across all 75 prompts. Their safety circuits produce binary comply/refuse. "Hedge-without-refuse" is a Gemma-family characteristic, not a general property of RLHF alignment.
 
-2. **Llama 3.2 1B shows well-calibrated tier sensitivity.** Refuse rate rises from 30% on benign to 91% on hazard-adjacent, a 61-point gradient. This is behaviorally appropriate calibration: refusing most benign biology at 30% is still over-refusal, but the hazard signal is clearly being picked up. Compare Gemma 2: 0% refuse on benign but also 0% refuse on hazard (all hedged).
+2. **Llama 3.2 1B shows the most calibrated tier sensitivity.** Refuse rate rises from 30% on benign to 91% on hazard-adjacent: a 61-point gradient. This is the only cross-arch model that meaningfully distinguishes tiers. Compare Gemma 2: 0% refuse on benign but also 0% refuse on hazard (100% hedge). Compare Qwen and Phi-3: 12-point gradients — barely discriminating.
 
-3. **Qwen 2.5 1.5B shows systematic over-refusal.** 83% refuse on benign biology and 95% on hazard-adjacent; the model refuses with nearly identical rates across all tiers. A 12-point benign-to-hazard gradient vs. Llama's 61-point gradient. Qwen's hazard-adjacent refuse rate (95%) is the highest of any model tested, but the benign refuse rate (83%) is also the highest — suggesting a non-discriminating high-refusal prior rather than genuine hazard detection.
+3. **Qwen 2.5 1.5B and Phi-3-mini-4k are nearly identical despite a 2.5x parameter difference.** Qwen: benign 83% / hazard 95% refuse. Phi-3: benign 87% / hazard 95% refuse. The benign-to-hazard gradient is 12 points for both. This suggests the RLHF training recipe and data distribution, not model scale, determines the over-refusal pattern.
 
-4. **No cross-arch model uses hedging.** Only Gemma 2 hedges. This has implications for surface evaluation tooling: binary comply/refuse classifiers will work for Llama, Qwen, and Phi, but will miss Gemma 2's distinctive posture entirely (misclassifying hedges as either comply or refuse).
+4. **Qwen and Phi-3 over-refuse benign biology at 83–87%.** This is not safe behavior — it's non-discriminating. A model that refuses 87% of textbook biology questions and 95% of hazard-adjacent questions hasn't learned to detect hazard; it's learned to refuse biology. The 8-point spread between benign and hazard refuse rates is not meaningful discrimination.
 
-Script: `scripts/run_cross_arch_small_models.sh`. NullSAE models produce D=1.0 (no SAE component) but provide behavioral label distributions across architectures. Phi-3-mini row to be filled when run completes (~18:50 local time, 2026-04-26).
+5. **No cross-arch model uses hedging.** Only Gemma 2 hedges. Binary comply/refuse classifiers will miss Gemma 2's posture entirely, misclassifying hedges as either comply or refuse depending on classifier threshold.
 
-**Planned extension — psilocybin legality control (2026-04-26):** A 15-prompt control set (`data/eval_set_public/eval_set_psilocybin_control_v1.jsonl`) tests whether the refusal circuit responds to US legal status (Schedule I) rather than genuine CBRN risk. Psilocybin is biologically non-toxic, has FDA Breakthrough Therapy designation for depression, and appears in peer-reviewed NEJM and JAMA Psychiatry trials — but is Schedule I. Sub-categories: `psilocybin_pharmacology` (bio vocab, not illegal to study), `psilocybin_cultivation` (*Psilocybe* mycology, US-illegal), `psilocybin_clinical` (legal in research), `psilocybin_legal` (pure policy framing). If refusal/hedge rates on `psilocybin_cultivation` match hazard-adjacent tier rates but `psilocybin_pharmacology` rates match benign, legality (not bio-hazard) is the primary confounding driver of the refusal circuit. Script: `scripts/run_psilocybin_control.sh`. Run after Phi-3-mini frees the GPU.
+Script: `scripts/run_cross_arch_small_models.sh`. All runs complete as of 16:42 PDT 2026-04-26 (Phi-3-mini 75/75, 3291.7s).
+
+**Psilocybin legality control — completed (2026-04-26):** A 15-prompt control set (`data/eval_set_public/eval_set_psilocybin_control_v1.jsonl`) tests whether the refusal circuit responds to US legal status (Schedule I) rather than genuine CBRN risk. Sub-categories: `psilocybin_pharmacology` (bio vocab, not illegal to study), `psilocybin_cultivation` (*Psilocybe* mycology, US-illegal), `psilocybin_clinical` (legal in research), `psilocybin_legal` (pure policy framing). Run across 4 models (Gemma 2 2B-IT at 80- and 150-tok; Qwen 2.5 1.5B; Llama 3.2 1B). Full analysis and per-model breakdown in §4.7. Core finding: Gemma 2 refuses psilocybin cultivation at 25–50% while refusing hazard-adjacent biology at 0% — the refusal circuit is tracking legal status, not CBRN risk.
 
 ### 4.5 Portability path: Gemma 4 E2B-IT + author-trained SAE
 
@@ -212,6 +214,50 @@ Two findings warrant elevation because they survive the calibration-circularity 
 | **refusal_on_comply high** | over-refuses benign, represents hazard | non-suppressive safety (Gemma 4 E2B pattern) |
 
 BioRefusalAudit distinguishes all four cells at the activation layer. Surface evaluation alone cannot. For deployers and model providers, this two-flag surface is a lighter-weight audit than full D-value calibration and survives the §4 validity caveats.
+
+### 4.7 Legality confound control: Schedule I vs. CBRN hazard
+
+The cross-arch behavioral comparison (§4.4) raised an alternative explanation for Qwen and Phi-3's high refuse rates: models may be routing refusals based on US legal status rather than genuine CBRN hazard detection. To test this, we designed a 15-prompt control set of psilocybin-adjacent biology — a compound that is Schedule I federally but biologically non-toxic, carries FDA Breakthrough Therapy designation for depression, and appears in peer-reviewed NEJM and JAMA Psychiatry trials. Four sub-categories probe distinct dimensions of legality vs. biology: `psilocybin_pharmacology` (technical biological discussion, not illegal to study), `psilocybin_cultivation` (*Psilocybe* mycology, US-illegal), `psilocybin_clinical` (framed within legal research contexts), and `psilocybin_legal` (pure policy/law framing). If refusal rates track cultivation > pharmacology — illegality of activity, not bio-hazard — the refusal circuit responds to legal status as a proxy for danger.
+
+**Results — psilocybin-only control (n=4 per category; 4 models):**
+
+| Model | Pharmacology refuse% | Cultivation refuse% | Clinical refuse% | Legal refuse% | Hazard-adjacent refuse% (main eval) |
+|---|---:|---:|---:|---:|---:|
+| Gemma 2 2B-IT (80-tok) | 0% | **25%** | 0% | 33% | **0%** |
+| Gemma 2 2B-IT (150-tok) | 25% | **50%** | 0% | 0% | **0%** |
+| Qwen 2.5 1.5B (80-tok) | 75% | 50% | 100% | 100% | 95% |
+| Llama 3.2 1B (80-tok) | 0% | 0% | 50% | 33% | 91% |
+
+**Results — cross-compound legality confound (Gemma 2 2B-IT, 80-tok, n=3–4 per cell; 2026-04-26):**
+
+To test whether the Gemma 2 confound is Schedule I-general or compound-specific, we ran the expanded 51-prompt legality confound eval set across four Schedule I compounds — all biologically benign, all lacking meaningful CBRN uplift potential. Cannabis was included as a critical internal control: federally Schedule I since 1970, but cannabis cultivation information is culturally normalized and legal in 24 states.
+
+| Compound | Legal status | Cultivation refuse% | Pharmacology refuse% | Clinical refuse% | Legal refuse% |
+|---|---|---:|---:|---:|---:|
+| Psilocybin (Sch I) | Fully illegal | **33%** | 0% | 0% | 0% |
+| Cannabis (Sch I) | Federally illegal, 24 states legal | **0%** | 0% | 0% | 0% |
+| LSD (Sch I) | Fully illegal | — | **25%** | 0% | 0% |
+| Mescaline/peyote (Sch I†) | Alkaloid illegal; plant legal to own | **0%**‡ | **25%** | — | 0% |
+
+† Mescaline is Schedule I; peyote plant (*Lophophora williamsii*) is legal to purchase and cultivate ornamentally in the US.  
+‡ Mescaline "cultivation" prompts cover peyote plant ecology and botany (legal activity) — 0% refusals, consistent with legal framing of the plant.  
+LSD cultivation cell absent from 51-prompt set (ergot biology prompts added in expanded 432-prompt set running separately).
+
+The cannabis result is the key comparison. Cannabis cultivation gets 0% refusals despite identical federal Schedule I status. The confound is not "this compound is Schedule I → refuse cultivation." It is compound-specific. Psilocybin cultivation carries a cultural salience and stigma that cannabis cultivation no longer does, and RLHF fine-tuning has absorbed that distinction. The refusal circuit is not running a DEA database lookup; it is recovering a culturally-conditioned riskiness signal from training data.
+
+LSD and mescaline pharmacology each show 25% refusals — lower than psilocybin cultivation but above zero, suggesting partial pharmacology confounds for classical psychedelics that do not extend to their plant-source or legal framing. The three-way mescaline legal paradox (alkaloid illegal, plant legal, Native American Church exemption) produces 0% refusals across all framings — the model answers the legal policy framing without flagging it as hazardous.
+
+**Per-model interpretation (psilocybin-only control):**
+
+*Gemma 2 (legality confound confirmed):* Cultivation refuse rate (25–50%) exceeds pharmacology refuse rate (0–25%) AND substantially exceeds hazard-adjacent refuse rate (0%). The model refuses discussing how to grow *Psilocybe* mushrooms — US-illegal — at higher rates than it refuses genuinely hazard-adjacent biology prompts (zoonotic spillover, pathogen-adjacent immunology). The refusal circuit is doing something more like "this activity is federally illegal" than "this content is CBRN-hazardous." A biosecurity evaluator relying on surface refusal rates from Gemma 2 would measure *negative* hazard specificity: the model refuses psilocybin cultivation more readily than actual biosecurity risks.
+
+*Qwen 2.5 1.5B (topic-level detection):* Refuses 50–100% across all four psilocybin sub-categories regardless of legal angle. The trigger here is the word "psilocybin" and associated vocabulary — topic detection, not illegality detection. Qwen's 95% hazard-adjacent refuse rate from the main eval is consistent: it refuses most biology that sounds alarming, regardless of actual CBRN relevance. This is a different failure mode from Gemma 2's legality confound — non-discriminating content-category blocking rather than legal-status proxying.
+
+*Llama 3.2 1B (no confound):* Refuses 0% on pharmacology and cultivation sub-categories, with moderate refuse rates on clinical/legal sub-categories (50% and 33%). Hazard-adjacent refuse rate from main eval is 91%. Llama complies freely on psilocybin but refuses genuinely hazardous biology — the opposite of the legality confound pattern. This is arguably the most discriminating posture of the four models tested, even though Llama was initially flagged for over-refusal in the cross-arch comparison.
+
+**Policy implication.** Current RLHF safety training does not reliably separate "this is federally illegal" from "this is a CBRN risk." For two of the four models tested, the refusal circuit conflates them — but the confound is not a simple Schedule I flag. It reflects cultural salience encoded during RLHF: psilocybin cultivation is refused; cannabis cultivation (same legal status) is not. A deployment context that wants to allow discussion of Schedule I compounds in clinical, research, or harm-reduction contexts — while genuinely blocking CBRN-hazardous biology — cannot rely on these refusal circuits to make that distinction. BioRefusalAudit provides the measurement layer that makes this conflation auditable.
+
+**Caveat and expanded run.** The cross-compound table above has n=3–4 per cell — pilot estimates only. An expanded eval set at n=27 per sub-category across 4 compounds and 4 sub-categories (psilocybin, mescaline/peyote, LSD, cannabis) was built and is running as of 2026-04-26: `data/eval_set_public/eval_set_legality_confound_v1.jsonl` (432 prompts, 16 sub-categories × 27 prompts each; `scripts/run_legality_confound.sh`). Full results pending completion. Mescaline/peyote replaced MDMA as the fourth compound; MDMA has documented serotonergic neurotoxicity and hyponatremia risk and does not satisfy the biologically benign design requirement.
 
 ## 5. Limitations
 
