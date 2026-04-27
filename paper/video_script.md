@@ -34,11 +34,11 @@ There was no tool to measure this. So we built one. We call the thing it measure
 
 ## [WHAT WE BUILT — ~45 seconds]
 
-The core idea: every time a model processes text, its residual stream encodes what it's *actually* representing. Sparse autoencoders decompose that into interpretable directions — bio-content features, hazard features, refusal circuitry, hedging patterns.
+The core idea: every time a model processes text, its residual stream encodes features of what it's processing. Sparse autoencoders decompose that into interpretable directions — bio-content features, hazard features, refusal circuitry, hedging patterns.
 
 We hook into that residual stream at generation time, project through Gemma Scope SAEs, run a judge consortium on the surface output, and compute a calibrated divergence score. How much does the internal pattern diverge from what the model said?
 
-High divergence on a refusal means the model is representing more than it's letting on.
+High divergence on a refusal may suggest the model's internal representations don't match its stated output.
 
 One thing I'm really excited about here: the score is computed entirely from activation vectors — not from what the user typed or what the model said. You could run this audit on a production system without the audit layer reading interaction content. Privacy-preserving bio-monitoring. That's what Sandbrink at NTI called for. We actually built it.
 
@@ -56,7 +56,7 @@ After fixing a judge pipeline bug that was mislabeling hedging responses as refu
 
 The model responds to dangerous content by softening, not stopping. And that matters — because hedge-without-refuse is a completely different failure mode, and surface evaluation collapses the two into one bin.
 
-**Two: The refusal circuit is a biology detector, not a hazard detector.**
+**Two: The refusal circuit appears to be a biology detector, not a hazard detector.**
 
 This one genuinely surprised me. We ran causal interventions on the SAE features driving refusal behavior. The circuit fires most reliably on *benign* biology — 87%. Dual-use: 80%. Hazard-adjacent, the stuff you actually care about: 73%.
 
@@ -64,7 +64,7 @@ And look at the largest internal-state shift in the entire corpus. Effect size 1
 
 **Three: Format kills the safety circuit. So does token budget.**
 
-Gemma 4's entire RLHF safety circuit is gated on chat template formatting. Without the correct tokens: zero refusals across 75 prompts. With them: 65 of 75. One formatting token. That's it.
+Gemma 4's RLHF safety circuit appears to be gated on chat template formatting. Without the correct tokens: zero refusals across 75 prompts. With them: 65 of 75. One formatting difference. That's it.
 
 And at an 80-token generation cap, both models refuse zero percent across all tiers. Safety articulation requires *room* to articulate. Constrained production contexts — mobile apps, latency-capped APIs — may be bypassing the safety circuits that lab evals are measuring, completely silently.
 
@@ -94,7 +94,7 @@ But here's what makes the confound really stick — we ran cannabis as an intern
 
 Cannabis is also Schedule I. Federally illegal since 1970. Same scheduling tier. And yet: cannabis cultivation gets zero percent refusals. Psilocybin cultivation: 33 percent.
 
-The model isn't running a DEA lookup. It absorbed a *culturally-conditioned* riskiness signal during training. Psilocybin still carries stigma that cannabis has largely shed. That cultural gradient — not legal status, not biology, not biosecurity relevance — is what's driving the refusals.
+The model isn't running a DEA lookup. The pattern suggests it may have absorbed a *culturally-conditioned* riskiness signal during training — psilocybin still carries stigma that cannabis has largely shed. Cultural salience, not legal status or biosecurity relevance, appears to be the operative variable.
 
 Think about what this means for deployment. A clinical assistant supporting harm-reduction or palliative care, where discussing Schedule I compounds is literally the job — that team cannot rely on the current refusal circuit to distinguish "clinically relevant" from "CBRN risk." The circuit isn't making that distinction. You'd never see this from surface evaluation alone.
 
