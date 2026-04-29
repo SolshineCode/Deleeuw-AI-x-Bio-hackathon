@@ -286,6 +286,10 @@ def main():
                         help="Output JSONL path")
     parser.add_argument("--dry-run", action="store_true",
                         help="Print prompts without loading model")
+    parser.add_argument("--dataset-version", default="v1",
+                        help="Version label written into every output row (e.g. v1, v1_post_hackathon)")
+    parser.add_argument("--provenance-note", default="",
+                        help="Free-text note written into every row, e.g. 'added post-hackathon 2026-04-29'")
     args = parser.parse_args()
 
     repo_root = Path(__file__).parent.parent
@@ -328,6 +332,8 @@ def main():
             "descriptor_original": descriptor["prompt"],
             "generation_model": cfg["hf_repo"],
             "generation_source_label": cfg["source_label"],
+            "dataset_version":  args.dataset_version,
+            "provenance_note":  args.provenance_note,
             "needs_review":     "[NEEDS_REVIEW]" in probe,
         }
         results.append(row)
