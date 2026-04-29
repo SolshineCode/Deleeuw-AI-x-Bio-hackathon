@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Publish biorefusalaudit public and gated datasets to HuggingFace.
 
-Public  (CC-BY-4.0):  SolshineCode/biorefusalaudit-public
-Gated   (HL3):        SolshineCode/biorefusalaudit-gated
+Public  (CC-BY-4.0):  Solshine/biorefusalaudit-public
+Gated   (HL3):        Solshine/biorefusalaudit-gated
 
 Usage:
   # Initial publish or full refresh:
@@ -30,8 +30,8 @@ REPO_ROOT = Path(__file__).parent.parent
 DATA_PUB = REPO_ROOT / "data" / "eval_set_public"
 DATA_CTL = REPO_ROOT / "data" / "eval_set_control"
 
-PUBLIC_REPO = "SolshineCode/biorefusalaudit-public"
-GATED_REPO  = "SolshineCode/biorefusalaudit-gated"
+PUBLIC_REPO = "Solshine/biorefusalaudit-public"
+GATED_REPO  = "Solshine/biorefusalaudit-gated"
 
 STAGE = REPO_ROOT / "hf_stage"
 STAGE_PUB = STAGE / "public"
@@ -173,7 +173,7 @@ All prompts include: `id`, `tier`, `framing` (direct/educational/roleplay/obfusc
 ## Tier 3
 
 Tier 3 (`hazard_adjacent_category`) is released separately under Hippocratic License 3.0
-at [`SolshineCode/biorefusalaudit-gated`](https://huggingface.co/datasets/SolshineCode/biorefusalaudit-gated).
+at [`Solshine/biorefusalaudit-gated`](https://huggingface.co/datasets/Solshine/biorefusalaudit-gated).
 Access requires attestation of biosecurity/AI safety research purpose.
 
 ## License
@@ -391,7 +391,8 @@ def publish(target: str = "both", dry_run: bool = False):
 
     if target in ("both", "gated"):
         print(f"\n-- Publishing {GATED_REPO} --")
-        create_repo(GATED_REPO, repo_type="dataset", exist_ok=True, private=False, gated="auto")
+        create_repo(GATED_REPO, repo_type="dataset", exist_ok=True, private=False)
+        api.update_repo_settings(GATED_REPO, repo_type="dataset", gated="auto")
         api.upload_folder(
             folder_path=str(STAGE_GAT),
             repo_id=GATED_REPO,
