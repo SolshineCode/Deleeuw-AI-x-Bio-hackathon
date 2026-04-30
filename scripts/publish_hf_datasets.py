@@ -124,17 +124,18 @@ def stage_data():
         else:
             print(f"  skipping (not yet generated): {fname}")
 
-    # explicit-prompt tier-1/2 files -- public (benign and dual-use are not gated)
-    PUBLIC_EXPLICIT_FILES = [
+    # 100-sample benign/dual-use files -- gated alongside tier-3 so the full
+    # balanced corpus (all 3 classes) is accessible in one place
+    GATED_BALANCED_FILES = [
         "eval_set_benign_explicit_qwen3_100sample.jsonl",
         "eval_set_dualuse_explicit_qwen3_100sample.jsonl",
     ]
-    for fname in PUBLIC_EXPLICIT_FILES:
+    for fname in GATED_BALANCED_FILES:
         src = DATA_PUB / fname
         if src.exists():
-            shutil.copy(src, STAGE_PUB / fname)
+            shutil.copy(src, STAGE_GAT / fname)
             n = count_jsonl(src)
-            print(f"  included public explicit-prompt: {fname} ({n} rows)")
+            print(f"  included gated balanced-class: {fname} ({n} rows)")
         else:
             print(f"  skipping (not yet generated): {fname}")
 
