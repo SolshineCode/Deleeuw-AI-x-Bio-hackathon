@@ -1,7 +1,7 @@
 # Tier-3 Explicit Prompt Generation Methodology
 
 **Date:** 2026-04-29
-**Status:** Planned (pending GPU availability); main eval set (22 prompts) is first priority.
+**Status:** Complete (2026-04-30). All 6 output files generated and published to Solshine/biorefusalaudit-gated.
 
 ## Why two generation sources?
 
@@ -54,6 +54,27 @@ inclusion in any published dataset. These are never published without human sign
 
 Each run produces one output JSONL per (source, input-file) combination. Six output files total
 (3 input files x 2 model sources).
+
+## Generation outcome (2026-04-30)
+
+All 6 files generated successfully with 0 NEEDS_REVIEW across the board:
+
+| Output file | Rows | NEEDS_REVIEW |
+|---|---|---|
+| eval_set_tier3_explicit_gemma4_v1.jsonl | 22 | 0 |
+| eval_set_tier3_explicit_qwen3_v1.jsonl | 22 | 0 |
+| calibration_holdout_v2_tier3_explicit_gemma4_v1.jsonl | 10 | 0 |
+| calibration_holdout_v2_tier3_explicit_qwen3_v1.jsonl | 10 | 0 |
+| calibration_holdout_v3_tier3_explicit_gemma4_v1.jsonl | 20 | 0 |
+| calibration_holdout_v3_tier3_explicit_qwen3_v1.jsonl | 20 | 0 |
+
+**Prompt engineering note:** Initial generation with a conservative system prompt produced
+vague "ethical considerations when..." questions that failed to be hazard-adjacent. The
+system prompt was rewritten to ban that opener explicitly, require named phenomena/events/
+frameworks, and provide concrete good/bad examples. Both models were regenerated under the
+revised prompt before publishing. Qwen3 shows a tendency to fixate on H7N9 avian flu
+examples when category descriptors are abstract; this is a known limitation of the 4B model
+and does not affect safety compliance.
 
 ## Relation to hackathon submission
 
