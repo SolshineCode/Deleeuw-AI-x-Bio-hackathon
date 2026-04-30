@@ -104,24 +104,39 @@ def stage_data():
     shutil.copy(DATA_PUB / "schema.md",              STAGE_PUB / "schema.md")
     shutil.copy(DATA_PUB / "stratification_stats.md", STAGE_PUB / "stratification_stats.md")
 
-    # explicit-prompt tier-3 files -- include in gated if generated
-    EXPLICIT_FILES = [
-        # (source_file, gated_dest_name)
-        ("eval_set_tier3_explicit_gemma4_v1.jsonl",               "eval_set_tier3_explicit_gemma4_v1.jsonl"),
-        ("eval_set_tier3_explicit_qwen3_v1.jsonl",                "eval_set_tier3_explicit_qwen3_v1.jsonl"),
-        ("calibration_holdout_v2_tier3_explicit_gemma4_v1.jsonl", "calibration_holdout_v2_tier3_explicit_gemma4_v1.jsonl"),
-        ("calibration_holdout_v2_tier3_explicit_qwen3_v1.jsonl",  "calibration_holdout_v2_tier3_explicit_qwen3_v1.jsonl"),
-        ("calibration_holdout_v3_tier3_explicit_gemma4_v1.jsonl", "calibration_holdout_v3_tier3_explicit_gemma4_v1.jsonl"),
-        ("calibration_holdout_v3_tier3_explicit_qwen3_v1.jsonl",  "calibration_holdout_v3_tier3_explicit_qwen3_v1.jsonl"),
+    # explicit-prompt tier-3 files -- gated
+    GATED_EXPLICIT_FILES = [
+        "eval_set_tier3_explicit_gemma4_v1.jsonl",
+        "eval_set_tier3_explicit_qwen3_v1.jsonl",
+        "calibration_holdout_v2_tier3_explicit_gemma4_v1.jsonl",
+        "calibration_holdout_v2_tier3_explicit_qwen3_v1.jsonl",
+        "calibration_holdout_v3_tier3_explicit_gemma4_v1.jsonl",
+        "calibration_holdout_v3_tier3_explicit_qwen3_v1.jsonl",
+        # 100-sample class-balance tier-3 file
+        "eval_set_tier3_explicit_qwen3_100sample.jsonl",
     ]
-    for src_name, dst_name in EXPLICIT_FILES:
-        src = DATA_PUB / src_name
+    for fname in GATED_EXPLICIT_FILES:
+        src = DATA_PUB / fname
         if src.exists():
-            shutil.copy(src, STAGE_GAT / dst_name)
+            shutil.copy(src, STAGE_GAT / fname)
             n = count_jsonl(src)
-            print(f"  included explicit-prompt file: {dst_name} ({n} rows)")
+            print(f"  included gated explicit-prompt: {fname} ({n} rows)")
         else:
-            print(f"  skipping (not yet generated): {src_name}")
+            print(f"  skipping (not yet generated): {fname}")
+
+    # explicit-prompt tier-1/2 files -- public (benign and dual-use are not gated)
+    PUBLIC_EXPLICIT_FILES = [
+        "eval_set_benign_explicit_qwen3_100sample.jsonl",
+        "eval_set_dualuse_explicit_qwen3_100sample.jsonl",
+    ]
+    for fname in PUBLIC_EXPLICIT_FILES:
+        src = DATA_PUB / fname
+        if src.exists():
+            shutil.copy(src, STAGE_PUB / fname)
+            n = count_jsonl(src)
+            print(f"  included public explicit-prompt: {fname} ({n} rows)")
+        else:
+            print(f"  skipping (not yet generated): {fname}")
 
 
 # -- dataset cards (dynamic) --------------------------------------------------
