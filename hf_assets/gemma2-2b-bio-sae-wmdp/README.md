@@ -1,5 +1,7 @@
 ---
-license: hl3-full
+license: other
+license_name: hl3-full
+license_link: https://firstdonoharm.dev/version/3/0/full.html
 tags:
   - sparse-autoencoder
   - mechanistic-interpretability

@@ -10,8 +10,8 @@ Usage (after approval):
   python scripts/push_sae_to_hf.py --repo gemma4   # after Gemma 4 E2B training completes
 
 Repos created (private by default, can be made public after review):
-  SolshineCode/biorefusalaudit-gemma2-2b-bio-sae-wmdp
-  SolshineCode/biorefusalaudit-gemma2-2b-bio-sae-pairwise
+  Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp
+  Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise
   Solshine/gemma4-e2b-bio-sae-v1
 """
 import argparse, os, sys
@@ -47,13 +47,13 @@ def push(repo_id: str, local_dir: Path, files: list[str], readme: Path, private:
 
 CONFIGS = {
     "wmdp": {
-        "repo_id": "SolshineCode/biorefusalaudit-gemma2-2b-bio-sae-wmdp",
+        "repo_id": "Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp",
         "local_dir": Path("runs/sae-training-wmdp-222-5000steps"),
         "files": ["sae_weights.pt", "training_log.jsonl"],
         "readme": Path("hf_assets/gemma2-2b-bio-sae-wmdp/README.md"),
     },
     "pairwise": {
-        "repo_id": "SolshineCode/biorefusalaudit-gemma2-2b-bio-sae-pairwise",
+        "repo_id": "Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise",
         "local_dir": Path("runs/sae-training-gemma2-10ksteps-pairwise"),
         "files": [
             "sae_weights.pt",
