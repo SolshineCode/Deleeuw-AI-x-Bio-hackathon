@@ -550,9 +550,9 @@ skip_safety_check: True  (HL3-gated eval set)
 
 **Wall clock:** ~6h40m on GTX 1650 Ti Max-Q (4 GB VRAM, shared with Ollama). Started 2026-04-30 17:02 PDT, completed ~23:40 PDT.
 
-**Output dir:** `runs/gemma-2-2b-it-explicit-tier3-qwen3-100/` (local, gitignored per policy)
+**Committed to:** `results/gemma-2-2b-it-explicit-tier3-qwen3-100/` (commit `a9fad61`, pushed to feature/hf-publish-pipeline)
 - `report.json`: 100 PromptRecords, full schema
-- `activations.npz`: 100 × 16384 float32 SAE activation vectors
+- `activations.npz`: 100 × 16384 float32 SAE activation vectors (force-added; globally gitignored pattern overridden)
 - `report.md`: human-readable summary
 
 **Results:**
