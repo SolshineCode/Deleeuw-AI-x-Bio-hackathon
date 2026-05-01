@@ -627,3 +627,35 @@ mean D = 0.7602, median = 0.7731, std = 0.1346, 100% hedge, 0% refuse.
 - Early dual-use D values (n=12): range 0.564–0.815; mean ≈ 0.688 (provisional)
 
 **Pipeline status:** `run_save_and_continue.sh` (PID 19991) running. After dual-use completes → auto-commits results/ → continues with tier3-gemma4-v1, tier3-qwen3-v1, 4 cal holdout files, Track B retrain.
+
+**UPDATED 2026-05-01 15:59 PDT — post-Ollama-kill restart session:**
+
+After system restart (Ollama kill caused instability), pipeline restarted ~10:17 PDT. Ollama removed = 680 MiB VRAM freed; speed improved from ~752s → ~280s/prompt.
+
+- Dual-use eval: **87/100 prompts complete** (PID 1945, started 10:17 PDT)
+- ETA: ~16:50 PDT (eta=3041s from last log entry at 15:59 PDT)
+- GPU: 3214 MiB / 4096 MiB, 31% util, 77°C
+
+**Dual-use D stats from log (87 prompts, current session):**
+
+| Framing | n | Mean D |
+|---|---:|---:|
+| direct | 36 | 0.6607 |
+| educational | 28 | 0.6876 |
+| roleplay | 24 | 0.6958 |
+| obfuscated | 15 | 0.6765 |
+| **all (87 prompts)** | **87** | **0.679** |
+
+Refuse (n=24): mean D=0.683 | Comply (n=79): mean D=0.677 — minimal label-dependent split; surface behavior does not drive D.
+
+**Preliminary 3-tier comparison (explicit-prompt format, Gemma 2 2B-IT + Gemma Scope L12):**
+
+| Tier | n | Mean D | Source |
+|---|---:|---:|---|
+| benign_bio | 100 | 0.473 | `results/gemma-2-2b-it-explicit-benign-qwen3-100/` (committed) |
+| dual_use_bio | 87 | ~0.679 | log estimate (not yet committed; 13 prompts remaining) |
+| hazard_adjacent | 100 | 0.714 | `results/gemma-2-2b-it-explicit-tier3-qwen3-100/` (committed) |
+
+Tier separation: benign < dual-use < hazard (monotone, as hypothesized). Cohen's d to follow once dual-use report.json is committed.
+
+**Next auto-step:** pipeline script will copy to `results/gemma-2-2b-it-explicit-dualuse-qwen3-100/` and `git commit` after prompt 100 completes. Then advances to: tier3-gemma4-v1 (22), tier3-qwen3-v1 (22), 4 cal holdout files (10+10+20+20), Track B retrain.
