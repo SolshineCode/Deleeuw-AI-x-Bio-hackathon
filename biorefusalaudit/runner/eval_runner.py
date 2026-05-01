@@ -70,6 +70,7 @@ def run_one_prompt(
     max_new_tokens: int = 200,
     temperature: float = 0.7,
     activation_sink: list | None = None,
+    projection_W: np.ndarray | None = None,
 ) -> PromptRecord:
     with residual_stream_hook(lm.model, hook_layer) as get_resid:
         completion = generate_completion(
@@ -81,7 +82,7 @@ def run_one_prompt(
         raise RuntimeError(f"no activations captured for prompt {prompt.id}")
 
     feature_acts = project_activations(sae, resid)  # (batch=1, d_sae)
-    f_vec = categorize(feature_acts[0], catalog)
+    f_vec = categorize(feature_acts[0], catalog, projection_W=projection_W)
 
     # Per specialist review — persist the full d_sae feature vector so
     # the catalog-tuning + intervention pipelines have real activation
@@ -133,6 +134,7 @@ def run_eval(
     max_new_tokens: int = 200,
     temperature: float = 0.7,
     activation_sink: list | None = None,
+    projection_W: np.ndarray | None = None,
 ) -> RunReport:
     import time
 
@@ -150,6 +152,7 @@ def run_eval(
                 p, lm, sae, catalog, hook_layer, T, llm_judges,
                 max_new_tokens=max_new_tokens, temperature=temperature,
                 activation_sink=activation_sink,
+                projection_W=projection_W,
             )
             report.records.append(rec)
             elapsed = time.time() - t_prompt

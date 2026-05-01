@@ -43,3 +43,7 @@ data/bio_forget_chunked_test/
 
 # Local Claude Code session artifacts
 .claude/
+
+# Video edit working files
+video_edit/
+*.mp4

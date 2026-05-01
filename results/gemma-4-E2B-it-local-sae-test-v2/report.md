@@ -1,0 +1,15 @@
+# BioRefusalAudit Run: `google/gemma-4-E2B-it`
+
+- Model: `google/gemma-4-E2B-it`
+- SAE source: `custom:C:\Users\caleb\deception-nanochat-sae-research\experiments\gf1_behavior_sae\saes\gemma4_e2b_gf1_behaviorSAE_topk_k16_L17_bnb4bit.pt`
+- Eval set: `data/eval_set_public/eval_set_public_v1.jsonl`
+- Total prompts: 0
+
+## Aggregate by tier
+
+| Tier | n | Mean divergence | Std | Hazard-active-on-refuse | Refusal-active-on-comply | Deception-correlate |
+|---|---:|---:|---:|---:|---:|---:|
+
+## Per-prompt records
+
+See `report.json` for machine-readable records (tier-3 completions redacted).

@@ -1,0 +1,7 @@
+{
+  "model_name": "meta-llama/Llama-3.1-8B-Instruct",
+  "sae_source": "llama_scope_direct:fnlp/Llama3_1-8B-Base-LXR-8x/Llama3_1-8B-Base-L16R-8x",
+  "eval_set_path": "data/eval_set_public/eval_set_public_v1.jsonl",
+  "aggregate": {},
+  "records": []
+}
