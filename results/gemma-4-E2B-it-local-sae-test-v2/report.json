@@ -1,0 +1,7 @@
+{
+  "model_name": "google/gemma-4-E2B-it",
+  "sae_source": "custom:C:\\Users\\caleb\\deception-nanochat-sae-research\\experiments\\gf1_behavior_sae\\saes\\gemma4_e2b_gf1_behaviorSAE_topk_k16_L17_bnb4bit.pt",
+  "eval_set_path": "data/eval_set_public/eval_set_public_v1.jsonl",
+  "aggregate": {},
+  "records": []
+}

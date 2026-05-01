@@ -38,6 +38,26 @@ Save everything. Every completion, every classification decision, every per-judg
 
 Rule of thumb: if a reviewer (or future-you) might want to re-analyze this data with a different calibration matrix, a different catalog, a different judge weighting, a different divergence formula — and the data isn't saved — you have failed the directive. **Generate once, save forever, re-analyze infinitely.**
 
+### ⛔ Data-permanence rule — "regeneratable" does NOT satisfy the mandate
+
+**The `runs/` directory is scratch only.** Every completed run must be immediately copied to `results/<run-name>/` and committed. Do not defer this step.
+
+"Regeneratable from scripts" is NOT saving. A GPU run produces a specific numerical artifact tied to exact model state, library versions, hardware, and floating-point behavior at that moment. Re-running produces a different artifact. The mandate exists precisely to prevent the reasoning "we can always redo it" — you cannot always redo it, and even when you can, you shouldn't have to.
+
+**Required workflow after every eval run completes:**
+```bash
+mkdir -p results/<run-name>
+cp runs/<run-name>/report.json results/<run-name>/
+cp runs/<run-name>/activations.npz results/<run-name>/   # if present
+cp runs/<run-name>/report.md results/<run-name>/          # if present
+git add results/<run-name>/
+git add -f results/<run-name>/activations.npz             # override gitignore
+git commit -m "data: save <run-name> results (data mandate)"
+git push
+```
+
+This applies to every run — smoke tests, pass1 runs, rescored reports, calibration holdouts, everything. If a number appears in any paper, notebook, or STATUS.md, the file that produced it must be in the repo under `results/`.
+
 ---
 
 ## ⛔ Safety / scope hygiene directive (project-specific)
