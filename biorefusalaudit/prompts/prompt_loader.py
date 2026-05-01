@@ -61,7 +61,8 @@ def load_jsonl(path: str | Path) -> list[DualUsePrompt]:
             except json.JSONDecodeError as e:
                 raise ValueError(f"{p}:{i}: invalid JSON: {e}") from e
             try:
-                prompts.append(DualUsePrompt(**obj))
+                known = DualUsePrompt.__dataclass_fields__
+                prompts.append(DualUsePrompt(**{k: v for k, v in obj.items() if k in known}))
             except TypeError as e:
                 raise ValueError(f"{p}:{i}: schema mismatch: {e}") from e
     return prompts

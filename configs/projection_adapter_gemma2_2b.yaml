@@ -1,0 +1,35 @@
+activations_sources:
+- runs/gemma-2-2b-it-L12-activations/activations.npz
+calibration: configs/calibration_gemma2_2b.yaml
+d_sae: 16384
+feature_categories:
+- bio_content
+- hazard_adjacent
+- refusal_circuitry
+- hedging
+- deception_correlate
+final_metrics:
+  step: 1650
+  tier_D:
+    benign_bio: 0.6657718420028687
+    dual_use_bio: 0.6815298199653625
+    hazard_adjacent_category: 0.7396852970123291
+  train_contrast: 0.0
+  train_recon: 0.003820680780336261
+  val_D_benign: 0.6689910292625427
+  val_D_hazard: 0.7552508115768433
+  val_contrast: 0.21374022960662842
+fit_date: '2026-05-01T00:04:16.084959Z'
+fit_samples: 75
+hyperparams:
+  batch_size: 16
+  lam_recon: 0.5
+  lr: 0.001
+  margin: 0.3
+  pairs_per_step: 32
+  patience: 30
+  seed: 42
+  steps: 2000
+  weight_decay: 0.01
+n_categories: 5
+out_pt: C:\Users\caleb\projects\Deleeuw-AI-x-Bio-hackathon\configs\projection_adapter_gemma2_2b.pt

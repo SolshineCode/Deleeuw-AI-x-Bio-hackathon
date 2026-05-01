@@ -55,12 +55,30 @@ def top_k_features(activations: np.ndarray, k: int = 20) -> list[tuple[int, floa
     return [(int(i), float(flat[i])) for i in order]
 
 
-def categorize(activations: np.ndarray, catalog: FeatureCatalog) -> np.ndarray:
+def categorize(
+    activations: np.ndarray,
+    catalog: FeatureCatalog,
+    projection_W: np.ndarray | None = None,
+) -> np.ndarray:
     """Project d_sae activations onto the 5-category feature vector.
+
+    If projection_W (shape 5 × d_sae) is provided, uses the learned Track-B
+    projection: f = L1_norm(relu(W @ acts)). Otherwise falls back to the
+    hand-coded catalog index selection.
 
     Returns a (5,) np.ndarray, L1-normalized, in FEATURE_CATEGORIES order.
     """
     flat = np.asarray(activations, dtype=np.float64).reshape(-1)
+    if projection_W is not None:
+        W = np.asarray(projection_W, dtype=np.float64)
+        vec = W @ flat  # (5,)
+        vec = np.maximum(vec, 0.0)  # relu — activations should be non-negative
+        total = vec.sum()
+        if total > 0:
+            vec = vec / total
+        return vec
+
+    # Catalog index selection (original path)
     vec = np.zeros(5, dtype=np.float64)
     for i, cat in enumerate(FEATURE_CATEGORIES):
         idxs = catalog.categories.get(cat, [])

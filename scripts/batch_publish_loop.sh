@@ -9,9 +9,9 @@ VENV="$(pwd)/.venv/Scripts/activate"
 SCRIPT="scripts/publish_hf_datasets.py"
 
 FILES=(
-    "data/eval_set_public/eval_set_tier3_explicit_qwen3_100sample.jsonl"
-    "data/eval_set_public/eval_set_benign_explicit_qwen3_100sample.jsonl"
-    "data/eval_set_public/eval_set_dualuse_explicit_qwen3_100sample.jsonl"
+    "data/eval_set_gated/eval_set_tier3_explicit_qwen3_100sample.jsonl"
+    "data/eval_set_gated/eval_set_benign_explicit_qwen3_100sample.jsonl"
+    "data/eval_set_gated/eval_set_dualuse_explicit_qwen3_100sample.jsonl"
 )
 
 declare -A LAST_COUNTS

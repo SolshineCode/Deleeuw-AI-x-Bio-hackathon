@@ -28,6 +28,7 @@ from huggingface_hub import HfApi, create_repo
 
 REPO_ROOT = Path(__file__).parent.parent
 DATA_PUB = REPO_ROOT / "data" / "eval_set_public"
+DATA_GAT = REPO_ROOT / "data" / "eval_set_gated"
 DATA_CTL = REPO_ROOT / "data" / "eval_set_control"
 
 PUBLIC_REPO = "Solshine/biorefusalaudit-public"
@@ -104,7 +105,7 @@ def stage_data():
     shutil.copy(DATA_PUB / "schema.md",              STAGE_PUB / "schema.md")
     shutil.copy(DATA_PUB / "stratification_stats.md", STAGE_PUB / "stratification_stats.md")
 
-    # explicit-prompt tier-3 files -- gated
+    # explicit-prompt files -- all in data/eval_set_gated/ (HL3, have real prompt bodies)
     GATED_EXPLICIT_FILES = [
         "eval_set_tier3_explicit_gemma4_v1.jsonl",
         "eval_set_tier3_explicit_qwen3_v1.jsonl",
@@ -112,30 +113,16 @@ def stage_data():
         "calibration_holdout_v2_tier3_explicit_qwen3_v1.jsonl",
         "calibration_holdout_v3_tier3_explicit_gemma4_v1.jsonl",
         "calibration_holdout_v3_tier3_explicit_qwen3_v1.jsonl",
-        # 100-sample class-balance tier-3 file
         "eval_set_tier3_explicit_qwen3_100sample.jsonl",
+        "eval_set_benign_explicit_qwen3_100sample.jsonl",
+        "eval_set_dualuse_explicit_qwen3_100sample.jsonl",
     ]
     for fname in GATED_EXPLICIT_FILES:
-        src = DATA_PUB / fname
+        src = DATA_GAT / fname
         if src.exists():
             shutil.copy(src, STAGE_GAT / fname)
             n = count_jsonl(src)
             print(f"  included gated explicit-prompt: {fname} ({n} rows)")
-        else:
-            print(f"  skipping (not yet generated): {fname}")
-
-    # 100-sample benign/dual-use files -- gated alongside tier-3 so the full
-    # balanced corpus (all 3 classes) is accessible in one place
-    GATED_BALANCED_FILES = [
-        "eval_set_benign_explicit_qwen3_100sample.jsonl",
-        "eval_set_dualuse_explicit_qwen3_100sample.jsonl",
-    ]
-    for fname in GATED_BALANCED_FILES:
-        src = DATA_PUB / fname
-        if src.exists():
-            shutil.copy(src, STAGE_GAT / fname)
-            n = count_jsonl(src)
-            print(f"  included gated balanced-class: {fname} ({n} rows)")
         else:
             print(f"  skipping (not yet generated): {fname}")
 

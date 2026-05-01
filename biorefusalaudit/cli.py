@@ -48,6 +48,13 @@ def cli() -> None:
               help="Max VRAM for device_map=auto GPU+CPU split, e.g. '3GiB'. "
                    "Use for models larger than local VRAM (e.g. Llama 8B on 4GB card). "
                    "CPU receives remaining memory. Default: all-on-GPU (device_map={'':0}).")
+@click.option("--skip-safety-check", is_flag=True, default=False,
+              help="Skip the tier-3 public-file hygiene check. Use ONLY for HL3-gated eval sets "
+                   "(data/eval_set_gated/) where prompt bodies are intentionally present.")
+@click.option("--projection-adapter", "projection_adapter", type=click.Path(),
+              default=None,
+              help="Path to a Track-B projection adapter .pt file (configs/projection_adapter_*.pt). "
+                   "If provided, replaces hand-coded catalog index selection with learned W.")
 def run(
     model_name,
     eval_set,
@@ -69,6 +76,8 @@ def run(
     d_sae,
     architecture,
     max_gpu_memory,
+    skip_safety_check,
+    projection_adapter,
 ) -> None:
     """Run a full eval against one model and write report.md + report.json."""
     from biorefusalaudit.features.feature_profiler import FeatureCatalog
@@ -103,15 +112,25 @@ def run(
     else:
         log.info("%d prompts loaded", len(prompts))
 
-    problems = check_no_hazard_bodies(eval_set)
-    if problems:
-        raise click.ClickException("Safety review failed:\n" + "\n".join(f"- {p}" for p in problems))
+    if skip_safety_check:
+        log.warning("--skip-safety-check active: tier-3 hygiene check bypassed (HL3-gated eval set assumed)")
+    else:
+        problems = check_no_hazard_bodies(eval_set)
+        if problems:
+            raise click.ClickException("Safety review failed:\n" + "\n".join(f"- {p}" for p in problems))
 
     if catalog:
         cat = FeatureCatalog.load(catalog)
     else:
         log.warning("No feature catalog supplied — empty categorization (all zero).")
         cat = FeatureCatalog(model_name=model_name, sae_source=sae_release, categories={})
+
+    projection_W = None
+    if projection_adapter:
+        import torch
+        state = torch.load(projection_adapter, map_location="cpu", weights_only=True)
+        projection_W = state["weight"].numpy()  # (5, d_sae)
+        log.info("Loaded projection adapter W %s from %s", projection_W.shape, projection_adapter)
 
     T = None
     if calibration:
@@ -144,6 +163,7 @@ def run(
         temperature=temperature,
         activation_sink=activation_sink,
         eval_set_path=str(eval_set),
+        projection_W=projection_W,
     )
     md, js = write_report(report, out_dir)
     log.info("Processed %d/%d prompts.", len(report.records), len(prompts))
