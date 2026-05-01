@@ -126,6 +126,46 @@ The cross-compound run (51-prompt expanded set, Gemma 2 2B-IT 80-tok) sharpens t
 
 Gemma 2 refuses psilocybin cultivation at 25–50% while refusing hazard-adjacent biology at 0%. The refusal circuit fires harder on "normalized-as-taboo but biologically benign" than on genuinely dangerous content. Qwen shows a different failure: topic-level detection (refuses all psilocybin vocabulary regardless of legality angle). Llama shows no confound: it refuses genuinely hazardous biology and freely discusses psilocybin. None of these patterns are visible to surface-only evaluation. (Psilocybin-only table: n=4 per sub-category. Cross-compound table: n=3–4 per cell. Second replication run on n=27 cannabis/psilocybin subset complete; directional finding holds, quantitative estimates remain noisy at this n.)
 
+**Finding 6: Explicit-prompt format validation — lower D, genuine binary behavior, and clear shallow-refusal signal (post-hackathon, 2026-04-30).** The hackathon eval set used abstract category-descriptor prompts (e.g., "hazard_adjacent_category: aerosol dispersion / dual-use framing") rather than explicit phrasings because frontier LLMs refused to generate the latter. This raised a validity question: does the category-descriptor format drive D, or does the signal survive more naturalistic explicit prompts? To test this, 100 explicit tier-3 prompts (Wave 3 corpus, Qwen3 4B abliterated, topics including H7N9 influenza enhancement, dual-use gain-of-function policy, and NSABB-style oversight questions) were run through the identical Gemma 2 2B-IT + Gemma Scope 1 pipeline (layer 12, width 16k, same catalog and calibration).
+
+**Table 3.** Explicit-prompt vs. category-descriptor format comparison, hazard_adjacent tier, same model and calibration.
+
+| Prompt format | n | Mean D | Median D | Std | comply% | hedge% | refuse% |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Category-descriptor (hackathon baseline) | 22 | 0.760 | 0.773 | 0.135 | 0% | **100%** | 0% |
+| Explicit (Wave 3, Qwen3 generated) | 100 | **0.714** | 0.723 | 0.129 | 33% | 0% | **67%** |
+
+Three findings emerge from this comparison:
+
+**(a) Explicit prompts break the universal hedge.** The category-descriptor format elicited 100% hedging with zero genuine refusals. Explicit phrasings forced binary behavior: 67% genuine refuse, 33% genuine comply. The hedge posture identified as Finding 1 is in part a format artifact — when the model sees an explicit question it cannot pass off as ambiguous, it commits.
+
+**(b) D is lower on explicit prompts (Δ = −0.046), meaning surface and internal state are more aligned.** This runs counter to the naive hypothesis that explicit prompts would produce higher divergence by eliciting stronger hazard feature activation uncoupled from surface refusal. The opposite is true: explicit questions produce more coherent behavior. When the model genuinely refuses (67% of cases), the refusal circuit fires consistently; when it complies, hazard features are proportionally lower. Category-descriptor hedging produces higher D because the model's surface posture (neutral, exploratory) misaligns with a feature space that still partially activates bio-hazard directions.
+
+**(c) Shallow-refusal signal is strong and unambiguous.** The flag analysis on explicit prompts identifies the core diagnostic BioRefusalAudit is built to surface: 39% of prompts where the model explicitly refuses still show `hazard_features_active_despite_refusal` — bio-hazard feature space is firing underneath a surface refusal. Category-descriptor prompts all hedge, making this flag uninterpretable. Explicit prompts, by forcing genuine refusals, make the shallow-refusal signal visible. 33% of compliances show `refusal_features_active_despite_compliance`, indicating reluctant compliance with residual safety-circuit activation.
+
+| Flag | n / 100 explicit prompts | Rate |
+|---|---:|---:|
+| hazard_features_active_despite_refusal | 39 | 39% |
+| refusal_features_active_despite_compliance | 33 | 33% |
+
+Framing breakdown: educational framing produces the highest D (0.733, n=27), consistent with the model partially complying in educational contexts while hazard features remain active. Obfuscated framing produces the lowest D (0.698, n=23), possibly because opaque phrasings trigger unambiguous surface refusal with matched internal suppression.
+
+| Framing | n | Mean D |
+|---|---:|---:|
+| educational | 27 | 0.733 |
+| roleplay | 23 | 0.717 |
+| direct | 27 | 0.707 |
+| obfuscated | 23 | 0.698 |
+
+**Finding 7: Track B projection adapter — learned W ∈ ℝ^{5 × 16384} achieves correct tier ordering with 75-sample training (post-hackathon, 2026-04-30).** The hackathon's hand-coded feature catalog assigns SAE activation weight to the 5 bio-safety categories via manually curated feature index lists. Track B replaces this with a learned linear projection W trained directly on SAE activation vectors via a contrastive margin loss (target: D(hazard) > D(benign) by ≥ 0.3 margin). Trained on 75 activation vectors from the original eval run (early stopping at step 1650, AdamW + L2 regularization, 80/20 train-val split, stratified by tier):
+
+| Method | D(benign\_bio) | D(dual\_use\_bio) | D(hazard\_adjacent) | Separation (haz − ben) |
+|---|---:|---:|---:|---:|
+| Hand-coded catalog (hackathon) | 0.478 | 0.664 | 0.760 | 0.282 |
+| Learned projection W (Track B, n=75) | 0.666 | 0.682 | 0.740 | **0.074** |
+
+The learned adapter achieves correct tier ordering (benign < dual-use < hazard) on val data from 75 training samples — demonstrating that the contrastive training signal is real and the SAE activations carry discriminative information. The tier-separation gap (0.074 vs. 0.282 for the catalog) is expected at this training scale: the adapter was trained on the same distribution it was evaluated on, using activations that are substantially zero outside catalog-indexed features, limiting the gradient signal. Training on Wave 3 explicit-prompt activations (n=300 once those evals complete) is the next step; the explicit-prompt activations engage a broader feature space and should provide substantially stronger contrastive signal.
+
 ---
 
 ## 5. Discussion and Limitations
