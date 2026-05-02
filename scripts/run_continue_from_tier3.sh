@@ -56,6 +56,15 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
     echo "[$(date)] Committed and pushed $RUN_NAME."
 }
 
+kill_ollama() {
+    # Kill ollama.exe and ollama app.exe to free GPU VRAM
+    powershell -Command "
+        Get-Process -Name 'ollama app' -ErrorAction SilentlyContinue | Stop-Process -Force
+        Get-Process -Name 'ollama' -ErrorAction SilentlyContinue | Stop-Process -Force
+    " 2>/dev/null || true
+    sleep 2
+}
+
 run_eval_and_save() {
     local EVAL_SET="$1"
     local OUT_DIR="$2"
@@ -67,6 +76,10 @@ run_eval_and_save() {
         echo "[$(date)] $RUN_NAME already in results/, skipping."
         return 0
     fi
+
+    # Kill Ollama before each eval to ensure full 4GB available
+    echo "[$(date)] Killing Ollama if running before eval..."
+    kill_ollama
 
     echo "[$(date)] Starting eval: $EVAL_SET -> $OUT_DIR"
     python -m biorefusalaudit.cli run \
