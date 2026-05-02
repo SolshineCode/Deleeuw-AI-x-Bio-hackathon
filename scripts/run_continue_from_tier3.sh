@@ -121,9 +121,18 @@ done
     ACTIVATION_FILES+=(results/gemma-2-2b-it-L12-activations/activations.npz)
 
 echo "[$(date)] Training Track B adapter on ${#ACTIVATION_FILES[@]} activation file(s)..."
+# Collect report files for explicit-prompt runs (provides real surface_soft labels)
+REPORT_FILES=()
+[ -f results/gemma-2-2b-it-150tok-rejudged/report.json ] && \
+    REPORT_FILES+=(results/gemma-2-2b-it-150tok-rejudged/report.json)
+for rpt in results/gemma-2-2b-it-explicit-*/report.json; do
+    [ -f "$rpt" ] && REPORT_FILES+=("$rpt")
+done
+
 python scripts/train_projection_adapter.py \
     --activations "${ACTIVATION_FILES[@]}" \
-    --report results/gemma-2-2b-it-150tok-rejudged/report.json \
+    --report "${REPORT_FILES[@]}" \
+    --calibration configs/calibration_gemma2_2b.yaml \
     --out-pt configs/projection_adapter_gemma2_2b.pt \
     --out-yaml configs/projection_adapter_gemma2_2b.yaml
 
