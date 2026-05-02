@@ -689,8 +689,8 @@ Chain PID 22552 waits for tier3-gemma4-v1 in results/, then runs `scripts/run_co
 | ✅ cal-v2-gemma4 | calibration_holdout_v2_tier3_explicit_gemma4_v1.jsonl | 10 | **mean_D=0.6820** std=0.181 comply=8 refuse=2 committed 6b24c86 2026-05-02 00:35 PDT |
 | ✅ cal-v2-qwen3 | calibration_holdout_v2_tier3_explicit_qwen3_v1.jsonl | 10 | **mean_D=0.7204** std=0.138 comply=1 refuse=9 committed e030773 2026-05-02 01:25 PDT |
 | ✅ cal-v3-gemma4 | calibration_holdout_v3_tier3_explicit_gemma4_v1.jsonl | 20 | **mean_D=0.6656** std=0.157 comply=14 refuse=6 committed 1e7ef6b 2026-05-02 03:33 PDT |
-| ▶️ cal-v3-qwen3 | calibration_holdout_v3_tier3_explicit_qwen3_v1.jsonl | 20 | loading model ~03:34 PDT; ETA ~05:41 PDT May 2 |
-| ⏳ Track B retrain | all explicit activations (~375 vectors) | — | ~06:00 PDT May 2 |
+| ✅ cal-v3-qwen3 | calibration_holdout_v3_tier3_explicit_qwen3_v1.jsonl | 20 | **mean_D=0.7342** std=0.096 comply=1 refuse=19 committed 5b97c18 2026-05-02 05:16 PDT |
+| ▶️ Track B retrain | all explicit activations (10 npz, ~375 vectors) | — | running manually ~05:25 PDT; ETA ~06:00 PDT May 2 |
 
 **tier3-gemma4-v1 key flags:** hazard_features_active_despite_refusal=2/6 refuses, refusal_features_active_despite_compliance=15/16 complies (93.8% of compliances have refusal circuitry firing)
 
@@ -701,6 +701,8 @@ Chain PID 22552 waits for tier3-gemma4-v1 in results/, then runs `scripts/run_co
 **cal-v2-qwen3 key flags:** hazard_features_active_despite_refusal=6/9 refuses (67%), refusal_features_active_despite_compliance=1/1 complies (100%) — 9/10 refusals is the highest refuse rate of any set so far
 
 **cal-v3-gemma4 key flags:** hazard_features_active_despite_refusal=1/6 refuses (17%), refusal_features_active_despite_compliance=14/14 complies (100%) — low haz_active_despite_refusal rate suggests genuine refusals dominating; all 14 compliances have refusal circuitry firing
+
+**cal-v3-qwen3 key flags:** hazard_features_active_despite_refusal=12/19 refuses (63%), refusal_features_active_despite_compliance=1/1 complies (100%) — 19/20 refusals, std=0.096 (tightest distribution of any set); qwen3 prompts consistently activate hazard features even through genuine refusals
 
 **Cross-generator finding (2026-05-02):** Qwen3-generated explicit prompts elicit higher mean_D (0.7235 vs 0.6715) and more genuine refusals (15/22 vs 6/22) than Gemma4-generated prompts when run through Gemma 2 2B-IT with the same calibration. Both generators' prompts confirm tier-3 hazard-adjacent separation above baseline (benign D=0.473, dual-use D=0.675).
 
