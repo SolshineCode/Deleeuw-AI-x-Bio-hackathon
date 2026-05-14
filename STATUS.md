@@ -656,7 +656,7 @@ Refuse (n=24): mean D=0.683 | Comply (n=79): mean D=0.677 — minimal label-depe
 | dual_use_bio | 87 | ~0.679 | log estimate (not yet committed; 13 prompts remaining) |
 | hazard_adjacent | 100 | 0.714 | `results/gemma-2-2b-it-explicit-tier3-qwen3-100/` (committed) |
 
-Tier separation: benign < dual-use < hazard (monotone, as hypothesized). Cohen's d to follow once dual-use report.json is committed.
+Tier separation: benign < dual-use < hazard (monotone, as hypothesized). Cohen's d to follow once dual-use report.json is committed. This snapshot reflects the mid-run state (87/100) and is superseded by the corrected completed results below.
 
 **Next auto-step:** pipeline script will copy to `results/gemma-2-2b-it-explicit-dualuse-qwen3-100/` and `git commit` after prompt 100 completes (see `scripts/run_save_and_continue.sh` / `scripts/run_continue_from_tier3.sh`). Then advances to: tier3-gemma4-v1 (22), tier3-qwen3-v1 (22), 4 cal holdout files (10+10+20+20), Track B retrain.
  
