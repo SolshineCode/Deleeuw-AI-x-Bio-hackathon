@@ -33,3 +33,136 @@ hyperparams:
   weight_decay: 0.01
 n_categories: 5
 out_pt: C:\Users\caleb\projects\Deleeuw-AI-x-Bio-hackathon\configs\projection_adapter_gemma2_2b.pt
+
+---
+# Re-fit 2026-05-02T12:25:28.428308Z
+activations_sources:
+- results/gemma-2-2b-it-explicit-benign-qwen3-100/activations.npz
+- results/gemma-2-2b-it-explicit-cal-v2-gemma4/activations.npz
+- results/gemma-2-2b-it-explicit-cal-v2-qwen3/activations.npz
+- results/gemma-2-2b-it-explicit-cal-v3-gemma4/activations.npz
+- results/gemma-2-2b-it-explicit-cal-v3-qwen3/activations.npz
+- results/gemma-2-2b-it-explicit-dualuse-qwen3-100/activations.npz
+- results/gemma-2-2b-it-explicit-tier3-gemma4-v1/activations.npz
+- results/gemma-2-2b-it-explicit-tier3-qwen3-100/activations.npz
+- results/gemma-2-2b-it-explicit-tier3-qwen3-v1/activations.npz
+- results/gemma-2-2b-it-L12-activations/activations.npz
+calibration: configs/calibration_gemma2_2b.yaml
+d_sae: 16384
+feature_categories:
+- bio_content
+- hazard_adjacent
+- refusal_circuitry
+- hedging
+- deception_correlate
+final_metrics:
+  step: 2000
+  tier_D:
+    benign_bio: 0.45569777488708496
+    dual_use_bio: 0.6449176073074341
+    hazard_adjacent_category: 0.6905132532119751
+  train_contrast: 0.0
+  train_recon: 0.010561446659266949
+  val_D_benign: 0.42051398754119873
+  val_D_hazard: 0.6766613721847534
+  val_contrast: 0.08380243927240372
+fit_date: '2026-05-02T12:25:28.428308Z'
+fit_samples: 479
+hyperparams:
+  batch_size: 16
+  lam_recon: 0.5
+  lr: 0.001
+  margin: 0.3
+  pairs_per_step: 32
+  patience: 30
+  seed: 42
+  steps: 2000
+  weight_decay: 0.01
+n_categories: 5
+out_pt: C:\Users\caleb\projects\Deleeuw-AI-x-Bio-hackathon\configs\projection_adapter_gemma2_2b.pt
+
+---
+# Re-fit 2026-05-02T12:26:01.034171Z
+activations_sources:
+- results/gemma-2-2b-it-explicit-benign-qwen3-100/activations.npz
+- results/gemma-2-2b-it-L12-activations/activations.npz
+calibration: configs/calibration_gemma2_2b.yaml
+d_sae: 16384
+feature_categories:
+- bio_content
+- hazard_adjacent
+- refusal_circuitry
+- hedging
+- deception_correlate
+final_metrics:
+  step: 2000
+  tier_D:
+    benign_bio: 0.5062777400016785
+    dual_use_bio: 0.7149311900138855
+    hazard_adjacent_category: 0.7619240283966064
+  train_contrast: 0.0
+  train_recon: 0.007673910353332758
+  val_D_benign: 0.48525333404541016
+  val_D_hazard: 0.7500125169754028
+  val_contrast: 0.06097370386123657
+fit_date: '2026-05-02T12:26:01.034171Z'
+fit_samples: 175
+hyperparams:
+  batch_size: 16
+  lam_recon: 0.5
+  lr: 0.001
+  margin: 0.3
+  pairs_per_step: 32
+  patience: 30
+  seed: 42
+  steps: 2000
+  weight_decay: 0.01
+n_categories: 5
+out_pt: C:\Users\caleb\projects\Deleeuw-AI-x-Bio-hackathon\configs\projection_adapter_gemma2_2b.pt
+
+---
+# Re-fit 2026-05-02T12:26:49.809051Z
+activations_sources:
+- results/gemma-2-2b-it-explicit-benign-qwen3-100/activations.npz
+- results/gemma-2-2b-it-explicit-cal-v2-gemma4/activations.npz
+- results/gemma-2-2b-it-explicit-cal-v2-qwen3/activations.npz
+- results/gemma-2-2b-it-explicit-cal-v3-gemma4/activations.npz
+- results/gemma-2-2b-it-explicit-cal-v3-qwen3/activations.npz
+- results/gemma-2-2b-it-explicit-dualuse-qwen3-100/activations.npz
+- results/gemma-2-2b-it-explicit-tier3-gemma4-v1/activations.npz
+- results/gemma-2-2b-it-explicit-tier3-qwen3-100/activations.npz
+- results/gemma-2-2b-it-explicit-tier3-qwen3-v1/activations.npz
+- results/gemma-2-2b-it-L12-activations/activations.npz
+calibration: configs/calibration_gemma2_2b.yaml
+d_sae: 16384
+feature_categories:
+- bio_content
+- hazard_adjacent
+- refusal_circuitry
+- hedging
+- deception_correlate
+final_metrics:
+  step: 2000
+  tier_D:
+    benign_bio: 0.45569777488708496
+    dual_use_bio: 0.6449176073074341
+    hazard_adjacent_category: 0.6905132532119751
+  train_contrast: 0.0
+  train_recon: 0.010561446659266949
+  val_D_benign: 0.42051398754119873
+  val_D_hazard: 0.6766613721847534
+  val_contrast: 0.08380243927240372
+fit_date: '2026-05-02T12:26:49.809051Z'
+fit_samples: 479
+hyperparams:
+  batch_size: 16
+  lam_recon: 0.5
+  lr: 0.001
+  margin: 0.3
+  pairs_per_step: 32
+  patience: 30
+  seed: 42
+  steps: 2000
+  weight_decay: 0.01
+n_categories: 5
+out_pt: C:\Users\caleb\projects\Deleeuw-AI-x-Bio-hackathon\configs\projection_adapter_gemma2_2b.pt

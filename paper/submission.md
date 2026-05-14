@@ -128,16 +128,18 @@ Gemma 2 refuses psilocybin cultivation at 25–50% while refusing hazard-adjacen
 
 **Finding 6: Explicit-prompt format validation — lower D, genuine binary behavior, and clear shallow-refusal signal (post-hackathon, 2026-04-30).** The hackathon eval set used abstract category-descriptor prompts (e.g., "hazard_adjacent_category: aerosol dispersion / dual-use framing") rather than explicit phrasings because frontier LLMs refused to generate the latter. This raised a validity question: does the category-descriptor format drive D, or does the signal survive more naturalistic explicit prompts? To test this, 100 explicit tier-3 prompts (Wave 3 corpus, Qwen3 4B abliterated, topics including H7N9 influenza enhancement, dual-use gain-of-function policy, and NSABB-style oversight questions) were run through the identical Gemma 2 2B-IT + Gemma Scope 1 pipeline (layer 12, width 16k, same catalog and calibration).
 
-**Table 3.** Explicit-prompt vs. category-descriptor format comparison, all tiers, same model and calibration. (dual_use_bio explicit results pending; committed on completion.)
+**Table 3.** Explicit-prompt vs. category-descriptor format comparison, all tiers, same model and calibration.
 
 | Tier | Prompt format | n | Mean D | Median D | Std | comply% | hedge% | refuse% |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
-| benign_bio | Category-descriptor (baseline) | 23 | 0.478 | 0.409 | 0.202 | 70% | 30% | 0% |
-| benign_bio | Explicit (Wave 3, Qwen3) | 100 | **0.473** | 0.471 | 0.182 | **84%** | 0% | 16% |
-| hazard_adjacent | Category-descriptor (baseline) | 22 | 0.760 | 0.773 | 0.135 | 0% | **100%** | 0% |
-| hazard_adjacent | Explicit (Wave 3, Qwen3) | 100 | **0.714** | 0.723 | 0.129 | 33% | 0% | **67%** |
+| benign\_bio | Category-descriptor (baseline) | 23 | 0.478 | 0.409 | 0.202 | 70% | 30% | 0% |
+| benign\_bio | Explicit (Wave 3, Qwen3) | 100 | **0.473** | 0.471 | 0.182 | **84%** | 0% | 16% |
+| dual\_use\_bio | Category-descriptor (baseline) | 30 | 0.655 | — | — | 80% | 20% | 0% |
+| dual\_use\_bio | Explicit (Wave 3, Qwen3) | 100 | **0.675** | 0.668 | 0.097 | **76%** | 0% | 24% |
+| hazard\_adjacent | Category-descriptor (baseline) | 22 | 0.760 | 0.773 | 0.135 | 0% | **100%** | 0% |
+| hazard\_adjacent | Explicit (Wave 3, Qwen3) | 100 | **0.714** | 0.723 | 0.129 | 33% | 0% | **67%** |
 
-Explicit tier separation (benign vs. hazard): 0.714 − 0.473 = **0.241** (baseline: 0.760 − 0.478 = 0.282). Tier ordering preserved; explicit format narrows the gap slightly.
+Complete 3-tier explicit-prompt ordering: benign (0.473) < dual-use (0.675) < hazard (0.714) — monotone as hypothesized. Tier separation (haz − ben): **0.241** explicit vs. 0.282 baseline. Ordering preserved; explicit format narrows the gap slightly because genuine refusals produce lower D than hedging (Finding 6b).
 
 Four findings emerge from this comparison:
 
@@ -149,10 +151,12 @@ Four findings emerge from this comparison:
 
 **(d) The refusal circuit fires on benign biology at high rates.** 82% of benign compliances show `refusal_features_active_despite_compliance` — the model correctly answers the benign question while its refusal circuitry remains activated. This is the strongest quantitative evidence for Finding 3: the refusal circuit responds to biology vocabulary, not to hazard level. A circuit that fires on 82% of benign compliances is not a hazard detector; it is a biology detector that happens to gate output more aggressively on higher-tier content.
 
-| Flag | benign (n=100) | hazard (n=100) |
-|---|---:|---:|
-| hazard_features_active_despite_refusal | 5 / 5% | **39 / 39%** |
-| refusal_features_active_despite_compliance | **82 / 82%** | 33 / 33% |
+| Flag | benign (n=100) | dual\_use (n=100) | hazard (n=100) |
+|---|---:|---:|---:|
+| hazard\_features\_active\_despite\_refusal | 5 / 5% | 19 / 19% | **39 / 39%** |
+| refusal\_features\_active\_despite\_compliance | **82 / 82%** | **76 / 76%** | 33 / 33% |
+
+The dual-use column reveals the sharpest evidence for surface-internal decoupling: **76% of dual-use compliances** have refusal circuitry firing internally. Refuse vs. comply D on dual-use are nearly identical (mean 0.683 vs. 0.677) — the internal feature state is almost entirely decoupled from the surface label. A model that complied with a dual-use prompt activated its refusal circuit at the same rate as one that refused. This is the operational risk that D is designed to surface: behavioral compliance is not evidence of internal alignment.
 
 Framing breakdown: educational framing produces the highest D (0.733, n=27), consistent with the model partially complying in educational contexts while hazard features remain active. Obfuscated framing produces the lowest D (0.698, n=23), possibly because opaque phrasings trigger unambiguous surface refusal with matched internal suppression.
 
