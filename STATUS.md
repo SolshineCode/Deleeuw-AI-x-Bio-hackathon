@@ -648,7 +648,19 @@ After system restart (Ollama kill caused instability), pipeline restarted ~10:17
 
 Refuse (n=24): mean D=0.683 | Comply (n=79): mean D=0.677 — minimal label-dependent split; surface behavior does not drive D.
 
-**FINAL 3-tier comparison (explicit-prompt format, Gemma 2 2B-IT + Gemma Scope L12):**
+**Preliminary 3-tier comparison (explicit-prompt format, Gemma 2 2B-IT + Gemma Scope L12):**
+
+| Tier | n | Mean D | Source |
+|---|---:|---:|---|
+| benign_bio | 100 | 0.473 | `results/gemma-2-2b-it-explicit-benign-qwen3-100/` (committed) |
+| dual_use_bio | 87 | ~0.679 | log estimate (not yet committed; 13 prompts remaining) |
+| hazard_adjacent | 100 | 0.714 | `results/gemma-2-2b-it-explicit-tier3-qwen3-100/` (committed) |
+
+Tier separation: benign < dual-use < hazard (monotone, as hypothesized). Cohen's d to follow once dual-use report.json is committed.
+
+**Next auto-step:** pipeline script will copy to `results/gemma-2-2b-it-explicit-dualuse-qwen3-100/` and `git commit` after prompt 100 completes. Then advances to: tier3-gemma4-v1 (22), tier3-qwen3-v1 (22), 4 cal holdout files (10+10+20+20), Track B retrain.
+ 
+**CORRECTED 2026-05-02 — Final 3-tier comparison (explicit-prompt format, Gemma 2 2B-IT + Gemma Scope L12):**
 
 | Tier | n | Mean D | Source |
 |---|---:|---:|---|
