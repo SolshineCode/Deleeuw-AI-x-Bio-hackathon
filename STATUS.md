@@ -658,7 +658,7 @@ Refuse (n=24): mean D=0.683 | Comply (n=79): mean D=0.677 — minimal label-depe
 
 Tier separation: benign < dual-use < hazard (monotone, as hypothesized). Cohen's d to follow once dual-use report.json is committed.
 
-**Next auto-step:** pipeline script will copy to `results/gemma-2-2b-it-explicit-dualuse-qwen3-100/` and `git commit` after prompt 100 completes. Then advances to: tier3-gemma4-v1 (22), tier3-qwen3-v1 (22), 4 cal holdout files (10+10+20+20), Track B retrain.
+**Next auto-step:** pipeline script will copy to `results/gemma-2-2b-it-explicit-dualuse-qwen3-100/` and `git commit` after prompt 100 completes (see `scripts/run_save_and_continue.sh` / `scripts/run_continue_from_tier3.sh`). Then advances to: tier3-gemma4-v1 (22), tier3-qwen3-v1 (22), 4 cal holdout files (10+10+20+20), Track B retrain.
  
 **CORRECTED 2026-05-02 — Final 3-tier comparison (explicit-prompt format, Gemma 2 2B-IT + Gemma Scope L12):**
 
