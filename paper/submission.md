@@ -22,7 +22,7 @@ The project is a proof-of-concept audit framework. Its contribution is showing t
 
 ## 1. Introduction
 
-Biosecurity benchmarks for language models (WMDP-Bio, VCT, ABC-Bench, LAB-Bench) ask whether a model will produce dangerous biological assistance. That is necessary but not sufficient for deployment decisions.
+Biosecurity benchmarks for language models (WMDP-Bio, VCT, ABC-Bench (Liu et al., 2025), LAB-Bench) ask whether a model will produce dangerous biological assistance. That is necessary but not sufficient for deployment decisions.
 
 A second question matters equally: when a model refuses, is that refusal internally stable? Qi et al. (2024) argue that safety training often affects only the first few generated tokens, leaving hazardous capability intact below. A model with a surface refusal over an intact internal representation is potentially one framing shift from compliance. A model whose internal features genuinely suppress hazard-relevant circuitry when it refuses is structurally different.
 
@@ -38,7 +38,7 @@ BioRefusalAudit was built to measure this distinction. It is not a capability ev
 
 ## 2. Related Work
 
-**Biosecurity benchmarks.** VCT (Götting et al., 2025) measures whether models produce hazardous biological assistance content. WMDP-Bio (Li et al., 2024) provides multiple-choice biology questions for evaluating capability unlearning. LAB-Bench (Laurent et al., 2024) covers practical biology research tasks (not dangerous-biology proxies, but general research capability). All three measure surface output. None distinguish a shallow refusal from a deep one.
+**Biosecurity benchmarks.** VCT (Götting et al., 2025) measures whether models produce hazardous biological assistance content. WMDP-Bio (Li et al., 2024) provides multiple-choice biology questions for evaluating capability unlearning. LAB-Bench (Laurent et al., 2024) covers practical biology research tasks. ABC-Bench (Liu et al., 2025) is an agentic biosecurity benchmark evaluating end-to-end task completion: liquid handling robot code, DNA fragment design, and screening evasion. All four measure surface output or task completion. None distinguish a shallow refusal from a deep one.
 
 **Refusal geometry.** Arditi et al. (2024) showed that refusal in open-weight LLMs is mediated by a single residual-stream direction whose ablation breaks safety training across model families. BioRefusalAudit extends this from a single direction to a 5-category SAE feature ensemble, trading resolution for robustness to polysemanticity failures documented in prior work (DeLeeuw, arXiv:2509.20393). Qi et al. (2024) and Wei et al. (2023) provide the theoretical backdrop: RLHF alignment is shallow and framing-sensitive.
 
@@ -76,13 +76,13 @@ D is not a safety score. It's an audit signal about internal-surface consistency
 ### 3.2 Model coverage
 
 **Full SAE pipeline (D metric computed):**
-- Gemma 2 2B-IT + Gemma Scope 1 `layer_12/width_16k/average_l0_82` (GTX 1650 Ti Max-Q, 4 GB VRAM)
-- Gemma 4 E2B-IT + author-trained bio SAE (`Solshine/gemma4-e2b-bio-sae-v1`, 2000-step contrastive fine-tune on WMDP bio-retain corpus)
+- Gemma 2 2B-IT + Gemma Scope 1 `layer_12/width_16k/average_l0_82` (GTX 1650 Ti Max-Q, 4 GB VRAM; Lieberum et al., 2024)
+- Gemma 4 E2B-IT (Google DeepMind, 2026; HuggingFace: `google/gemma-4-e2b-it`) + author-trained bio SAE (`Solshine/gemma4-e2b-bio-sae-v1`, 2000-step contrastive fine-tune on WMDP bio-retain corpus)
 
 **Behavioral-label comparison (NullSAE, surface labels only, same 75-prompt eval set):**
 - Llama 3.2 1B
 - Qwen 2.5 1.5B
-- Phi-3-mini-4k
+- Phi-3-mini-4k-instruct (Abdin et al., 2024; arXiv:2404.14219)
 
 **Prompt generation only (not evaluated as subject model):**
 - Qwen3 4B abliterated, used to generate Wave 3 explicit-prompt corpus (Finding 6)
@@ -109,6 +109,8 @@ Feature categories are populated via Cohen's d discrimination between high-tier 
 ### 3.6 Calibration
 
 T is fit within-sample for the main Gemma 2 experiment. A held-out calibration run on a differently-framed prompt distribution produced inverted tier ordering (Cohen's d = -0.967), meaning T is framing-distribution-sensitive. Table 1 D-values are proof-of-concept pipeline demonstrations, not held-out validated metrics. Table 3 uses T_prior (identity-biased permutation), a weaker but less overfitted assumption.
+
+Because D depends on calibration choice, D values should only be compared within a table or across experiments using the same calibration procedure. Cross-table D comparisons (e.g., Table 1 vs. Table 3) reflect both the change in model/prompt conditions and the change in calibration, and should not be read as a single controlled comparison.
 
 ---
 
@@ -153,7 +155,7 @@ Intervention results and explicit-prompt follow-up data both show refusal-relate
 | hazard_features_active_despite_refusal | 5% | 19% | **39%** |
 | refusal_features_active_despite_compliance | **82%** | **76%** | 33% |
 
-A feature firing on 82 of 100 benign biology prompts (during compliance responses) is not a hazard detector. It's a biology detector that happens to gate output more aggressively on higher-tier content. The dual-use column sharpens this: 76 of 100 dual-use prompts triggered `refusal_features_active_despite_compliance`. Since 76 of those 100 prompts were compliances (76%), this means every dual-use compliance had refusal circuitry firing internally. The internal feature state was almost entirely decoupled from the surface label.
+A feature firing on 82 of 100 benign biology prompts (during compliance responses) is not a hazard detector. It's a biology detector that happens to gate output more aggressively on higher-tier content. The dual-use column sharpens this: across 100 dual-use prompts, 76 triggered `refusal_features_active_despite_compliance`. The denominator here is all dual-use prompts, not compliance responses only — if denominated over compliance responses alone (76 of 100 prompts), the rate would be 100%, but that inference requires confirming the flag fired exclusively on compliance responses in the run outputs. Either way, the flag rate closely tracks the compliance rate, indicating frequent surface-internal decoupling during compliance behavior.
 
 This result depends on a statistically selected (not semantically validated) feature catalog within a single model family. It's evidence of a pattern, not proof of a universal circuit.
 
@@ -269,6 +271,8 @@ A learned linear projection W trained via contrastive margin loss achieves corre
 
 Correct ordering achieved. Narrower separation is expected at this training scale. Wave 3 explicit-prompt activations (n=300) are the next training step.
 
+*This result is in-sample: the adapter was trained and evaluated on the same 75 samples. It is evidence that the activation signal is learnable, not a held-out validation of generalization.*
+
 ---
 
 ## 5. Discussion
@@ -300,6 +304,8 @@ The format-gating finding (65 refusals vs. 0 depending solely on chat-template t
 **Within-sample calibration.** T is fit on the same 75 prompts used for evaluation. Held-out calibration on a differently-framed distribution produced inverted tier ordering. Table 1 D-values are proof-of-concept pipeline outputs, not validated general metrics.
 
 **Prompt scale.** 75 prompts supports group-level patterns but not stable per-cell estimates for fine-grained subgroups. Findings 1-3 and the format/token findings hold up reasonably well. The legality confound cells (n=3-4 per compound) should be treated as pilot findings.
+
+**Finding 8 is in-sample.** The learned projection adapter (Finding 8) was trained and evaluated on the same 75 samples. It demonstrates that the activation signal is learnable at this scale, not that the adapter generalizes to held-out distributions. Held-out validation is the required next step before treating this result as evidence of generalization.
 
 **Contrastive SAE.** The domain-specific SAE trained during the hackathon barely moved the contrastive loss. Behavioral pair data (base model vs. RLHF-tuned on identical prompts) is needed to provide genuine contrastive signal, and requires institutional partners.
 
@@ -338,7 +344,11 @@ The divergence metric D can separate comply from refuse postures at the activati
 
 ## References
 
+Abdin, M. et al. (2024). Phi-3 Technical Report: A Highly Capable Language Model Locally on Your Phone. *arXiv:2404.14219.*
+
 Arditi, A. et al. (2024). Refusal in LLMs is mediated by a single direction. *arXiv:2406.11717.*
+
+Liu, A. B., Nedungadi, S., Cai, B., Kleinman, A., Bhasin, H., & Donoughe, S. (2025). ABC-Bench: An Agentic Bio-Capabilities Benchmark for Biosecurity. *NeurIPS 2025 Workshop BioSafe GenAI.* openreview.net/forum?id=mo5H9VAr6r.
 
 Bloomfield, L., Black, J., Crook, O. et al. (2026). A Biosecurity Data Level framework for governing AI biology tools. *Science.*
 
@@ -349,6 +359,8 @@ Crook, O. (2026). Keynote: Calibrated confidence in biosecurity AI evaluation. A
 Cunningham, H. et al. (2023). Sparse autoencoders find highly interpretable features in language models. *arXiv:2309.08600.*
 
 DeLeeuw, C. (2025). The Secret Agenda: LLMs strategically lie undetected by current safety tools. *arXiv:2509.20393.* AAAI 2026 AI GOV.
+
+Google DeepMind. (2026). Gemma 4 Model Card. ai.google.dev/gemma/docs/core/model_card_4.
 
 Götting, M. et al. (2025). VCT: A biosecurity capability evaluation for language models. *arXiv:2504.16137.*
 
