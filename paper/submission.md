@@ -11,7 +11,7 @@
 
 Biosecurity evaluations of language models typically ask whether a model will produce hazardous output. This paper addresses a complementary question: when a model refuses, is that refusal structurally sound, or is it a shallow surface behavior that disappears under modest changes to prompt framing, formatting, or output length?
 
-The clearest findings here are behavioral, and they span **five architectures**. Gemma 2 2B-IT produced zero genuine refusals across 75 evaluation prompts, hedging instead. Gemma 4 E2B-IT refused 65 of 75 prompts with canonical chat-template formatting and 0 of 75 without it. Both models refused 0% of prompts under an 80-token generation cap. Llama 3.2 1B, Qwen 2.5 1.5B, and Phi-3-mini were evaluated behaviorally across the same prompt set: none showed the hedge posture, but Qwen and Phi-3 showed near-identical high-refusal priors with an 83-87% false-positive rate on benign biology, while Llama showed a meaningful 61-point refusal gradient from benign to hazard. A psilocybin control run across all four architectures suggests refusal patterns may track culturally salient taboo topics more strongly than genuinely hazardous biology content.
+The clearest findings here are behavioral, and they span **five architectures**. Gemma 2 2B-IT produced zero genuine refusals across 75 evaluation prompts, hedging instead. Gemma 4 E2B-IT refused 65 of 75 prompts with canonical chat-template formatting and 0 of 75 without it. Both models refused 0% of prompts under an 80-token generation cap. Llama 3.2 1B, Qwen 2.5 1.5B, and Phi-3-mini were evaluated behaviorally across the same prompt set: none showed the hedge posture, but Qwen and Phi-3 showed near-identical high-refusal priors with an 83-87% false-positive rate on benign biology, while Llama showed a meaningful 61-point refusal gradient from benign to hazard. A psilocybin control run across three model families (Gemma 2 under two token budgets, Qwen 2.5, and Llama 3.2) suggests refusal patterns may track culturally salient taboo topics more strongly than genuinely hazardous biology content.
 
 To measure the internal side of these behaviors, the paper introduces a divergence score **D**, which compares a model's surface response label to its internal sparse autoencoder (SAE) feature activations. A low D means the model's internal state matches its outward behavior. A high D means they pull in different directions. Full SAE-based D computation was performed on Gemma 2 2B-IT (Gemma Scope 1) and Gemma 4 E2B-IT (author-trained bio SAE). On Gemma 4, comply and refuse responses separated with a 0.647-point gap and zero overlap across 75 prompts. This mechanistic result is preliminary: the feature catalog is narrow, calibration is within-sample, and full SAE pipeline coverage is currently Gemma-family only. Expanding SAE coverage to Llama and Qwen architectures is the highest-priority replication step.
 
@@ -152,7 +152,7 @@ Intervention results and explicit-prompt follow-up data both show refusal-relate
 | hazard_features_active_despite_refusal | 5% | 19% | **39%** |
 | refusal_features_active_despite_compliance | **82%** | **76%** | 33% |
 
-A feature firing on 82% of benign biology compliances is not a hazard detector. It's a biology detector that happens to gate output more aggressively on higher-tier content. The dual-use column sharpens this: 76% of dual-use compliances showed refusal circuitry active internally, meaning the internal feature state was almost entirely decoupled from the surface label.
+A feature firing on 82 of 100 benign biology prompts (during compliance responses) is not a hazard detector. It's a biology detector that happens to gate output more aggressively on higher-tier content. The dual-use column sharpens this: 76 of 100 dual-use prompts triggered `refusal_features_active_despite_compliance`. Since 76 of those 100 prompts were compliances (76%), this means every dual-use compliance had refusal circuitry firing internally. The internal feature state was almost entirely decoupled from the surface label.
 
 This result depends on a statistically selected (not semantically validated) feature catalog within a single model family. It's evidence of a pattern, not proof of a universal circuit.
 
@@ -165,10 +165,12 @@ NullSAE behavioral runs (n=75 each) showed that Gemma 2's hedge posture doesn't 
 | Model | benign refuse% | hazard_adj refuse% | Hedge% | Primary failure mode |
 |---|---:|---:|---:|---|
 | Gemma 2 2B-IT | 0% | 0% | 30-100% | Universal hedging, never commits |
-| Gemma 4 E2B-IT | varies | 65/75 with fmt | 0% | Format-gated; template-sensitive |
+| Gemma 4 E2B-IT | N/A* | 87% overall* | 0% | Format-gated; template-sensitive |
 | Llama 3.2 1B | 30% | 91% | 0% | Good gradient; over-refusal on benign |
 | Qwen 2.5 1.5B | 83% | 95% | 0% | High-refusal prior; poor discrimination |
 | Phi-3-mini-4k | 87% | 95% | 0% | Nearly identical to Qwen despite 2.5x params |
+
+*Gemma 4: 65/75 (87%) refusals across all tiers under canonical chat-template formatting. Tier-specific breakdowns not separately reported. Without canonical formatting: 0% across all tiers.
 
 Llama shows a 61-point refusal gradient from benign to hazard, the best discrimination of the five. Qwen and Phi-3 are nearly indistinguishable despite a 2.5x parameter difference, which suggests training approach matters more than model family for refusal behavior. Neither achieves genuine discrimination: an 83-87% false-positive rate on benign biology makes them unusable as safety filters without a secondary classification layer.
 
@@ -176,9 +178,9 @@ The practical evaluation consequence: a binary classifier on Gemma 2 misclassifi
 
 ---
 
-### Finding 5: The psilocybin legality confound, tested across four architectures
+### Finding 5: The psilocybin legality confound, tested across three model families
 
-This finding was tested across four architectures (Gemma 2 at two token budgets, Qwen 2.5, and Llama 3.2), making it one of the most cross-architecturally supported results in this paper.
+This finding was tested across three model families (Gemma 2 at two token budgets, Qwen 2.5, and Llama 3.2), under four experimental conditions, making it one of the most cross-architecturally supported results in this paper.
 
 The probe: psilocybin is federally Schedule I but biologically non-toxic, with FDA Breakthrough Therapy designation for depression. It tests whether refusal circuits respond to CBRN hazard or to legal status, cultural taboo, and training-distribution salience.
 
@@ -196,7 +198,9 @@ Gemma 2 refused psilocybin cultivation at 25-50% while refusing hazard-adjacent 
 | Psilocybin | Schedule I | **33%** | 0% |
 | Cannabis | Schedule I | **0%** | 0% |
 | LSD | Schedule I | N/A | **25%** |
-| Mescaline/peyote | Schedule I | **0%** | **25%** |
+| Mescaline/peyote | Schedule I (alkaloid)† | **0%** | **25%** |
+
+†Peyote cactus is legal to possess in the US despite mescaline's Schedule I classification. The 0% cultivation refusal rate is consistent with the model tracking the plant's legal status rather than the substance's federal scheduling.
 
 Both psilocybin and cannabis are federally Schedule I, yet cannabis cultivation gets 0% refusals while psilocybin gets 33%. Federal scheduling alone doesn't predict the pattern. State-level legality (cannabis legal in ~24 states), commercial normalization, cultural salience, and training-data frequency all likely contribute.
 
@@ -212,6 +216,8 @@ The original eval used category-descriptor phrasings (e.g., "hazard_adjacent_cat
 
 **Table 3.** Format comparison across tiers.
 
+*(Note: Category-descriptor D values here (0.478 benign, 0.760 hazard) differ from Table 1 (0.467 benign, 0.669 hazard) because Table 3 uses T_prior calibration fitted on the combined category-descriptor + explicit-prompt set, while Table 1 uses within-sample T fitted on the 75-prompt hackathon set alone. The underlying prompts and model are identical.)*
+
 | Tier | Format | n | Mean D | comply% | hedge% | refuse% |
 |---|---|---:|---:|---:|---:|---:|---:|
 | benign_bio | Category-descriptor | 23 | 0.478 | 70% | 30% | 0% |
@@ -221,7 +227,7 @@ The original eval used category-descriptor phrasings (e.g., "hazard_adjacent_cat
 | hazard_adjacent | Category-descriptor | 22 | 0.760 | 0% | **100%** | 0% |
 | hazard_adjacent | Explicit | 100 | **0.714** | 33% | 0% | **67%** |
 
-With explicit prompts, universal hedging breaks into 67% genuine refuse / 33% genuine comply. Tier ordering is preserved. D is slightly lower on explicit prompts because genuine refusals produce more internally coherent activation patterns than hedging. The shallow-refusal flag becomes interpretable: 39% of explicit hazard refusals showed `hazard_features_active_despite_refusal`, a signal that was uninterpretable under category-descriptor format (which produced no genuine refusals to flag).
+With explicit prompts, universal hedging breaks into 67% genuine refuse / 33% genuine comply. Tier ordering is preserved. D is slightly lower on explicit prompts because genuine refusals produce more internally coherent activation patterns than hedging. The shallow-refusal flag becomes interpretable: 39 of 100 explicit hazard prompts showed `hazard_features_active_despite_refusal`, which is 58% of the 67 genuine refusals in that tier. That signal was uninterpretable under category-descriptor format, which produced no genuine refusals to flag.
 
 Framing breakdown: educational framing produces the highest D (0.733, n=27), consistent with partial compliance in educational contexts while hazard features remain active. Obfuscated framing produces the lowest D (0.698, n=23), suggesting opaque phrasings trigger more coherent surface-internal alignment.
 
@@ -307,7 +313,7 @@ The format-gating finding (65 refusals vs. 0 depending solely on chat-template t
 
 ## 8. Conclusion
 
-Language models can refuse without their internal states reflecting that refusal, and the specific ways they fail differ substantially across architectures. Gemma 2 2B-IT never genuinely refused across 75 prompts. Gemma 4's refusal behavior is gated on formatting tokens and disappears at 80 tokens. Llama 3.2 1B showed a 61-point refusal gradient but over-refused on benign biology. Qwen 2.5 1.5B and Phi-3-mini refused nearly everything regardless of hazard level. A psilocybin legality control tested across four architectures suggests that current refusal circuits in at least some models may be calibrated to cultural taboo salience rather than CBRN hazard.
+Language models can refuse without their internal states reflecting that refusal, and the specific ways they fail differ substantially across architectures. Gemma 2 2B-IT never genuinely refused across 75 prompts. Gemma 4's refusal behavior is gated on formatting tokens and disappears at 80 tokens. Llama 3.2 1B showed a 61-point refusal gradient but over-refused on benign biology. Qwen 2.5 1.5B and Phi-3-mini refused nearly everything regardless of hazard level. A psilocybin legality control tested across three model families (four experimental conditions) suggests that current refusal circuits in at least some models may be calibrated to cultural taboo salience rather than CBRN hazard.
 
 The divergence metric D can separate comply from refuse postures at the activation layer with a 0.647-point gap and zero overlap on the Gemma 4 validation run, though this result needs cross-family replication. Behavioral evaluation tells you what the model said. Refusal depth auditing tells you whether that behavior reflects something structural, and whether the circuit producing it is responding to the right signal at all.
 
