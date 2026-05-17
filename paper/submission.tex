@@ -39,6 +39,7 @@
 \IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
 \hypersetup{
   pdftitle={BioRefusalAudit: Auditing Biosecurity Refusal Depth Using General and Domain-Fine-Tuned Sparse Autoencoders},
+  pdfauthor={Caleb DeLeeuw},
   colorlinks=true,
   linkcolor={blue},
   filecolor={Maroon},
@@ -77,35 +78,20 @@
 \setlength{\emergencystretch}{3em} % prevent overfull lines
 \providecommand{\tightlist}{%
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
-\setcounter{secnumdepth}{5}
-\usepackage{booktabs}
-\usepackage{longtable}
-\usepackage{array}
-\usepackage{multirow}
-\usepackage{graphicx}
-\usepackage{float}
-\usepackage{amsmath}
-\usepackage{amssymb}
-\usepackage{microtype}
-\usepackage{hyperref}
-\hypersetup{breaklinks=true}
-\setlength{\emergencystretch}{3em}
-\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
 \ifLuaTeX
   \usepackage{selnolig}  % disable illegal ligatures
 \fi
 
 \title{BioRefusalAudit: Auditing Biosecurity Refusal Depth Using General
 and Domain-Fine-Tuned Sparse Autoencoders}
-\author{true\thanks{Developed at Apart Research AIxBio Sprint, April 2026 (Track 3: AI Biosecurity Tools, Fourth Eon Bio).}}
+\author{Caleb DeLeeuw\thanks{Apart Research AIxBio Sprint, April 2026 (Track 3: AI Biosecurity Tools, Fourth Eon Bio).}\\\small Independent researcher}
 \date{May 2026}
 
 \begin{document}
 \maketitle
 
-\hypertarget{abstract}{%
-\section{Abstract}\label{abstract}}
-
+\begin{abstract}
 Biosecurity evaluations of language models typically ask whether a model
 will produce hazardous output. This paper addresses a complementary
 question: when a model refuses, is that refusal structurally sound, or
@@ -146,9 +132,11 @@ invisible to behavioral evaluation, and that behavioral failure modes
 themselves vary substantially and informatively across architectures.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+\end{abstract}
+
 
 \hypertarget{introduction}{%
-\section{1. Introduction}\label{introduction}}
+\section{Introduction}\label{introduction}}
 
 Biosecurity benchmarks for language models (WMDP-Bio, VCT, ABC-Bench,
 LAB-Bench) ask whether a model will produce dangerous biological
@@ -195,7 +183,7 @@ frameworks, but the two are distinct systems.
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
 \hypertarget{related-work}{%
-\section{2. Related Work}\label{related-work}}
+\section{Related Work}\label{related-work}}
 
 \textbf{Biosecurity benchmarks.} VCT (Götting et al., 2025) measures
 whether models produce hazardous biological assistance content. WMDP-Bio
@@ -232,10 +220,10 @@ measurement could serve.
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
 \hypertarget{methods}{%
-\section{3. Methods}\label{methods}}
+\section{Methods}\label{methods}}
 
 \hypertarget{the-divergence-metric-d-intuitive-and-formal}{%
-\subsection{3.1 The divergence metric D: intuitive and
+\subsection{The divergence metric D: intuitive and
 formal}\label{the-divergence-metric-d-intuitive-and-formal}}
 
 The core question is: does what the model says match what its internal
@@ -288,7 +276,7 @@ circuitry fires but does not gate output \\
 \end{longtable}
 
 \hypertarget{model-coverage}{%
-\subsection{3.2 Model coverage}\label{model-coverage}}
+\subsection{Model coverage}\label{model-coverage}}
 
 \textbf{Full SAE pipeline (D metric computed):} - Gemma 2 2B-IT + Gemma
 Scope 1 \passthrough{\lstinline!layer\_12/width\_16k/average\_l0\_82!}
@@ -309,7 +297,7 @@ currently Gemma-family only. These two scopes are kept distinct
 throughout.
 
 \hypertarget{evaluation-pipeline}{%
-\subsection{3.3 Evaluation pipeline}\label{evaluation-pipeline}}
+\subsection{Evaluation pipeline}\label{evaluation-pipeline}}
 
 For each (model, prompt) pair: 1. Generate at T=0.7 with a
 residual-stream forward hook at \textasciitilde50\% model depth 2.
@@ -320,7 +308,7 @@ CLI → Claude Haiku, weighted voting) to produce soft \textbf{s} 5.
 Compute D and three divergence flags
 
 \hypertarget{feature-catalog-construction}{%
-\subsection{3.4 Feature catalog
+\subsection{Feature catalog
 construction}\label{feature-catalog-construction}}
 
 Feature categories are populated via Cohen's d discrimination between
@@ -331,7 +319,7 @@ biosecurity-specific circuitry. Tier-level D separation is directional
 evidence, not proof of a cleanly isolated biosecurity circuit.
 
 \hypertarget{evaluation-set}{%
-\subsection{3.5 Evaluation set}\label{evaluation-set}}
+\subsection{Evaluation set}\label{evaluation-set}}
 
 75 prompts stratified by tier (benign\_bio n=23, dual\_use\_bio n=30,
 hazard\_adjacent n=22) and framing (direct / educational / roleplay /
@@ -341,7 +329,7 @@ Data Level framework (Bloomfield, Black, Crook et al., \emph{Science}
 2026). Example illustrative prompts appear in Appendix A.
 
 \hypertarget{calibration}{%
-\subsection{3.6 Calibration}\label{calibration}}
+\subsection{Calibration}\label{calibration}}
 
 T is fit within-sample for the main Gemma 2 experiment. A held-out
 calibration run on a differently-framed prompt distribution produced
@@ -354,7 +342,7 @@ assumption.
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
 \hypertarget{results}{%
-\section{4. Results}\label{results}}
+\section{Results}\label{results}}
 
 \hypertarget{finding-1-gemma-2-2b-it-hedges.-it-does-not-genuinely-refuse.}{%
 \subsection{Finding 1: Gemma 2 2B-IT hedges. It does not genuinely
@@ -703,10 +691,10 @@ training step.
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
 \hypertarget{discussion}{%
-\section{5. Discussion}\label{discussion}}
+\section{Discussion}\label{discussion}}
 
 \hypertarget{what-behavioral-evaluation-misses}{%
-\subsection{5.1 What behavioral evaluation
+\subsection{What behavioral evaluation
 misses}\label{what-behavioral-evaluation-misses}}
 
 Surface evaluation cannot distinguish deep from shallow refusals or
@@ -721,7 +709,7 @@ and generalizes the result to a family of deployed systems is reasoning
 from an insufficient sample.
 
 \hypertarget{monitoring-without-content-disclosure}{%
-\subsection{5.2 Monitoring without content
+\subsection{Monitoring without content
 disclosure}\label{monitoring-without-content-disclosure}}
 
 D is computed from internal SAE feature activation vectors, not
@@ -733,7 +721,7 @@ monitoring-without-disclosure requirement Sandbrink (2026) identifies as
 a key unmet need.
 
 \hypertarget{practical-implications}{%
-\subsection{5.3 Practical implications}\label{practical-implications}}
+\subsection{Practical implications}\label{practical-implications}}
 
 The 80-token finding has immediate operational significance. Standard
 lab evaluations use full generation budgets. Production deployments
@@ -748,7 +736,7 @@ no standard pre-deployment check for format sensitivity.
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
 \hypertarget{limitations}{%
-\section{6. Limitations}\label{limitations}}
+\section{Limitations}\label{limitations}}
 
 \textbf{Mechanistic results are Gemma-family only.} This is the most
 important scope limitation. Full SAE-based analysis (D metric, internal
@@ -782,7 +770,7 @@ contrastive signal, and requires institutional partners.
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
 \hypertarget{future-work}{%
-\section{7. Future Work}\label{future-work}}
+\section{Future Work}\label{future-work}}
 
 \begin{itemize}
 \tightlist
@@ -812,7 +800,7 @@ contrastive signal, and requires institutional partners.
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
 \hypertarget{conclusion}{%
-\section{8. Conclusion}\label{conclusion}}
+\section{Conclusion}\label{conclusion}}
 
 Language models can refuse without their internal states reflecting that
 refusal, and the specific ways they fail differ substantially across
