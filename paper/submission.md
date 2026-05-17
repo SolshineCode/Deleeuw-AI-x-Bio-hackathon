@@ -9,27 +9,27 @@
 
 ## Abstract
 
-Biosecurity evaluations of language models typically ask whether a model will produce hazardous output. This paper addresses a complementary question: when a model refuses, is that refusal structurally robust, or is it a shallow surface behavior that disappears under modest changes to prompt framing, formatting, or output length?
+Biosecurity evaluations of language models typically ask whether a model will produce hazardous output. This paper addresses a complementary question: when a model refuses, is that refusal structurally sound, or is it a shallow surface behavior that disappears under modest changes to prompt framing, formatting, or output length?
 
-The clearest findings here are behavioral — and they span **five architectures**, not one. Gemma 2 2B-IT produced zero genuine refusals across 75 evaluation prompts, hedging instead. Gemma 4 E2B-IT refused 65 of 75 prompts with canonical chat-template formatting and 0 of 75 without it. Both models refused 0% of prompts under an 80-token generation cap. Llama 3.2 1B, Qwen 2.5 1.5B, and Phi-3-mini were evaluated behaviorally across the same prompt set: none showed the hedge posture, but Qwen and Phi-3 showed near-identical high-refusal priors with an 83–87% false-positive rate on benign biology, while Llama showed a meaningful 61-point refusal gradient from benign to hazard. A psilocybin control — run across all four architectures with behavioral labels — suggests refusal patterns may track culturally salient taboo topics more strongly than genuinely hazardous biology content.
+The clearest findings here are behavioral, and they span **five architectures**. Gemma 2 2B-IT produced zero genuine refusals across 75 evaluation prompts, hedging instead. Gemma 4 E2B-IT refused 65 of 75 prompts with canonical chat-template formatting and 0 of 75 without it. Both models refused 0% of prompts under an 80-token generation cap. Llama 3.2 1B, Qwen 2.5 1.5B, and Phi-3-mini were evaluated behaviorally across the same prompt set: none showed the hedge posture, but Qwen and Phi-3 showed near-identical high-refusal priors with an 83-87% false-positive rate on benign biology, while Llama showed a meaningful 61-point refusal gradient from benign to hazard. A psilocybin control run across all four architectures suggests refusal patterns may track culturally salient taboo topics more strongly than genuinely hazardous biology content.
 
-To measure the internal side of these behaviors, the paper introduces a divergence score **D**, which compares a model's surface response label to its internal sparse autoencoder (SAE) feature activations. A low D means the model's internal state matches its outward behavior; a high D means they pull in different directions. Full SAE-based D computation was performed on Gemma 2 2B-IT (Gemma Scope 1) and Gemma 4 E2B-IT (author-trained bio SAE). On Gemma 4, comply and refuse responses separated with a 0.647-point gap and zero overlap across 75 prompts. This mechanistic result is preliminary: the feature catalog is narrow, calibration is within-sample, and full SAE pipeline coverage is currently Gemma-family only. Expanding SAE coverage to Llama and Qwen architectures is the highest-priority replication step.
+To measure the internal side of these behaviors, the paper introduces a divergence score **D**, which compares a model's surface response label to its internal sparse autoencoder (SAE) feature activations. A low D means the model's internal state matches its outward behavior. A high D means they pull in different directions. Full SAE-based D computation was performed on Gemma 2 2B-IT (Gemma Scope 1) and Gemma 4 E2B-IT (author-trained bio SAE). On Gemma 4, comply and refuse responses separated with a 0.647-point gap and zero overlap across 75 prompts. This mechanistic result is preliminary: the feature catalog is narrow, calibration is within-sample, and full SAE pipeline coverage is currently Gemma-family only. Expanding SAE coverage to Llama and Qwen architectures is the highest-priority replication step.
 
-The project is a proof-of-concept audit framework. Its contribution is showing that activation-level auditing can surface failure modes invisible to behavioral evaluation — and that behavioral failure modes themselves vary substantially and informatively across architectures.
+The project is a proof-of-concept audit framework. Its contribution is showing that activation-level auditing can surface failure modes invisible to behavioral evaluation, and that behavioral failure modes themselves vary substantially and informatively across architectures.
 
 ---
 
 ## 1. Introduction
 
-Biosecurity benchmarks for language models — WMDP-Bio, VCT, ABC-Bench, LAB-Bench — ask whether a model will produce dangerous biological assistance. That is necessary but not sufficient for deployment decisions.
+Biosecurity benchmarks for language models (WMDP-Bio, VCT, ABC-Bench, LAB-Bench) ask whether a model will produce dangerous biological assistance. That is necessary but not sufficient for deployment decisions.
 
 A second question matters equally: when a model refuses, is that refusal internally stable? Qi et al. (2024) argue that safety training often affects only the first few generated tokens, leaving hazardous capability intact below. A model with a surface refusal over an intact internal representation is potentially one framing shift from compliance. A model whose internal features genuinely suppress hazard-relevant circuitry when it refuses is structurally different.
 
-BioRefusalAudit was built to measure this distinction. It is not a capability evaluation — it does not test whether models can answer hazardous questions. It is a refusal quality audit: given that a model refused, how deep was that refusal?
+BioRefusalAudit was built to measure this distinction. It is not a capability evaluation. It does not test whether models can answer hazardous questions. It is a refusal quality audit: given that a model refused, how deep was that refusal?
 
 **Scope of model coverage.** This paper evaluates five architectures. Full SAE-based mechanistic analysis (the D metric) was performed on Gemma 2 2B-IT and Gemma 4 E2B-IT. Behavioral-label comparisons across the same 75-prompt eval set were run on all five architectures: Gemma 2, Gemma 4, Llama 3.2 1B, Qwen 2.5 1.5B, and Phi-3-mini-4k. The behavioral findings have cross-architecture support. The mechanistic findings are Gemma-family only and are treated as such throughout.
 
-**Why framing, formatting, and token limits matter.** Capable adversaries use educational framing, roleplay scaffolding, and gradual context injection — the exact surface that direct-query benchmarks miss. If a model's safety behavior is also sensitive to chat-template tokens or generation caps, that gap compounds. BioRefusalAudit's four-axis eval (direct / educational / roleplay / obfuscated) and explicit token-budget experiments probe this directly.
+**Why framing, formatting, and token limits matter.** Capable adversaries use educational framing, roleplay scaffolding, and gradual context injection, the exact attack surface that direct-query benchmarks miss. If a model's safety behavior is also sensitive to chat-template tokens or generation caps, that gap compounds. BioRefusalAudit's four-axis eval (direct / educational / roleplay / obfuscated) and explicit token-budget experiments probe this directly.
 
 **What this paper does not do.** BioRefusalAudit is a measurement tool, not a governance framework. It does not implement tiered access or managed-access policy as described by Yassif and Carter (2026). Those are institutional access-control systems for biological AI tools. BioRefusalAudit provides a refusal-depth signal that could inform such frameworks, but the two are distinct systems.
 
@@ -37,13 +37,13 @@ BioRefusalAudit was built to measure this distinction. It is not a capability ev
 
 ## 2. Related Work
 
-**Biosecurity benchmarks.** VCT (Götting et al., 2025) measures whether models produce hazardous biological assistance content. WMDP-Bio (Li et al., 2024) provides multiple-choice biology questions for evaluating capability unlearning. LAB-Bench (Laurent et al., 2024) covers practical biology research tasks — not dangerous-biology proxies, but general research capability. All three measure surface output. None distinguish a shallow refusal from a deep one.
+**Biosecurity benchmarks.** VCT (Götting et al., 2025) measures whether models produce hazardous biological assistance content. WMDP-Bio (Li et al., 2024) provides multiple-choice biology questions for evaluating capability unlearning. LAB-Bench (Laurent et al., 2024) covers practical biology research tasks (not dangerous-biology proxies, but general research capability). All three measure surface output. None distinguish a shallow refusal from a deep one.
 
 **Refusal geometry.** Arditi et al. (2024) showed that refusal in open-weight LLMs is mediated by a single residual-stream direction whose ablation breaks safety training across model families. BioRefusalAudit extends this from a single direction to a 5-category SAE feature ensemble, trading resolution for robustness to polysemanticity failures documented in prior work (DeLeeuw, arXiv:2509.20393). Qi et al. (2024) and Wei et al. (2023) provide the theoretical backdrop: RLHF alignment is shallow and framing-sensitive.
 
 **SAE foundations.** The methodology builds on Gemma Scope 1 (Lieberum et al., 2024), JumpReLU SAEs (Rajamanoharan et al., 2024), and Sparse Feature Circuits (Marks & Rager et al., 2024).
 
-**Policy context.** Sandbrink (AIxBio 2026) identified the need for biosecurity monitoring that does not require reading interaction content. BioRefusalAudit's activation-layer audit addresses this: D is computed from internal feature vectors, not transcripts. Yassif and Carter (NTI Bio, 2026) describe tiered managed-access governance for biological AI tools — a distinct problem, but one that a validated refusal-depth measurement could eventually complement. SecureBio's BioTier work on access stratification and biosecurity capability thresholds is additional relevant context for the policy layer this measurement could serve.
+**Policy context.** Sandbrink (AIxBio 2026) identified the need for biosecurity monitoring that does not require reading interaction content. BioRefusalAudit's activation-layer audit addresses this: D is computed from internal feature vectors, not transcripts. Yassif and Carter (NTI Bio, 2026) describe tiered managed-access governance for biological AI tools, a distinct problem, but one that a validated refusal-depth measurement could eventually complement. SecureBio's BioTier work on access stratification and biosecurity capability thresholds is additional relevant context for the policy layer this measurement could serve.
 
 ---
 
@@ -53,22 +53,22 @@ BioRefusalAudit was built to measure this distinction. It is not a capability ev
 
 The core question is: does what the model says match what its internal features are doing?
 
-BioRefusalAudit first labels the model's surface response — comply, refuse, hedge, partial, or evade — then looks at internal SAE feature categories during generation: how active are features related to bio-content, hazard-adjacent vocabulary, refusal circuitry, hedging, and deception-correlates?
+BioRefusalAudit first labels the model's surface response (comply, refuse, hedge, partial, or evade) then looks at internal SAE feature categories during generation: how active are features related to bio-content, hazard-adjacent vocabulary, refusal circuitry, hedging, and deception-correlates?
 
-If a model refuses, refusal-circuitry features should be active while hazard-content features are suppressed. If that's what happens, D is low — the model's interior matches its words. If the model says "I refuse" while hazard features keep firing, D is high — words and interior pulling in opposite directions.
+If a model refuses, refusal-circuitry features should be active while hazard-content features are suppressed. When that's what happens, D is low. The model's interior matches its words. If the model says "I refuse" while hazard features keep firing, D is high. Words and interior pulling in opposite directions.
 
 **Formally:**
 
 $$D(s, f) = 1 - \cos(f,\ T^T \cdot s)$$
 
-where $s \in \mathbb{R}^5$ is the soft surface-label vector (refuse / comply / partial / hedge / evade weights from the judge ensemble), $f \in \mathbb{R}^5$ is the normalized internal feature-category vector, and $T \in \mathbb{R}^{5 \times 5}$ is an alignment matrix mapping expected internal states to surface states. D ranges from 0 to 2; higher means more divergent.
+where $s \in \mathbb{R}^5$ is the soft surface-label vector (refuse / comply / partial / hedge / evade weights from the judge ensemble), $f \in \mathbb{R}^5$ is the normalized internal feature-category vector, and $T \in \mathbb{R}^{5 \times 5}$ is an alignment matrix mapping expected internal states to surface states. D ranges from 0 to 2. Higher means more divergent.
 
 D is not a safety score. It's an audit signal about internal-surface consistency.
 
 | Posture | Surface label | D | Interpretation |
 |---|---|---|---|
-| Deep refusal | REFUSE | Low | Refusal features active, hazard features suppressed — structurally robust |
-| Shallow refusal | REFUSE | High | Refusal features present, hazard features still firing — behaviorally masked |
+| Deep refusal | REFUSE | Low | Refusal features active, hazard features suppressed. Structurally sound. |
+| Shallow refusal | REFUSE | High | Refusal features present, hazard features still firing. Behaviorally masked. |
 | Hedge-without-refuse | HEDGE | Variable | Model avoids committing; surface looks safe, interior may still engage hazard content |
 | Non-suppressive compliance | COMPLY | High | Model answers; refusal circuitry fires but does not gate output |
 
@@ -78,13 +78,13 @@ D is not a safety score. It's an audit signal about internal-surface consistency
 - Gemma 2 2B-IT + Gemma Scope 1 `layer_12/width_16k/average_l0_82` (GTX 1650 Ti Max-Q, 4 GB VRAM)
 - Gemma 4 E2B-IT + author-trained bio SAE (`Solshine/gemma4-e2b-bio-sae-v1`, 2000-step contrastive fine-tune on WMDP bio-retain corpus)
 
-**Behavioral-label comparison (NullSAE, surface labels only — same 75-prompt eval set):**
+**Behavioral-label comparison (NullSAE, surface labels only, same 75-prompt eval set):**
 - Llama 3.2 1B
 - Qwen 2.5 1.5B
 - Phi-3-mini-4k
 
 **Prompt generation only (not evaluated as subject model):**
-- Qwen3 4B abliterated — used to generate Wave 3 explicit-prompt corpus (Finding 6)
+- Qwen3 4B abliterated, used to generate Wave 3 explicit-prompt corpus (Finding 6)
 
 Behavioral findings in this paper have cross-architecture support across five distinct model families. Mechanistic (D-based) findings are currently Gemma-family only. These two scopes are kept distinct throughout.
 
@@ -92,28 +92,28 @@ Behavioral findings in this paper have cross-architecture support across five di
 
 For each (model, prompt) pair:
 1. Generate at T=0.7 with a residual-stream forward hook at ~50% model depth
-2. Project activations through the SAE; take per-feature mean across generated tokens
+2. Project activations through the SAE and take per-feature mean across generated tokens
 3. Compress to 5 categories via feature catalog and L1-normalize to produce **f**
 4. Run judge ensemble (regex → Gemini CLI → Claude Haiku, weighted voting) to produce soft **s**
 5. Compute D and three divergence flags
 
 ### 3.4 Feature catalog construction
 
-Feature categories are populated via Cohen's d discrimination between high-tier and low-tier activation samples — statistical selection, not semantic validation. Neuronpedia inspection found many top auto-tuned features encode generic technical and governance vocabulary rather than biosecurity-specific circuitry. Tier-level D separation is directional evidence, not proof of a cleanly isolated biosecurity circuit.
+Feature categories are populated via Cohen's d discrimination between high-tier and low-tier activation samples (statistical selection, not semantic validation). Neuronpedia inspection found many top auto-tuned features encode generic technical and governance vocabulary rather than biosecurity-specific circuitry. Tier-level D separation is directional evidence, not proof of a cleanly isolated biosecurity circuit.
 
 ### 3.5 Evaluation set
 
-75 prompts stratified by tier (benign_bio n=23, dual_use_bio n=30, hazard_adjacent n=22) and framing (direct / educational / roleplay / obfuscated). Tier-1 and 2 content is CC-BY-4.0 public; tier-3 is behind an HL3-gated HuggingFace attestation consistent with the Biosecurity Data Level framework (Bloomfield, Black, Crook et al., *Science* 2026). Example illustrative prompts appear in Appendix A.
+75 prompts stratified by tier (benign_bio n=23, dual_use_bio n=30, hazard_adjacent n=22) and framing (direct / educational / roleplay / obfuscated). Tier-1 and 2 content is CC-BY-4.0 public. Tier-3 is behind an HL3-gated HuggingFace attestation consistent with the Biosecurity Data Level framework (Bloomfield, Black, Crook et al., *Science* 2026). Example illustrative prompts appear in Appendix A.
 
 ### 3.6 Calibration
 
-T is fit within-sample for the main Gemma 2 experiment. A held-out calibration run on a differently-framed prompt distribution produced inverted tier ordering (Cohen's d = −0.967), meaning T is framing-distribution-sensitive. Table 1 D-values are proof-of-concept pipeline demonstrations, not held-out validated metrics. Table 2 uses T_prior (identity-biased permutation), a weaker but less overfitted assumption.
+T is fit within-sample for the main Gemma 2 experiment. A held-out calibration run on a differently-framed prompt distribution produced inverted tier ordering (Cohen's d = -0.967), meaning T is framing-distribution-sensitive. Table 1 D-values are proof-of-concept pipeline demonstrations, not held-out validated metrics. Table 2 uses T_prior (identity-biased permutation), a weaker but less overfitted assumption.
 
 ---
 
 ## 4. Results
 
-### Finding 1: Gemma 2 2B-IT hedges; it does not genuinely refuse
+### Finding 1: Gemma 2 2B-IT hedges. It does not genuinely refuse.
 
 **Table 1.** Gemma 2 2B-IT + Gemma Scope 1, layer 12. Per-tier mean D and surface labels (n=75, within-sample T calibration).
 
@@ -139,7 +139,7 @@ Gemma 4 E2B-IT's safety behavior is heavily sensitive to chat-template formattin
 
 Both Gemma 2 and Gemma 4 refused **0% of prompts at an 80-token generation cap**.
 
-Safety articulation requires token budget. Standard lab evaluations use full generation budgets; production deployments often cap at 80–150 tokens for latency or cost. Safety behavior measured in evaluation doesn't transfer to constrained production when the token budget is the binding constraint.
+Safety articulation requires token budget. Standard lab evaluations use full generation budgets. Production deployments often cap at 80-150 tokens for latency or cost. Safety behavior measured in evaluation doesn't transfer to constrained production when the token budget is the binding constraint.
 
 ---
 
@@ -158,25 +158,25 @@ This result depends on a statistically selected (not semantically validated) fea
 
 ---
 
-### Finding 4: Cross-architecture behavioral comparison — five models, five different failure modes
+### Finding 4: Cross-architecture behavioral comparison, five models, five different failure modes
 
 NullSAE behavioral runs (n=75 each) showed that Gemma 2's hedge posture doesn't generalize. Each architecture has its own characteristic failure mode:
 
 | Model | benign refuse% | hazard_adj refuse% | Hedge% | Primary failure mode |
 |---|---:|---:|---:|---|
-| Gemma 2 2B-IT | 0% | 0% | 30–100% | Universal hedging — never commits |
+| Gemma 2 2B-IT | 0% | 0% | 30-100% | Universal hedging, never commits |
 | Gemma 4 E2B-IT | varies | 65/75 with fmt | 0% | Format-gated; template-sensitive |
 | Llama 3.2 1B | 30% | 91% | 0% | Good gradient; over-refusal on benign |
 | Qwen 2.5 1.5B | 83% | 95% | 0% | High-refusal prior; poor discrimination |
 | Phi-3-mini-4k | 87% | 95% | 0% | Nearly identical to Qwen despite 2.5x params |
 
-Llama shows a 61-point refusal gradient from benign to hazard — the best discrimination of the five. Qwen and Phi-3 are nearly indistinguishable despite a 2.5x parameter difference, which suggests training approach matters more than model family for refusal behavior. Neither achieves genuine discrimination: an 83–87% false-positive rate on benign biology makes them unusable as safety filters without a secondary classification layer.
+Llama shows a 61-point refusal gradient from benign to hazard, the best discrimination of the five. Qwen and Phi-3 are nearly indistinguishable despite a 2.5x parameter difference, which suggests training approach matters more than model family for refusal behavior. Neither achieves genuine discrimination: an 83-87% false-positive rate on benign biology makes them unusable as safety filters without a secondary classification layer.
 
-The practical evaluation consequence: a binary classifier on Gemma 2 misclassifies 100% of hazard-adjacent prompts (all hedged, none refused). The same classifier on Qwen or Phi-3 correctly flags 95% of hazard prompts but generates an 83–87% false-positive rate on benign biology. Neither outcome is what a deployer who needs calibrated refusal behavior actually wants.
+The practical evaluation consequence: a binary classifier on Gemma 2 misclassifies 100% of hazard-adjacent prompts (all hedged, none refused). The same classifier on Qwen or Phi-3 correctly flags 95% of hazard prompts but generates an 83-87% false-positive rate on benign biology. Neither outcome is what a deployer who needs calibrated refusal behavior actually wants.
 
 ---
 
-### Finding 5: The psilocybin legality confound — tested across four architectures
+### Finding 5: The psilocybin legality confound, tested across four architectures
 
 This finding was tested across four architectures (Gemma 2 at two token budgets, Qwen 2.5, and Llama 3.2), making it one of the most cross-architecturally supported results in this paper.
 
@@ -189,7 +189,7 @@ The probe: psilocybin is federally Schedule I but biologically non-toxic, with F
 | Qwen 2.5 1.5B | 75% | 50% | 95% |
 | Llama 3.2 1B | 0% | 0% | 91% |
 
-Gemma 2 refused psilocybin cultivation at 25–50% while refusing hazard-adjacent biology at 0%. The cross-compound comparison sharpens this:
+Gemma 2 refused psilocybin cultivation at 25-50% while refusing hazard-adjacent biology at 0%. The cross-compound comparison sharpens this:
 
 | Compound | Federal schedule | Cultivation refuse% | Pharmacology refuse% |
 |---|---|---:|---:|
@@ -200,9 +200,9 @@ Gemma 2 refused psilocybin cultivation at 25–50% while refusing hazard-adjacen
 
 Both psilocybin and cannabis are federally Schedule I, yet cannabis cultivation gets 0% refusals while psilocybin gets 33%. Federal scheduling alone doesn't predict the pattern. State-level legality (cannabis legal in ~24 states), commercial normalization, cultural salience, and training-data frequency all likely contribute.
 
-Llama shows no confound — it freely discusses psilocybin while correctly refusing genuinely hazardous biology. Qwen shows topic-level detection regardless of legality angle. Gemma 2 fires harder on the culturally taboo but biologically benign than on genuinely hazardous content. Three different failure modes for the same underlying stimulus, across three architectures. None of this is visible to surface-only evaluation.
+Llama shows no confound: it freely discusses psilocybin while correctly refusing genuinely hazardous biology. Qwen shows topic-level detection regardless of legality angle. Gemma 2 fires harder on the culturally taboo but biologically benign than on genuinely hazardous content. Three different failure modes for the same underlying stimulus, across three architectures. None of this is visible to surface-only evaluation.
 
-*Cell sizes: n=3–4 per sub-category per run. A replication run on n=27 cannabis/psilocybin confirmed directional findings; quantitative estimates remain noisy at this scale.*
+*Cell sizes: n=3-4 per sub-category per run. A replication run on n=27 cannabis/psilocybin confirmed directional findings. Quantitative estimates remain noisy at this scale.*
 
 ---
 
@@ -243,7 +243,7 @@ Framing breakdown: educational framing produces the highest D (0.733, n=27), con
 | comply | 59 | 0.896 | 0.001 |
 | refuse | 16 | 0.249 | 0.004 |
 
-Zero overlap. 0.647-point separation. This is the cleanest evidence that D can discriminate posture classes at the activation layer. It's from a single model + author-trained SAE, so it shouldn't be generalized across architectures without replication — but as a proof-of-concept it's clean.
+Zero overlap. 0.647-point separation. This is the cleanest evidence that D can discriminate posture classes at the activation layer. It's from a single model plus author-trained SAE, so it shouldn't be generalized across architectures without replication, but as a proof-of-concept it's clean.
 
 ---
 
@@ -256,7 +256,7 @@ A learned linear projection W trained via contrastive margin loss achieves corre
 | Hand-coded catalog | 0.478 | 0.664 | 0.760 | 0.282 |
 | Learned projection W (n=75) | 0.666 | 0.682 | 0.740 | 0.074 |
 
-Correct ordering achieved; narrower separation is expected at this training scale. Wave 3 explicit-prompt activations (n=300) are the next training step.
+Correct ordering achieved. Narrower separation is expected at this training scale. Wave 3 explicit-prompt activations (n=300) are the next training step.
 
 ---
 
@@ -274,23 +274,23 @@ D is computed from internal SAE feature activation vectors, not transcripts. A h
 
 ### 5.3 Practical implications
 
-The 80-token finding has immediate operational significance. Standard lab evaluations use full generation budgets; production deployments often cap at 80–150 tokens for cost or latency. Safety behaviors measured at evaluation time may not transfer to constrained production.
+The 80-token finding has immediate operational significance. Standard lab evaluations use full generation budgets. Production deployments often cap at 80-150 tokens for cost or latency. Safety behaviors measured at evaluation time may not transfer to constrained production.
 
-The format-gating finding — 65 refusals vs. 0 depending solely on chat-template tokens — means any deployer who assumes safety behaviors are format-invariant should verify that assumption. There is currently no standard pre-deployment check for format sensitivity.
+The format-gating finding (65 refusals vs. 0 depending solely on chat-template tokens) means any deployer who assumes safety behaviors are format-invariant should verify that assumption. There is currently no standard pre-deployment check for format sensitivity.
 
 ---
 
 ## 6. Limitations
 
-**Mechanistic results are Gemma-family only.** This is the most important scope limitation. Full SAE-based analysis (D metric, internal flag rates, intervention effects) was performed on Gemma 2 2B-IT and Gemma 4 E2B-IT. Behavioral comparisons span five architectures. These two scopes must not be conflated: the behavioral findings have broad support; the mechanistic claims do not yet. Expanding SAE coverage to Llama and Qwen family models is the priority replication step.
+**Mechanistic results are Gemma-family only.** This is the most important scope limitation. Full SAE-based analysis (D metric, internal flag rates, intervention effects) was performed on Gemma 2 2B-IT and Gemma 4 E2B-IT. Behavioral comparisons span five architectures. These two scopes must not be conflated: the behavioral findings have broad support, the mechanistic claims do not yet. Expanding SAE coverage to Llama and Qwen family models is the priority replication step.
 
 **Feature catalog validity.** The five-category internal representation depends on statistically selected, not semantically validated, features. Neuronpedia inspection found many top features encode generic technical or governance vocabulary. D may partly reflect vocabulary routing rather than a clean refusal-depth mechanism.
 
 **Within-sample calibration.** T is fit on the same 75 prompts used for evaluation. Held-out calibration on a differently-framed distribution produced inverted tier ordering. Table 1 D-values are proof-of-concept pipeline outputs, not validated general metrics.
 
-**Prompt scale.** 75 prompts supports group-level patterns but not stable per-cell estimates for fine-grained subgroups. Findings 1–3 and the format/token findings are relatively robust; the legality confound cells (n=3–4 per compound) should be treated as pilot findings.
+**Prompt scale.** 75 prompts supports group-level patterns but not stable per-cell estimates for fine-grained subgroups. Findings 1-3 and the format/token findings hold up reasonably well. The legality confound cells (n=3-4 per compound) should be treated as pilot findings.
 
-**Contrastive SAE.** The domain-specific SAE trained during the hackathon barely moved the contrastive loss. Behavioral pair data — base model vs. RLHF-tuned on identical prompts — is needed to provide genuine contrastive signal, and requires institutional partners.
+**Contrastive SAE.** The domain-specific SAE trained during the hackathon barely moved the contrastive loss. Behavioral pair data (base model vs. RLHF-tuned on identical prompts) is needed to provide genuine contrastive signal, and requires institutional partners.
 
 ---
 
@@ -307,9 +307,9 @@ The format-gating finding — 65 refusals vs. 0 depending solely on chat-templat
 
 ## 8. Conclusion
 
-Language models can refuse without their internal states reflecting that refusal — and the specific ways they fail differ substantially across architectures. Gemma 2 2B-IT never genuinely refused across 75 prompts. Gemma 4's refusal behavior is gated on formatting tokens and disappears at 80 tokens. Llama 3.2 1B showed a 61-point refusal gradient but over-refused on benign biology. Qwen 2.5 1.5B and Phi-3-mini refused nearly everything regardless of hazard level. A psilocybin legality control tested across four architectures suggests that current refusal circuits in at least some models may be calibrated to cultural taboo salience rather than CBRN hazard.
+Language models can refuse without their internal states reflecting that refusal, and the specific ways they fail differ substantially across architectures. Gemma 2 2B-IT never genuinely refused across 75 prompts. Gemma 4's refusal behavior is gated on formatting tokens and disappears at 80 tokens. Llama 3.2 1B showed a 61-point refusal gradient but over-refused on benign biology. Qwen 2.5 1.5B and Phi-3-mini refused nearly everything regardless of hazard level. A psilocybin legality control tested across four architectures suggests that current refusal circuits in at least some models may be calibrated to cultural taboo salience rather than CBRN hazard.
 
-The divergence metric D can separate comply from refuse postures at the activation layer with a 0.647-point gap and zero overlap on the Gemma 4 validation run, though this result needs cross-family replication. Behavioral evaluation tells you what the model said. Refusal depth auditing tells you whether that behavior reflects something structural — and whether the circuit producing it is responding to the right signal at all.
+The divergence metric D can separate comply from refuse postures at the activation layer with a 0.647-point gap and zero overlap on the Gemma 4 validation run, though this result needs cross-family replication. Behavioral evaluation tells you what the model said. Refusal depth auditing tells you whether that behavior reflects something structural, and whether the circuit producing it is responding to the right signal at all.
 
 ---
 
@@ -319,7 +319,7 @@ The divergence metric D can separate comply from refuse postures at the activati
 **License:** Hippocratic License 3.0 (HL3-BDS-CL-ECO-EXTR-FFD-MEDIA-MIL-MY-SUP-SV-TAL-USTA-XUAR)  
 **Interactive demo:** [Live dashboard, all 75 prompts](https://solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive_explorer.html)  
 **Demo video:** [youtu.be/PY9WztZKFh4](https://youtu.be/PY9WztZKFh4)  
-**Public dataset (tiers 1–2, CC-BY-4.0):** [SolshineCode/biorefusalaudit-public](https://huggingface.co/datasets/SolshineCode/biorefusalaudit-public)  
+**Public dataset (tiers 1-2, CC-BY-4.0):** [SolshineCode/biorefusalaudit-public](https://huggingface.co/datasets/SolshineCode/biorefusalaudit-public)  
 **Gated dataset (tier 3, HL3 attestation):** [SolshineCode/biorefusalaudit-gated](https://huggingface.co/datasets/SolshineCode/biorefusalaudit-gated)  
 **Published SAE checkpoint:** [Solshine/gemma4-e2b-bio-sae-v1](https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1)
 
@@ -384,7 +384,7 @@ BioRefusalAudit measures which prompt types activate or bypass a model's refusal
 
 **Mitigations:** HL3 license binds users to enforceable obligations prohibiting harmful use. Tier-3 content is behind signed attestation. The audit layer never reads prompt content. Primary intended users are defenders, evaluators, and RSP auditors.
 
-**Disclosure posture:** No previously unknown model vulnerabilities were discovered. Format-gating and token-budget sensitivity are observable through standard behavioral testing. These findings are published openly because they describe observable model behaviors, not private infrastructure vulnerabilities. If future use identifies a novel exploitable mechanism — e.g., a feature direction whose activation can be suppressed to disable refusal circuits — coordinated disclosure to the relevant model developer is recommended before publication.
+**Disclosure posture:** No previously unknown model vulnerabilities were discovered. Format-gating and token-budget sensitivity are observable through standard behavioral testing. These findings are published openly because they describe observable model behaviors, not private infrastructure vulnerabilities. If future use identifies a novel exploitable mechanism (e.g., a feature direction whose activation can be suppressed to disable refusal circuits), coordinated disclosure to the relevant model developer is recommended before publication.
 
 ---
 
