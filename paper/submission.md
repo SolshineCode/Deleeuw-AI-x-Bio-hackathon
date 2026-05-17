@@ -3,7 +3,8 @@
 **Author:** Caleb DeLeeuw  
 **Affiliation:** Independent researcher  
 **Contact:** caleb.deleeuw@gmail.com  
-**Submitted to:** AIxBio Hackathon 2026, Track 3: AI Biosecurity Tools (Fourth Eon Bio)
+**Date:** May 2026  
+**Venue:** Apart Research AIxBio Sprint, April 2026 (Track 3: AI Biosecurity Tools, Fourth Eon Bio)
 
 ---
 
@@ -107,7 +108,7 @@ Feature categories are populated via Cohen's d discrimination between high-tier 
 
 ### 3.6 Calibration
 
-T is fit within-sample for the main Gemma 2 experiment. A held-out calibration run on a differently-framed prompt distribution produced inverted tier ordering (Cohen's d = -0.967), meaning T is framing-distribution-sensitive. Table 1 D-values are proof-of-concept pipeline demonstrations, not held-out validated metrics. Table 2 uses T_prior (identity-biased permutation), a weaker but less overfitted assumption.
+T is fit within-sample for the main Gemma 2 experiment. A held-out calibration run on a differently-framed prompt distribution produced inverted tier ordering (Cohen's d = -0.967), meaning T is framing-distribution-sensitive. Table 1 D-values are proof-of-concept pipeline demonstrations, not held-out validated metrics. Table 3 uses T_prior (identity-biased permutation), a weaker but less overfitted assumption.
 
 ---
 
@@ -145,7 +146,7 @@ Safety articulation requires token budget. Standard lab evaluations use full gen
 
 ### Finding 3: The refusal circuit may detect biology, not hazard
 
-Intervention results and explicit-prompt follow-up data both show refusal-related internal features active during benign biology compliances at high rates:
+Intervention results and explicit-prompt follow-up data both show refusal-related internal features active during benign biology compliances at high rates. (Flag data below is from the explicit-prompt corpus, n=100 per tier; see Finding 6. The original 75-prompt hackathon set produced no genuine refusals on hazard-adjacent prompts, making the `hazard_features_active_despite_refusal` flag uninterpretable for that set.)
 
 | Flag | benign (n=100) | dual_use (n=100) | hazard (n=100) |
 |---|---:|---:|---:|
@@ -214,9 +215,9 @@ Llama shows no confound: it freely discusses psilocybin while correctly refusing
 
 The original eval used category-descriptor phrasings (e.g., "hazard_adjacent_category: aerosol dispersion / dual-use framing"). An explicit-prompt follow-up (n=100 per tier, same pipeline) confirmed that these were driving the universal hedging.
 
-**Table 3.** Format comparison across tiers.
+**Table 2.** Format comparison across tiers.
 
-*(Note: Category-descriptor D values here (0.478 benign, 0.760 hazard) differ from Table 1 (0.467 benign, 0.669 hazard) because Table 3 uses T_prior calibration fitted on the combined category-descriptor + explicit-prompt set, while Table 1 uses within-sample T fitted on the 75-prompt hackathon set alone. The underlying prompts and model are identical.)*
+*(Note: Category-descriptor D values here (0.478 benign, 0.760 hazard) differ from Table 1 (0.467 benign, 0.669 hazard) because Table 2 uses T_prior calibration fitted on the combined category-descriptor + explicit-prompt set, while Table 1 uses within-sample T fitted on the 75-prompt hackathon set alone. The underlying prompts and model are identical.)*
 
 | Tier | Format | n | Mean D | comply% | hedge% | refuse% |
 |---|---|---:|---:|---:|---:|---:|---:|
@@ -242,7 +243,7 @@ Framing breakdown: educational framing produces the highest D (0.733, n=27), con
 
 ### Finding 7: D metric validation on Gemma 4
 
-**Table 2.** Gemma 4 E2B-IT + author-trained bio SAE, 150-token budget, T_prior calibration (n=75).
+**Table 3.** Gemma 4 E2B-IT + author-trained bio SAE, 150-token budget, T_prior calibration (n=75).
 
 | Surface label | n | Mean D | Std |
 |---|---:|---:|---:|
@@ -251,9 +252,13 @@ Framing breakdown: educational framing produces the highest D (0.733, n=27), con
 
 Zero overlap. 0.647-point separation. This is the cleanest evidence that D can discriminate posture classes at the activation layer. It's from a single model plus author-trained SAE, so it shouldn't be generalized across architectures without replication, but as a proof-of-concept it's clean.
 
+**Figure 1.** Per-tier mean D across model configurations. Left group: Gemma 2 2B-IT under two generation-budget conditions (80-tok and 150-tok), showing tier ordering and the token-budget collapse. Right group: Gemma 4 E2B-IT comply vs. refuse split, showing the 0.647-point posture separation with T_prior calibration. Full interactive prompt-level exploration available at the [project dashboard](https://solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive_explorer.html).
+
+![Figure 1: Per-tier mean D across model configurations](../demo/scaling_plot.png)
+
 ---
 
-### Finding 8: Learned projection adapter (Track B, post-hackathon)
+### Finding 8: Learned projection adapter achieves correct tier ordering at n=75 training samples
 
 A learned linear projection W trained via contrastive margin loss achieves correct tier ordering from 75 training samples:
 
