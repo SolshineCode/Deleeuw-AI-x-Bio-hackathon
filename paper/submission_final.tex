@@ -279,13 +279,23 @@ circuitry fires but does not gate output \\
 \tightlist
 \item
   Gemma 2 2B-IT + Gemma Scope 1
-  \passthrough{\lstinline!layer\_12/width\_16k/average\_l0\_82!} (GTX
-  1650 Ti Max-Q, 4 GB VRAM; Lieberum et al., 2024)
+  \passthrough{\lstinline!layer\_12/width\_16k/average\_l0\_82!} --- a
+  general-purpose pre-trained JumpReLU SAE (GTX 1650 Ti Max-Q, 4 GB
+  VRAM; Lieberum et al., 2024). Two author-fine-tuned Gemma 2 domain bio
+  SAE variants are also published: WMDP corpus fine-tune
+  (\href{https://huggingface.co/Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp}{Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp})
+  and pairwise behavioral fine-tune
+  (\href{https://huggingface.co/Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise}{Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise}).
 \item
   Gemma 4 E2B-IT (Google DeepMind, 2026; HuggingFace:
   \passthrough{\lstinline!google/gemma-4-e2b-it!}) + author-trained bio
-  SAE (\passthrough{\lstinline!Solshine/gemma4-e2b-bio-sae-v1!},
-  2000-step contrastive fine-tune on WMDP bio-retain corpus)
+  SAE
+  (\href{https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1}{Solshine/gemma4-e2b-bio-sae-v1})
+  --- a TopK(k=32) SAE trained from scratch on Gemma 4 activations
+  during this hackathon (see §3.7 for training details). All three
+  domain-specific SAE checkpoints are collected at:
+  \href{https://huggingface.co/collections/Solshine/aixbio-2026-biosecurity-domain-trained-saes-for-gemma-models}{AIxBio
+  2026: Biosecurity Domain-Trained SAEs for Gemma Models}.
 \end{itemize}
 
 \textbf{Behavioral-label comparison (NullSAE, surface labels only, same
@@ -376,6 +386,51 @@ compared within a table or across experiments using the same calibration
 procedure. Cross-table D comparisons (e.g., Table 1 vs.~Table 3) reflect
 both the change in model/prompt conditions and the change in
 calibration, and should not be read as a single controlled comparison.
+
+\hypertarget{domain-specific-bio-sae-architecture-and-training}{%
+\subsection{Domain-specific bio SAE: architecture and
+training}\label{domain-specific-bio-sae-architecture-and-training}}
+
+The Gemma 4 E2B-IT analysis uses an author-trained sparse autoencoder
+rather than a pre-existing general SAE. No Gemma Scope release covers
+Gemma 4, so a domain-specific SAE was trained from scratch during the
+hackathon.
+
+\textbf{Architecture:} TopK (k=32), d\_model=1536, d\_sae=6144 (4×
+expansion), residual stream hook at layer 17 of Gemma 4 E2B-IT.
+
+\textbf{Training data:} \textasciitilde5,000 documents from the WMDP
+bio-retain corpus (non-hazardous biology; provides the reconstruction
+signal) plus 22 tier-1/2 bio prompts from the BioRefusalAudit eval set
+(the intended contrastive hazard signal).
+
+\textbf{Loss function:}
+
+\[L = L_{\text{recon}} + 0.04 \cdot L_{\text{sparsity}} + 0.1 \cdot L_{\text{contrastive}}\]
+
+\textbf{Training:} 2,000 steps on a Tesla T4, AdamW
+(lr=\(3 \times 10^{-4}\)).
+
+\textbf{Key result from training:} The contrastive loss term collapsed
+to near zero. The 22-prompt hazard corpus was too small to drive genuine
+differentiation between bio-hazard and bio-retain activations. As a
+result the trained SAE functions as a general-purpose reconstruction SAE
+for Gemma 4 internal activations, not a specialized hazard detector.
+This limitation is documented in §6 and in the honest scope framing
+throughout.
+
+The practical consequence: D values on Gemma 4 capture the geometry of
+Gemma 4's activation space as reconstructed by a topk-SAE trained on
+those activations, not a validated bio-hazard feature detector. The
+0.647-point comply/refuse separation in Finding 7 is real
+activation-space structure --- the SAE learned to represent whatever
+internal state distinguishes comply from refuse --- but that internal
+state has not been validated as a clean biosecurity circuit.
+
+Training code and checkpoint:
+\href{https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1}{Solshine/gemma4-e2b-bio-sae-v1}.
+Full training details in
+\passthrough{\lstinline!training/train\_bio\_sae.py!}.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
@@ -698,11 +753,19 @@ across architectures without replication, but as a proof-of-concept it's
 clean.
 
 \textbf{Figure 1.} Per-tier mean D across model configurations. Left
-group: Gemma 2 2B-IT under two generation-budget conditions (80-tok and
-150-tok), showing tier ordering and the token-budget collapse. Right
-group: Gemma 4 E2B-IT comply vs.~refuse split, showing the 0.647-point
-posture separation with T\_prior calibration. Full interactive
-prompt-level exploration available at the
+group: Gemma 2 2B-IT paired with Gemma Scope 1
+(\passthrough{\lstinline!layer\_12/width\_16k/average\_l0\_82!}) --- a
+community-published general-purpose JumpReLU SAE --- under two
+generation-budget conditions (80-tok and 150-tok), showing tier ordering
+and token-budget collapse. Right group: Gemma 4 E2B-IT paired with the
+author-trained bio SAE
+(\passthrough{\lstinline!Solshine/gemma4-e2b-bio-sae-v1!}) --- a
+TopK(k=32) SAE trained on Gemma 4 activations during this hackathon ---
+showing the 0.647-point comply/refuse posture separation with T\_prior
+calibration. The two SAE approaches are architecturally and
+provenance-wise distinct: Gemma Scope 1 is a pre-existing general SAE;
+the Gemma 4 bio SAE was trained specifically for this work. Full
+interactive prompt-level exploration:
 \href{https://solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive_explorer.html}{project
 dashboard}.
 
@@ -710,6 +773,20 @@ dashboard}.
 \centering
 \includegraphics[width=\linewidth,keepaspectratio]{figures/scaling_plot.png}
 \caption{Per-tier mean D across model configurations}
+\end{figure}
+
+\textbf{Figure 2.} BioRefusalAudit interactive dashboard showing all 75
+eval prompts with per-prompt D scores, surface labels, divergence flags,
+and tier assignments. Color coding distinguishes comply (green), hedge
+(yellow), and refuse (red) responses. Sorting by D score surfaces the
+highest-divergence prompts --- cases where surface label and internal
+activations pull in opposite directions. Live at
+\href{https://solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive_explorer.html}{solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive\_explorer.html}.
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth,keepaspectratio]{figures/dashboard_screenshot.png}
+\caption{BioRefusalAudit interactive dashboard}
 \end{figure}
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
@@ -784,6 +861,54 @@ The format-gating finding (65 refusals vs.~0 depending solely on
 chat-template tokens) means any deployer who assumes safety behaviors
 are format-invariant should verify that assumption. There is currently
 no standard pre-deployment check for format sensitivity.
+
+\hypertarget{licensing-and-responsible-release-the-hippocratic-license}{%
+\subsection{Licensing and responsible release: the Hippocratic
+License}\label{licensing-and-responsible-release-the-hippocratic-license}}
+
+BioRefusalAudit is published under the Hippocratic License 3.0
+(HL3-BDS-CL-ECO-EXTR-FFD-MEDIA-MIL-MY-SUP-SV-TAL-USTA-XUAR). To the
+authors' knowledge, this is the first use of the Hippocratic License for
+biosecurity AI research.
+
+HL3 was chosen over standard permissive licenses (Apache 2.0, MIT)
+because permissive licenses carry no enforceable downstream obligations.
+A researcher who forks BioRefusalAudit and uses D scores as
+prompt-optimization feedback toward phrasings that evade refusal
+circuits faces no license-based sanction under MIT or Apache. Under HL3,
+downstream use for activities prohibited by the UN Universal Declaration
+of Human Rights is a license violation with civil remedy --- not just a
+norm violation.
+
+The specific HL3 modules applied:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{BDS, CL, ECO, EXTR, FFD, MEDIA, MY, SUP, SV, TAL, USTA, XUAR}
+  --- standard human-rights and labor-rights modules binding downstream
+  use to UN/IHL standards
+\item
+  \textbf{MIL} --- prohibits use in autonomous weapons systems and
+  related targeting contexts; directly relevant to biosecurity given
+  dual-use potential of refusal-depth measurement
+\end{itemize}
+
+The MIL module is the most operationally significant for this project.
+It prohibits using BioRefusalAudit as a component in any weapons system,
+including hypothetical systems that could use refusal-depth scores to
+identify and route around model safety behaviors for harmful purposes.
+
+HL3 does not provide technical enforcement --- it provides legal
+enforceability. Paired with technical controls (tier-3 gating behind
+signed attestation, no hazard prompt bodies in the public repo, audit
+layer that never reads prompt content), it creates a defense-in-depth
+stack: technical barriers reduce casual misuse; legal obligations create
+risk for deliberate misuse by institutional actors with reputational or
+civil-liability exposure.
+
+Full license text and rationale:
+\passthrough{\lstinline!docs/HL3\_RATIONALE.md!} in the repository.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
@@ -899,8 +1024,24 @@ dashboard, all 75 prompts}\\
 \href{https://huggingface.co/datasets/SolshineCode/biorefusalaudit-public}{SolshineCode/biorefusalaudit-public}\\
 \textbf{Gated dataset (tier 3, HL3 attestation):}
 \href{https://huggingface.co/datasets/SolshineCode/biorefusalaudit-gated}{SolshineCode/biorefusalaudit-gated}\\
-\textbf{Published SAE checkpoint:}
-\href{https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1}{Solshine/gemma4-e2b-bio-sae-v1}
+\textbf{Domain-specific SAE checkpoints (HuggingFace):}
+
+\begin{itemize}
+\tightlist
+\item
+  Gemma 4 bio SAE (used in Finding 7):
+  \href{https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1}{Solshine/gemma4-e2b-bio-sae-v1}
+\item
+  Gemma 2 WMDP corpus fine-tune:
+  \href{https://huggingface.co/Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp}{Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp}
+\item
+  Gemma 2 pairwise behavioral fine-tune:
+  \href{https://huggingface.co/Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise}{Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise}
+\item
+  Full SAE collection:
+  \href{https://huggingface.co/collections/Solshine/aixbio-2026-biosecurity-domain-trained-saes-for-gemma-models}{AIxBio
+  2026 --- Biosecurity Domain-Trained SAEs for Gemma Models}
+\end{itemize}
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
