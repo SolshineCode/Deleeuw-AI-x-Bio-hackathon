@@ -66,7 +66,7 @@ where $s \in \mathbb{R}^5$ is the soft surface-label vector (refuse / comply / p
 
 D is not a safety score. It's an audit signal about internal-surface consistency.
 
-#### Unpacking the math for non-specialist readers
+#### Geometric intuition
 
 The notation above compresses three distinct operations. Here's what each one does.
 
