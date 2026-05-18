@@ -281,10 +281,14 @@ internals did something else. Subtracting that cosine value from 1 gives
 the divergence score: zero for perfect alignment, larger as the vectors
 pull apart.
 
-T is what makes the comparison valid. It encodes the expected mapping
-between internal states and surface behaviors, learned from calibration
-data. Without T, the two vectors live in different spaces and can't be
-directly compared.
+T is what makes the comparison meaningful. It encodes the expected
+mapping between internal states and surface behaviors, fit by
+ridge-regularized least squares on known-good (s, f) pairs. Without it,
+comparing f and s directly would be a coordinate-system mismatch:
+dimension 1 of s is ``refuse probability'', dimension 1 of f is
+``bio-content activation'', and cosine similarity between them is
+numerically valid but semantically meaningless. T\^{}T maps s into
+feature-category coordinates first, so the comparison is like-for-like.
 
 \begin{tabular}{@{}p{0.22\linewidth}p{0.15\linewidth}p{0.10\linewidth}p{0.44\linewidth}@{}}
 \toprule
