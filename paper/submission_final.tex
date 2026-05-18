@@ -255,6 +255,48 @@ mapping expected internal states to surface states. D ranges from 0 to
 D is not a safety score. It's an audit signal about internal-surface
 consistency.
 
+\hypertarget{unpacking-the-math-for-non-specialist-readers}{%
+\subsubsection{Unpacking the math for non-specialist
+readers}\label{unpacking-the-math-for-non-specialist-readers}}
+
+The notation above compresses three distinct operations. Here's what
+each one does.
+
+\textbf{s and f are both five-dimensional, not high-dimensional.} The
+surface vector s is the judge ensemble's probability distribution over
+behavioral postures: how much of a refusal is this, how much comply,
+hedge, and so on. The internal feature vector f is the normalized
+activation score across five feature categories (bio-content, hazard
+vocabulary, refusal circuitry, hedging, deception correlates). Both live
+in \(\mathbb{R}^5\). Neither is the raw SAE output. The SAE produces
+thousands of feature activations, but the feature catalog compresses
+those down to five category scores before f is ever computed. The 5×5
+alignment matrix T operates entirely within this compressed space.
+
+\textbf{T\^{}T projects the surface behavior backward into
+internal-feature space.} T encodes the expected relationship: given that
+internal refusal circuitry is highly active, what surface label should
+you see? T\^{}T runs this in reverse. Given what the model \emph{said}
+(the surface distribution s), what should its internal features look
+like if that behavior were genuine? The product T\^{}T · s is a
+predicted internal activation profile derived purely from the surface
+label.
+
+\textbf{Cosine similarity measures the angle between predicted and
+actual.} With T\^{}T · s (predicted internals) and f (actual internals)
+both in \(\mathbb{R}^5\), cosine similarity measures how closely they
+point in the same direction. Subtracting from 1 converts angle-agreement
+into a divergence score: D = 0 is perfect surface-internal harmony, D
+near 2 means they're pointing in opposite directions.
+
+This is why D works as a privacy-preserving audit signal. The
+computation runs entirely on the activation vector. A hospital deploying
+a clinical biology assistant could flag every inference for
+internal-surface divergence without the audit layer ever reading the
+text of what was asked or answered, which is the
+monitoring-without-disclosure property Sandbrink (2026) identifies as a
+requirement for deployed biosecurity systems.
+
 \begin{tabular}{@{}p{0.22\linewidth}p{0.15\linewidth}p{0.10\linewidth}p{0.44\linewidth}@{}}
 \toprule
 Posture & Surface label & D & Interpretation \\
