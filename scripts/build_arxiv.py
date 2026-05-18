@@ -18,11 +18,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PAPER = ROOT / "paper"
-SRC = PAPER / "submission.md"
-TEX_OUT = PAPER / "submission.tex"
-PDF_OUT = PAPER / "submission.pdf"
-HTML_TEMP = PAPER / "_temp_submission.html"
-MD_TEMP = PAPER / "_temp_submission_arxiv.md"
+_stem = sys.argv[1] if len(sys.argv) > 1 else "submission"
+SRC = PAPER / f"{_stem}.md"
+TEX_OUT = PAPER / f"{_stem}.tex"
+PDF_OUT = PAPER / f"{_stem}.pdf"
+HTML_TEMP = PAPER / f"_temp_{_stem}.html"
+MD_TEMP = PAPER / f"_temp_{_stem}_arxiv.md"
 
 # ─── Step 1: Pre-process markdown ────────────────────────────────────────────
 
@@ -122,6 +123,13 @@ tex = re.sub(
     ),
     tex,
     count=1,
+)
+
+# 3a-2. Constrain all \includegraphics to \linewidth so figures don't overflow arXiv margins
+tex = re.sub(
+    r'\\includegraphics\{',
+    r'\\includegraphics[width=\\linewidth,keepaspectratio]{',
+    tex,
 )
 
 # 3b. Remove duplicate \usepackage lines that header-includes would add
