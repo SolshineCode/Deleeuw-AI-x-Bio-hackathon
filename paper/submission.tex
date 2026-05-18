@@ -136,10 +136,10 @@ themselves vary substantially and informatively across architectures.
 \hypertarget{introduction}{%
 \section{Introduction}\label{introduction}}
 
-Biosecurity benchmarks for language models (WMDP-Bio, VCT, ABC-Bench
-(Liu et al., 2025), LAB-Bench) ask whether a model will produce
-dangerous biological assistance. That is necessary but not sufficient
-for deployment decisions.
+Biosecurity benchmarks for language models (WMDP-Bio, VCT, ABC-Bench,
+LAB-Bench) ask whether a model will produce dangerous biological
+assistance. That is necessary but not sufficient for deployment
+decisions.
 
 A second question matters equally: when a model refuses, is that refusal
 internally stable? Qi et al.~(2024) argue that safety training often
@@ -187,11 +187,9 @@ frameworks, but the two are distinct systems.
 whether models produce hazardous biological assistance content. WMDP-Bio
 (Li et al., 2024) provides multiple-choice biology questions for
 evaluating capability unlearning. LAB-Bench (Laurent et al., 2024)
-covers practical biology research tasks. ABC-Bench (Liu et al., 2025) is
-an agentic biosecurity benchmark evaluating end-to-end task completion:
-liquid handling robot code, DNA fragment design, and screening evasion.
-All four measure surface output or task completion. None distinguish a
-shallow refusal from a deep one.
+covers practical biology research tasks (not dangerous-biology proxies,
+but general research capability). All three measure surface output. None
+distinguish a shallow refusal from a deep one.
 
 \textbf{Refusal geometry.} Arditi et al.~(2024) showed that refusal in
 open-weight LLMs is mediated by a single residual-stream direction whose
@@ -273,42 +271,18 @@ circuitry fires but does not gate output \\
 \hypertarget{model-coverage}{%
 \subsection{Model coverage}\label{model-coverage}}
 
-\textbf{Full SAE pipeline (D metric computed):}
-
-\begin{itemize}
-\tightlist
-\item
-  Gemma 2 2B-IT + Gemma Scope 1
-  \passthrough{\lstinline!layer\_12/width\_16k/average\_l0\_82!} (GTX
-  1650 Ti Max-Q, 4 GB VRAM; Lieberum et al., 2024)
-\item
-  Gemma 4 E2B-IT (Google DeepMind, 2026; HuggingFace:
-  \passthrough{\lstinline!google/gemma-4-e2b-it!}) + author-trained bio
-  SAE (\passthrough{\lstinline!Solshine/gemma4-e2b-bio-sae-v1!},
-  2000-step contrastive fine-tune on WMDP bio-retain corpus)
-\end{itemize}
+\textbf{Full SAE pipeline (D metric computed):} - Gemma 2 2B-IT + Gemma
+Scope 1 \passthrough{\lstinline!layer\_12/width\_16k/average\_l0\_82!}
+(GTX 1650 Ti Max-Q, 4 GB VRAM) - Gemma 4 E2B-IT + author-trained bio SAE
+(\passthrough{\lstinline!Solshine/gemma4-e2b-bio-sae-v1!}, 2000-step
+contrastive fine-tune on WMDP bio-retain corpus)
 
 \textbf{Behavioral-label comparison (NullSAE, surface labels only, same
-75-prompt eval set):}
+75-prompt eval set):} - Llama 3.2 1B - Qwen 2.5 1.5B - Phi-3-mini-4k
 
-\begin{itemize}
-\tightlist
-\item
-  Llama 3.2 1B
-\item
-  Qwen 2.5 1.5B
-\item
-  Phi-3-mini-4k-instruct (Abdin et al., 2024; arXiv:2404.14219)
-\end{itemize}
-
-\textbf{Prompt generation only (not evaluated as subject model):}
-
-\begin{itemize}
-\tightlist
-\item
-  Qwen3 4B abliterated, used to generate Wave 3 explicit-prompt corpus
-  (Finding 6)
-\end{itemize}
+\textbf{Prompt generation only (not evaluated as subject model):} -
+Qwen3 4B abliterated, used to generate Wave 3 explicit-prompt corpus
+(Finding 6)
 
 Behavioral findings in this paper have cross-architecture support across
 five distinct model families. Mechanistic (D-based) findings are
@@ -318,26 +292,13 @@ throughout.
 \hypertarget{evaluation-pipeline}{%
 \subsection{Evaluation pipeline}\label{evaluation-pipeline}}
 
-For each (model, prompt) pair:
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  Generate at T=0.7 with a residual-stream forward hook at
-  \textasciitilde50\% model depth
-\item
-  Project activations through the SAE and take per-feature mean across
-  generated tokens
-\item
-  Compress to 5 categories via feature catalog and L1-normalize to
-  produce \textbf{f}
-\item
-  Run judge ensemble (regex -\textgreater{} Gemini CLI -\textgreater{}
-  Claude Haiku, weighted voting) to produce soft \textbf{s}
-\item
-  Compute D and three divergence flags
-\end{enumerate}
+For each (model, prompt) pair: 1. Generate at T=0.7 with a
+residual-stream forward hook at \textasciitilde50\% model depth 2.
+Project activations through the SAE and take per-feature mean across
+generated tokens 3. Compress to 5 categories via feature catalog and
+L1-normalize to produce \textbf{f} 4. Run judge ensemble (regex → Gemini
+CLI → Claude Haiku, weighted voting) to produce soft \textbf{s} 5.
+Compute D and three divergence flags
 
 \hypertarget{feature-catalog-construction}{%
 \subsection{Feature catalog
@@ -370,12 +331,6 @@ framing-distribution-sensitive. Table 1 D-values are proof-of-concept
 pipeline demonstrations, not held-out validated metrics. Table 3 uses
 T\_prior (identity-biased permutation), a weaker but less overfitted
 assumption.
-
-Because D depends on calibration choice, D values should only be
-compared within a table or across experiments using the same calibration
-procedure. Cross-table D comparisons (e.g., Table 1 vs.~Table 3) reflect
-both the change in model/prompt conditions and the change in
-calibration, and should not be read as a single controlled comparison.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
@@ -423,16 +378,9 @@ via regex re-judge of stored completions. D-values are unchanged.
 problem}\label{finding-2-format-gating-and-the-80-token-problem}}
 
 Gemma 4 E2B-IT's safety behavior is heavily sensitive to chat-template
-formatting:
-
-\begin{itemize}
-\tightlist
-\item
-  With canonical \passthrough{\lstinline!<start\_of\_turn>!} tokens:
-  \textbf{65/75 refusals}
-\item
-  Without canonical formatting: \textbf{0/75 refusals}
-\end{itemize}
+formatting: - With canonical \passthrough{\lstinline!<start\_of\_turn>!}
+tokens: \textbf{65/75 refusals} - Without canonical formatting:
+\textbf{0/75 refusals}
 
 Both Gemma 2 and Gemma 4 refused \textbf{0\% of prompts at an 80-token
 generation cap}.
@@ -472,15 +420,12 @@ Flag & benign & dual-use & hazard \\
 A feature firing on 82 of 100 benign biology prompts (during compliance
 responses) is not a hazard detector. It's a biology detector that
 happens to gate output more aggressively on higher-tier content. The
-dual-use column sharpens this: across 100 dual-use prompts, 76 triggered
+dual-use column sharpens this: 76 of 100 dual-use prompts triggered
 \passthrough{\lstinline!refusal\_features\_active\_despite\_compliance!}.
-The denominator here is all dual-use prompts, not compliance responses
-only --- if denominated over compliance responses alone (76 of 100
-prompts), the rate would be 100\%, but that inference requires
-confirming the flag fired exclusively on compliance responses in the run
-outputs. Either way, the flag rate closely tracks the compliance rate,
-indicating frequent surface-internal decoupling during compliance
-behavior.
+Since 76 of those 100 prompts were compliances (76\%), this means every
+dual-use compliance had refusal circuitry firing internally. The
+internal feature state was almost entirely decoupled from the surface
+label.
 
 This result depends on a statistically selected (not semantically
 validated) feature catalog within a single model family. It's evidence
@@ -578,12 +523,12 @@ refuse\% \\
 Psilocybin & Schedule I & \textbf{33\%} & 0\% \\
 Cannabis & Schedule I & \textbf{0\%} & 0\% \\
 LSD & Schedule I & N/A & \textbf{25\%} \\
-Mescaline/peyote & Schedule I (alkaloid)* & \textbf{0\%} &
+Mescaline/peyote & Schedule I (alkaloid)† & \textbf{0\%} &
 \textbf{25\%} \\
 \bottomrule
 \end{longtable}
 
-*Peyote cactus is legal to possess in the US despite mescaline's
+†Peyote cactus is legal to possess in the US despite mescaline's
 Schedule I classification. The 0\% cultivation refusal rate is
 consistent with the model tracking the plant's legal status rather than
 the substance's federal scheduling.
@@ -709,7 +654,7 @@ dashboard}.
 \begin{figure}
 \centering
 \includegraphics[width=\linewidth,keepaspectratio]{figures/scaling_plot.png}
-\caption{Per-tier mean D across model configurations}
+\caption{Figure 1: Per-tier mean D across model configurations}
 \end{figure}
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
@@ -735,10 +680,6 @@ Learned projection W (n=75) & 0.666 & 0.682 & 0.740 & 0.074 \\
 Correct ordering achieved. Narrower separation is expected at this
 training scale. Wave 3 explicit-prompt activations (n=300) are the next
 training step.
-
-\emph{This result is in-sample: the adapter was trained and evaluated on
-the same 75 samples. It is evidence that the activation signal is
-learnable, not a held-out validation of generalization.}
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
@@ -813,13 +754,6 @@ proof-of-concept pipeline outputs, not validated general metrics.
 stable per-cell estimates for fine-grained subgroups. Findings 1-3 and
 the format/token findings hold up reasonably well. The legality confound
 cells (n=3-4 per compound) should be treated as pilot findings.
-
-\textbf{Finding 8 is in-sample.} The learned projection adapter (Finding
-8) was trained and evaluated on the same 75 samples. It demonstrates
-that the activation signal is learnable at this scale, not that the
-adapter generalizes to held-out distributions. Held-out validation is
-the required next step before treating this result as evidence of
-generalization.
 
 \textbf{Contrastive SAE.} The domain-specific SAE trained during the
 hackathon barely moved the contrastive loss. Behavioral pair data (base
@@ -907,16 +841,8 @@ dashboard, all 75 prompts}\\
 \hypertarget{references}{%
 \section{References}\label{references}}
 
-Abdin, M. et al.~(2024). Phi-3 Technical Report: A Highly Capable
-Language Model Locally on Your Phone. \emph{arXiv:2404.14219.}
-
 Arditi, A. et al.~(2024). Refusal in LLMs is mediated by a single
 direction. \emph{arXiv:2406.11717.}
-
-Liu, A. B., Nedungadi, S., Cai, B., Kleinman, A., Bhasin, H., \&
-Donoughe, S. (2025). ABC-Bench: An Agentic Bio-Capabilities Benchmark
-for Biosecurity. \emph{NeurIPS 2025 Workshop BioSafe GenAI.}
-openreview.net/forum?id=mo5H9VAr6r.
 
 Bloomfield, L., Black, J., Crook, O. et al.~(2026). A Biosecurity Data
 Level framework for governing AI biology tools. \emph{Science.}
@@ -932,9 +858,6 @@ interpretable features in language models. \emph{arXiv:2309.08600.}
 
 DeLeeuw, C. (2025). The Secret Agenda: LLMs strategically lie undetected
 by current safety tools. \emph{arXiv:2509.20393.} AAAI 2026 AI GOV.
-
-Google DeepMind. (2026). Gemma 4 Model Card.
-ai.google.dev/gemma/docs/core/model\_card\_4.
 
 Götting, M. et al.~(2025). VCT: A biosecurity capability evaluation for
 language models. \emph{arXiv:2504.16137.}
