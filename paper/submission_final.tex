@@ -130,8 +130,6 @@ The project is a proof-of-concept audit framework. Its contribution is
 showing that activation-level auditing can surface failure modes
 invisible to behavioral evaluation, and that behavioral failure modes
 themselves vary substantially and informatively across architectures.
-
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 \end{abstract}
 
 
@@ -280,21 +278,42 @@ circuitry fires but does not gate output \\
 \hypertarget{model-coverage}{%
 \subsection{Model coverage}\label{model-coverage}}
 
-\textbf{Full SAE pipeline (D metric computed):} - Gemma 2 2B-IT + Gemma
-Scope 1 \passthrough{\lstinline!layer\_12/width\_16k/average\_l0\_82!}
-(GTX 1650 Ti Max-Q, 4 GB VRAM; Lieberum et al., 2024) - Gemma 4 E2B-IT
-(Google DeepMind, 2026; HuggingFace:
-\passthrough{\lstinline!google/gemma-4-e2b-it!}) + author-trained bio
-SAE (\passthrough{\lstinline!Solshine/gemma4-e2b-bio-sae-v1!}, 2000-step
-contrastive fine-tune on WMDP bio-retain corpus)
+\textbf{Full SAE pipeline (D metric computed):}
+
+\begin{itemize}
+\tightlist
+\item
+  Gemma 2 2B-IT + Gemma Scope 1
+  \passthrough{\lstinline!layer\_12/width\_16k/average\_l0\_82!} (GTX
+  1650 Ti Max-Q, 4 GB VRAM; Lieberum et al., 2024)
+\item
+  Gemma 4 E2B-IT (Google DeepMind, 2026; HuggingFace:
+  \passthrough{\lstinline!google/gemma-4-e2b-it!}) + author-trained bio
+  SAE (\passthrough{\lstinline!Solshine/gemma4-e2b-bio-sae-v1!},
+  2000-step contrastive fine-tune on WMDP bio-retain corpus)
+\end{itemize}
 
 \textbf{Behavioral-label comparison (NullSAE, surface labels only, same
-75-prompt eval set):} - Llama 3.2 1B - Qwen 2.5 1.5B -
-Phi-3-mini-4k-instruct (Abdin et al., 2024; arXiv:2404.14219)
+75-prompt eval set):}
 
-\textbf{Prompt generation only (not evaluated as subject model):} -
-Qwen3 4B abliterated, used to generate Wave 3 explicit-prompt corpus
-(Finding 6)
+\begin{itemize}
+\tightlist
+\item
+  Llama 3.2 1B
+\item
+  Qwen 2.5 1.5B
+\item
+  Phi-3-mini-4k-instruct (Abdin et al., 2024; arXiv:2404.14219)
+\end{itemize}
+
+\textbf{Prompt generation only (not evaluated as subject model):}
+
+\begin{itemize}
+\tightlist
+\item
+  Qwen3 4B abliterated, used to generate Wave 3 explicit-prompt corpus
+  (Finding 6)
+\end{itemize}
 
 Behavioral findings in this paper have cross-architecture support across
 five distinct model families. Mechanistic (D-based) findings are
@@ -304,13 +323,26 @@ throughout.
 \hypertarget{evaluation-pipeline}{%
 \subsection{Evaluation pipeline}\label{evaluation-pipeline}}
 
-For each (model, prompt) pair: 1. Generate at T=0.7 with a
-residual-stream forward hook at \textasciitilde50\% model depth 2.
-Project activations through the SAE and take per-feature mean across
-generated tokens 3. Compress to 5 categories via feature catalog and
-L1-normalize to produce \textbf{f} 4. Run judge ensemble (regex → Gemini
-CLI → Claude Haiku, weighted voting) to produce soft \textbf{s} 5.
-Compute D and three divergence flags
+For each (model, prompt) pair:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Generate at T=0.7 with a residual-stream forward hook at
+  \textasciitilde50\% model depth
+\item
+  Project activations through the SAE and take per-feature mean across
+  generated tokens
+\item
+  Compress to 5 categories via feature catalog and L1-normalize to
+  produce \textbf{f}
+\item
+  Run judge ensemble (regex -\textgreater{} Gemini CLI -\textgreater{}
+  Claude Haiku, weighted voting) to produce soft \textbf{s}
+\item
+  Compute D and three divergence flags
+\end{enumerate}
 
 \hypertarget{feature-catalog-construction}{%
 \subsection{Feature catalog
@@ -396,9 +428,16 @@ via regex re-judge of stored completions. D-values are unchanged.
 problem}\label{finding-2-format-gating-and-the-80-token-problem}}
 
 Gemma 4 E2B-IT's safety behavior is heavily sensitive to chat-template
-formatting: - With canonical \passthrough{\lstinline!<start\_of\_turn>!}
-tokens: \textbf{65/75 refusals} - Without canonical formatting:
-\textbf{0/75 refusals}
+formatting:
+
+\begin{itemize}
+\tightlist
+\item
+  With canonical \passthrough{\lstinline!<start\_of\_turn>!} tokens:
+  \textbf{65/75 refusals}
+\item
+  Without canonical formatting: \textbf{0/75 refusals}
+\end{itemize}
 
 Both Gemma 2 and Gemma 4 refused \textbf{0\% of prompts at an 80-token
 generation cap}.
@@ -544,12 +583,12 @@ refuse\% \\
 Psilocybin & Schedule I & \textbf{33\%} & 0\% \\
 Cannabis & Schedule I & \textbf{0\%} & 0\% \\
 LSD & Schedule I & N/A & \textbf{25\%} \\
-Mescaline/peyote & Schedule I (alkaloid)† & \textbf{0\%} &
+Mescaline/peyote & Schedule I (alkaloid)* & \textbf{0\%} &
 \textbf{25\%} \\
 \bottomrule
 \end{longtable}
 
-†Peyote cactus is legal to possess in the US despite mescaline's
+*Peyote cactus is legal to possess in the US despite mescaline's
 Schedule I classification. The 0\% cultivation refusal rate is
 consistent with the model tracking the plant's legal status rather than
 the substance's federal scheduling.

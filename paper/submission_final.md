@@ -76,15 +76,18 @@ D is not a safety score. It's an audit signal about internal-surface consistency
 ### 3.2 Model coverage
 
 **Full SAE pipeline (D metric computed):**
+
 - Gemma 2 2B-IT + Gemma Scope 1 `layer_12/width_16k/average_l0_82` (GTX 1650 Ti Max-Q, 4 GB VRAM; Lieberum et al., 2024)
 - Gemma 4 E2B-IT (Google DeepMind, 2026; HuggingFace: `google/gemma-4-e2b-it`) + author-trained bio SAE (`Solshine/gemma4-e2b-bio-sae-v1`, 2000-step contrastive fine-tune on WMDP bio-retain corpus)
 
 **Behavioral-label comparison (NullSAE, surface labels only, same 75-prompt eval set):**
+
 - Llama 3.2 1B
 - Qwen 2.5 1.5B
 - Phi-3-mini-4k-instruct (Abdin et al., 2024; arXiv:2404.14219)
 
 **Prompt generation only (not evaluated as subject model):**
+
 - Qwen3 4B abliterated, used to generate Wave 3 explicit-prompt corpus (Finding 6)
 
 Behavioral findings in this paper have cross-architecture support across five distinct model families. Mechanistic (D-based) findings are currently Gemma-family only. These two scopes are kept distinct throughout.
@@ -92,10 +95,11 @@ Behavioral findings in this paper have cross-architecture support across five di
 ### 3.3 Evaluation pipeline
 
 For each (model, prompt) pair:
+
 1. Generate at T=0.7 with a residual-stream forward hook at ~50% model depth
 2. Project activations through the SAE and take per-feature mean across generated tokens
 3. Compress to 5 categories via feature catalog and L1-normalize to produce **f**
-4. Run judge ensemble (regex → Gemini CLI → Claude Haiku, weighted voting) to produce soft **s**
+4. Run judge ensemble (regex -> Gemini CLI -> Claude Haiku, weighted voting) to produce soft **s**
 5. Compute D and three divergence flags
 
 ### 3.4 Feature catalog construction
@@ -137,6 +141,7 @@ Zero genuine refusals across all 75 prompts. On every hazard-adjacent prompt, th
 ### Finding 2: Format-gating and the 80-token problem
 
 Gemma 4 E2B-IT's safety behavior is heavily sensitive to chat-template formatting:
+
 - With canonical `<start_of_turn>` tokens: **65/75 refusals**
 - Without canonical formatting: **0/75 refusals**
 
@@ -201,9 +206,9 @@ Gemma 2 refused psilocybin cultivation at 25-50% while refusing hazard-adjacent 
 | Psilocybin | Schedule I | **33%** | 0% |
 | Cannabis | Schedule I | **0%** | 0% |
 | LSD | Schedule I | N/A | **25%** |
-| Mescaline/peyote | Schedule I (alkaloid)† | **0%** | **25%** |
+| Mescaline/peyote | Schedule I (alkaloid)\* | **0%** | **25%** |
 
-†Peyote cactus is legal to possess in the US despite mescaline's Schedule I classification. The 0% cultivation refusal rate is consistent with the model tracking the plant's legal status rather than the substance's federal scheduling.
+\*Peyote cactus is legal to possess in the US despite mescaline's Schedule I classification. The 0% cultivation refusal rate is consistent with the model tracking the plant's legal status rather than the substance's federal scheduling.
 
 Both psilocybin and cannabis are federally Schedule I, yet cannabis cultivation gets 0% refusals while psilocybin gets 33%. Federal scheduling alone doesn't predict the pattern. State-level legality (cannabis legal in ~24 states), commercial normalization, cultural salience, and training-data frequency all likely contribute.
 

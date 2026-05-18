@@ -159,6 +159,8 @@ abstract_pattern = re.compile(
 m = abstract_pattern.search(tex)
 if m:
     abstract_body = m.group(1).strip()
+    # Remove any \rule horizontal lines that pandoc generates from markdown --- separators
+    abstract_body = re.sub(r'\\begin\{center\}\\rule[^\n]+\\end\{center\}', '', abstract_body).strip()
     replacement = f"\\begin{{abstract}}\n{abstract_body}\n\\end{{abstract}}\n\n"
     tex = tex[:m.start()] + replacement + tex[m.end():]
     print("     Abstract -> \\begin{abstract}...\\end{abstract}")
