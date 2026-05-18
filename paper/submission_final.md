@@ -76,7 +76,7 @@ The inside vector is f, the actual internal activations compressed to five categ
 
 Both vectors live in $\mathbb{R}^5$, so cosine similarity can measure how closely they point in the same direction. When they're aligned, the model's actual internals match what its surface behavior predicted. When they point in opposite directions, the model said one thing while its internals did something else. Subtracting that cosine value from 1 gives the divergence score: zero for perfect alignment, larger as the vectors pull apart.
 
-T is what makes the comparison valid. It encodes the expected mapping between internal states and surface behaviors, learned from calibration data. Without T, the two vectors live in different spaces and can't be directly compared.
+T is what makes the comparison meaningful. It encodes the expected mapping between internal states and surface behaviors, fit by ridge-regularized least squares on known-good (s, f) pairs. Without it, comparing f and s directly would be a coordinate-system mismatch: dimension 1 of s is "refuse probability", dimension 1 of f is "bio-content activation", and cosine similarity between them is numerically valid but semantically meaningless. T^T maps s into feature-category coordinates first, so the comparison is like-for-like.
 
 | Posture | Surface label | D | Interpretation |
 |---|---|---|---|
