@@ -435,25 +435,25 @@ DeLeeuw, C. (2025). The Secret Agenda: LLMs strategically lie undetected by curr
 
 Google DeepMind. (2026). Gemma 4 Model Card. ai.google.dev/gemma/docs/core/model_card_4.
 
-Götting, M. et al. (2025). VCT: A biosecurity capability evaluation for language models. *arXiv:2504.16137.*
+Götting, J. et al. (2025). Virology Capabilities Test (VCT): A multimodal virology Q&A benchmark. *arXiv:2504.16137.*
 
 Laurent, J. et al. (2024). LAB-Bench: Measuring capabilities of language models for biology research. *arXiv:2407.10362.*
 
 Li, N. et al. (2024). The WMDP benchmark: Measuring and reducing malicious use with unlearning. *arXiv:2403.03218.*
 
-Lieberum, T. et al. (2024). Gemma Scope: Open sparse autoencoders everywhere all at once. *arXiv:2408.05147.*
+Lieberum, T. et al. (2024). Gemma Scope: Open sparse autoencoders everywhere all at once on Gemma 2. *arXiv:2408.05147.*
 
 Marks, S., Rager, C. et al. (2024). Sparse feature circuits: Discovering and editing interpretable causal graphs in language models. *arXiv:2403.19647.*
 
-Qi, X. et al. (2024). Fine-tuning aligned language models compromises safety. *arXiv:2406.05946.*
+Qi, X. et al. (2024). Safety alignment should be made more than just a few tokens deep. *arXiv:2406.05946.*
 
 Rajamanoharan, S. et al. (2024). Jumping ahead: Improving reconstruction fidelity with JumpReLU sparse autoencoders. *arXiv:2407.14435.*
 
-Sandbrink, J. (2026). AI biosecurity monitoring without content disclosure. AIxBio Hackathon 2026.
+Sandbrink, J. (2026). Keynote presentation. AIxBio Hackathon 2026.
 
 SecureBio. (2026). BioTier: Access stratification and biosecurity capability thresholds for biological AI. securebio.org/biotier.
 
-Wei, A. et al. (2023). Jailbroken: How does LLM safety training fail? *arXiv:2307.15043.*
+Wei, A. et al. (2023). Jailbroken: How does LLM safety training fail? *arXiv:2307.02483.*
 
 Yassif, J. & Carter, S. (2026). A Framework for Managed Access to Biological AI Tools. NTI Bio, January 2026.
 
