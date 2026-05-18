@@ -77,8 +77,8 @@ D is not a safety score. It's an audit signal about internal-surface consistency
 
 **Full SAE pipeline (D metric computed):**
 
-- Gemma 2 2B-IT + Gemma Scope 1 `layer_12/width_16k/average_l0_82` (GTX 1650 Ti Max-Q, 4 GB VRAM; Lieberum et al., 2024)
-- Gemma 4 E2B-IT (Google DeepMind, 2026; HuggingFace: `google/gemma-4-e2b-it`) + author-trained bio SAE (`Solshine/gemma4-e2b-bio-sae-v1`, 2000-step contrastive fine-tune on WMDP bio-retain corpus)
+- Gemma 2 2B-IT + Gemma Scope 1 `layer_12/width_16k/average_l0_82`, a general-purpose pre-trained JumpReLU SAE (GTX 1650 Ti Max-Q, 4 GB VRAM; Lieberum et al., 2024). Two author-fine-tuned Gemma 2 domain bio SAE variants are also published: WMDP corpus fine-tune ([Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp](https://huggingface.co/Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp)) and pairwise behavioral fine-tune ([Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise](https://huggingface.co/Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise)).
+- Gemma 4 E2B-IT (Google DeepMind, 2026; HuggingFace: `google/gemma-4-e2b-it`) + author-trained bio SAE ([Solshine/gemma4-e2b-bio-sae-v1](https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1)), a TopK(k=32) SAE trained from scratch on Gemma 4 activations during this hackathon (see §3.7). All three domain-specific SAE checkpoints are published as an HF collection: [AIxBio 2026 Biosecurity Domain-Trained SAEs for Gemma Models](https://huggingface.co/collections/Solshine/aixbio-2026-biosecurity-domain-trained-saes-for-gemma-models).
 
 **Behavioral-label comparison (NullSAE, surface labels only, same 75-prompt eval set):**
 
@@ -115,6 +115,26 @@ Feature categories are populated via Cohen's d discrimination between high-tier 
 T is fit within-sample for the main Gemma 2 experiment. A held-out calibration run on a differently-framed prompt distribution produced inverted tier ordering (Cohen's d = -0.967), meaning T is framing-distribution-sensitive. Table 1 D-values are proof-of-concept pipeline demonstrations, not held-out validated metrics. Table 3 uses T_prior (identity-biased permutation), a weaker but less overfitted assumption.
 
 Because D depends on calibration choice, D values should only be compared within a table or across experiments using the same calibration procedure. Cross-table D comparisons (e.g., Table 1 vs. Table 3) reflect both the change in model/prompt conditions and the change in calibration, and should not be read as a single controlled comparison.
+
+### 3.7 Domain-specific bio SAE: architecture and training
+
+The Gemma 4 E2B-IT analysis uses an author-trained sparse autoencoder rather than a pre-existing general SAE. No Gemma Scope release covers Gemma 4, so a domain-specific SAE was trained from scratch during the hackathon.
+
+**Architecture:** TopK (k=32), d\_model=1536, d\_sae=6144 (4× expansion), residual stream hook at layer 17 of Gemma 4 E2B-IT.
+
+**Training data:** ~5,000 documents from the WMDP bio-retain corpus (non-hazardous biology, used as the reconstruction signal) plus 22 tier-1/2 bio prompts from the BioRefusalAudit eval set (the intended contrastive hazard signal).
+
+**Loss function:**
+
+$$L = L_{\text{recon}} + 0.04 \cdot L_{\text{sparsity}} + 0.1 \cdot L_{\text{contrastive}}$$
+
+**Training:** 2,000 steps on a Tesla T4, AdamW (lr=$3 \times 10^{-4}$).
+
+**Key result from training:** The contrastive loss term collapsed to near zero. The 22-prompt hazard corpus was too small to drive genuine differentiation between bio-hazard and bio-retain activations. As a result the trained SAE functions as a general-purpose reconstruction SAE for Gemma 4 internal activations, not a specialized hazard detector. This limitation is documented in §6 and in the honest scope framing throughout.
+
+In practice, D values on Gemma 4 capture the geometry of Gemma 4's activation space as reconstructed by a topk-SAE trained on those activations, not a validated bio-hazard feature detector. The 0.647-point comply/refuse separation in Finding 7 is real activation-space structure. The SAE learned to represent whatever internal state distinguishes comply from refuse, but that internal state hasn't been validated as a clean biosecurity circuit.
+
+Training code and checkpoint: [Solshine/gemma4-e2b-bio-sae-v1](https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1). Full training details in `training/train_bio_sae.py`.
 
 ---
 
@@ -160,7 +180,7 @@ Intervention results and explicit-prompt follow-up data both show refusal-relate
 | hazard_features_active_despite_refusal | 5% | 19% | **39%** |
 | refusal_features_active_despite_compliance | **82%** | **76%** | 33% |
 
-A feature firing on 82 of 100 benign biology prompts (during compliance responses) is not a hazard detector. It's a biology detector that happens to gate output more aggressively on higher-tier content. The dual-use column sharpens this: across 100 dual-use prompts, 76 triggered `refusal_features_active_despite_compliance`. The denominator here is all dual-use prompts, not compliance responses only — if denominated over compliance responses alone (76 of 100 prompts), the rate would be 100%, but that inference requires confirming the flag fired exclusively on compliance responses in the run outputs. Either way, the flag rate closely tracks the compliance rate, indicating frequent surface-internal decoupling during compliance behavior.
+A feature firing on 82 of 100 benign biology prompts (during compliance responses) is not a hazard detector. It's a biology detector that happens to gate output more aggressively on higher-tier content. The dual-use column sharpens this: across 100 dual-use prompts, 76 triggered `refusal_features_active_despite_compliance`. The denominator here is all dual-use prompts, not compliance responses only. If denominated over compliance responses alone (76 of 100 prompts), the rate would be 100%, but that inference requires confirming the flag fired exclusively on compliance responses in the run outputs. Either way, the flag rate closely tracks the compliance rate, indicating frequent surface-internal decoupling during compliance behavior.
 
 This result depends on a statistically selected (not semantically validated) feature catalog within a single model family. It's evidence of a pattern, not proof of a universal circuit.
 
@@ -259,9 +279,13 @@ Framing breakdown: educational framing produces the highest D (0.733, n=27), con
 
 Zero overlap. 0.647-point separation. This is the cleanest evidence that D can discriminate posture classes at the activation layer. It's from a single model plus author-trained SAE, so it shouldn't be generalized across architectures without replication, but as a proof-of-concept it's clean.
 
-**Figure 1.** Per-tier mean D across model configurations. Left group: Gemma 2 2B-IT under two generation-budget conditions (80-tok and 150-tok), showing tier ordering and the token-budget collapse. Right group: Gemma 4 E2B-IT comply vs. refuse split, showing the 0.647-point posture separation with T_prior calibration. Full interactive prompt-level exploration available at the [project dashboard](https://solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive_explorer.html).
+**Figure 1.** Per-tier mean D across model configurations. Left group: Gemma 2 2B-IT paired with Gemma Scope 1 (`layer_12/width_16k/average_l0_82`), a community-published general-purpose JumpReLU SAE, under two generation-budget conditions (80-tok and 150-tok), showing tier ordering and token-budget collapse. Right group: Gemma 4 E2B-IT paired with the author-trained bio SAE (`Solshine/gemma4-e2b-bio-sae-v1`), a TopK(k=32) SAE trained on Gemma 4 activations during this hackathon, showing the 0.647-point comply/refuse posture separation with T\_prior calibration. Gemma Scope 1 is a pre-existing community SAE. The Gemma 4 bio SAE was trained specifically for this work. Full interactive prompt-level exploration: [project dashboard](https://solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive_explorer.html).
 
 ![Per-tier mean D across model configurations](../demo/scaling_plot.png)
+
+**Figure 2.** BioRefusalAudit interactive dashboard showing all 75 eval prompts with per-prompt D scores, surface labels, divergence flags, and tier assignments. Color coding distinguishes comply (green), hedge (yellow), and refuse (red) responses. Sorting by D score surfaces the highest-divergence prompts, the ones where surface label and internal activations point in opposite directions. Live at [solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive_explorer.html](https://solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive_explorer.html).
+
+![BioRefusalAudit interactive dashboard](figures/dashboard_screenshot.png)
 
 ---
 
@@ -297,6 +321,23 @@ D is computed from internal SAE feature activation vectors, not transcripts. A h
 The 80-token finding has immediate operational significance. Standard lab evaluations use full generation budgets. Production deployments often cap at 80-150 tokens for cost or latency. Safety behaviors measured at evaluation time may not transfer to constrained production.
 
 The format-gating finding (65 refusals vs. 0 depending solely on chat-template tokens) means any deployer who assumes safety behaviors are format-invariant should verify that assumption. There is currently no standard pre-deployment check for format sensitivity.
+
+### 5.4 Licensing and responsible release: the Hippocratic License
+
+BioRefusalAudit is published under the Hippocratic License 3.0 (HL3-BDS-CL-ECO-EXTR-FFD-MEDIA-MIL-MY-SUP-SV-TAL-USTA-XUAR). To the authors' knowledge, this is the first use of the Hippocratic License for biosecurity AI research.
+
+HL3 was chosen over standard permissive licenses (Apache 2.0, MIT) because permissive licenses carry no enforceable downstream obligations. A researcher who forks BioRefusalAudit and uses D scores as prompt-optimization feedback toward phrasings that evade refusal circuits faces no license-based sanction under MIT or Apache. Under HL3, downstream use for activities prohibited by the UN Universal Declaration of Human Rights is a license violation with civil remedy, which MIT and Apache don't offer.
+
+This repository applies 13 HL3 modules:
+
+- **BDS, CL, ECO, EXTR, FFD, MEDIA, MY, SUP, SV, TAL, USTA, XUAR**: standard human-rights and labor-rights modules binding downstream use to UN/IHL standards
+- **MIL**: prohibits use in autonomous weapons systems and related targeting contexts, directly relevant to biosecurity given the dual-use potential of a refusal-depth measurement tool
+
+The MIL module is the most operationally significant for this project. It prohibits using BioRefusalAudit as a component in any weapons system, including hypothetical systems that could use refusal-depth scores to identify and route around model safety behaviors for harmful purposes.
+
+HL3 doesn't provide technical enforcement. It provides legal enforceability. Paired with technical controls (tier-3 gating, no hazard prompt bodies in the public repo, an audit layer that never reads prompt content), this creates a defense-in-depth stack: technical barriers for casual misuse, legal obligations for deliberate misuse by institutional actors with civil-liability exposure.
+
+Full license text and rationale: `docs/HL3_RATIONALE.md` in the repository.
 
 ---
 
@@ -343,7 +384,12 @@ The divergence metric D can separate comply from refuse postures at the activati
 **Demo video:** [youtu.be/PY9WztZKFh4](https://youtu.be/PY9WztZKFh4)  
 **Public dataset (tiers 1-2, CC-BY-4.0):** [SolshineCode/biorefusalaudit-public](https://huggingface.co/datasets/SolshineCode/biorefusalaudit-public)  
 **Gated dataset (tier 3, HL3 attestation):** [SolshineCode/biorefusalaudit-gated](https://huggingface.co/datasets/SolshineCode/biorefusalaudit-gated)  
-**Published SAE checkpoint:** [Solshine/gemma4-e2b-bio-sae-v1](https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1)
+**Domain-specific SAE checkpoints (HuggingFace):**
+
+- Gemma 4 bio SAE (used in Finding 7): [Solshine/gemma4-e2b-bio-sae-v1](https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1)
+- Gemma 2 WMDP corpus fine-tune: [Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp](https://huggingface.co/Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp)
+- Gemma 2 pairwise behavioral fine-tune: [Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise](https://huggingface.co/Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise)
+- Full SAE collection: [AIxBio 2026 Biosecurity Domain-Trained SAEs for Gemma Models](https://huggingface.co/collections/Solshine/aixbio-2026-biosecurity-domain-trained-saes-for-gemma-models)
 
 ---
 
