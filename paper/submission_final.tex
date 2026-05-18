@@ -255,15 +255,10 @@ mapping expected internal states to surface states. D ranges from 0 to
 D is not a safety score. It's an audit signal about internal-surface
 consistency.
 
-\begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.25}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.25}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.25}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.25}}@{}}
+\begin{tabular}{@{}p{0.22\linewidth}p{0.15\linewidth}p{0.10\linewidth}p{0.44\linewidth}@{}}
 \toprule
 Posture & Surface label & D & Interpretation \\
 \midrule
-\endhead
 Deep refusal & REFUSE & Low & Refusal features active, hazard features
 suppressed. Structurally sound. \\
 Shallow refusal & REFUSE & High & Refusal features present, hazard
@@ -273,7 +268,7 @@ surface looks safe, interior may still engage hazard content \\
 Non-suppressive compliance & COMPLY & High & Model answers; refusal
 circuitry fires but does not gate output \\
 \bottomrule
-\end{longtable}
+\end{tabular}
 
 \hypertarget{model-coverage}{%
 \subsection{Model coverage}\label{model-coverage}}
@@ -462,14 +457,14 @@ set produced no genuine refusals on hazard-adjacent prompts, making the
 \passthrough{\lstinline!hazard\_features\_active\_despite\_refusal!}
 flag uninterpretable for that set.)
 
-\begin{longtable}[]{@{}lrrr@{}}
+\begin{longtable}[]{@{}p{0.45\linewidth}rrr@{}}
 \toprule
-Flag & benign (n=100) & dual\_use (n=100) & hazard (n=100) \\
+Flag & benign & dual-use & hazard \\
 \midrule
 \endhead
-hazard\_features\_active\_despite\_refusal & 5\% & 19\% &
+{\small\ttfamily hazard\_\allowbreak features\_\allowbreak active\_\allowbreak despite\_\allowbreak refusal} & 5\% & 19\% &
 \textbf{39\%} \\
-refusal\_features\_active\_despite\_compliance & \textbf{82\%} &
+{\small\ttfamily refusal\_\allowbreak features\_\allowbreak active\_\allowbreak despite\_\allowbreak compliance} & \textbf{82\%} &
 \textbf{76\%} & 33\% \\
 \bottomrule
 \end{longtable}
@@ -502,10 +497,10 @@ NullSAE behavioral runs (n=75 each) showed that Gemma 2's hedge posture
 doesn't generalize. Each architecture has its own characteristic failure
 mode:
 
-\begin{longtable}[]{@{}lrrrl@{}}
+{\setlength{\tabcolsep}{4pt}
+\begin{longtable}[]{@{}lrrrp{0.28\linewidth}@{}}
 \toprule
-Model & benign refuse\% & hazard\_adj refuse\% & Hedge\% & Primary
-failure mode \\
+Model & benign ref\% & haz-adj ref\% & Hedge\% & Primary failure mode \\
 \midrule
 \endhead
 Gemma 2 2B-IT & 0\% & 0\% & 30-100\% & Universal hedging, never
@@ -519,7 +514,7 @@ discrimination \\
 Phi-3-mini-4k & 87\% & 95\% & 0\% & Nearly identical to Qwen despite
 2.5x params \\
 \bottomrule
-\end{longtable}
+\end{longtable}}
 
 *Gemma 4: 65/75 (87\%) refusals across all tiers under canonical
 chat-template formatting. Tier-specific breakdowns not separately
@@ -559,7 +554,7 @@ status, cultural taboo, and training-distribution salience.
 
 \begin{longtable}[]{@{}lrrr@{}}
 \toprule
-Model & Pharmacology refuse\% & Cultivation refuse\% & Hazard-adjacent
+Model & Pharmacology refuse\% & Cultivation refuse\% & Hazard-adj
 refuse\% \\
 \midrule
 \endhead
