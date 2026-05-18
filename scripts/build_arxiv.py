@@ -172,6 +172,76 @@ if r'\setcounter{secnumdepth}' not in tex:
         r'\setcounter{secnumdepth}{0}' + '\n' + r'\begin{document}',
     )
 
+# 3e. Convert the Posture table (4-equal-col longtable) to a tabular to prevent page splits.
+#     The longtable for a 4-row table causes the header to strand on a page with no data rows.
+OLD_POSTURE_SPEC = (
+    '\\begin{longtable}[]{@{}\n'
+    '  >{\\raggedright\\arraybackslash}p{(\\columnwidth - 6\\tabcolsep) * \\real{0.25}}\n'
+    '  >{\\raggedright\\arraybackslash}p{(\\columnwidth - 6\\tabcolsep) * \\real{0.25}}\n'
+    '  >{\\raggedright\\arraybackslash}p{(\\columnwidth - 6\\tabcolsep) * \\real{0.25}}\n'
+    '  >{\\raggedright\\arraybackslash}p{(\\columnwidth - 6\\tabcolsep) * \\real{0.25}}@{}}\n'
+    '\\toprule\n'
+    'Posture & Surface label & D & Interpretation \\\\\n'
+    '\\midrule\n'
+    '\\endhead\n'
+)
+NEW_POSTURE_SPEC = (
+    '\\begin{tabular}{@{}p{0.22\\linewidth}p{0.15\\linewidth}p{0.10\\linewidth}p{0.44\\linewidth}@{}}\n'
+    '\\toprule\n'
+    'Posture & Surface label & D & Interpretation \\\\\n'
+    '\\midrule\n'
+)
+tex = tex.replace(OLD_POSTURE_SPEC, NEW_POSTURE_SPEC)
+tex = tex.replace(
+    'circuitry fires but does not gate output \\\\\n\\bottomrule\n\\end{longtable}',
+    'circuitry fires but does not gate output \\\\\n\\bottomrule\n\\end{tabular}',
+    1,
+)
+
+# 3f. Fix flag table: long identifiers overflow l column; use p-width + \allowbreak hints.
+tex = tex.replace(
+    '\\begin{longtable}[]{@{}lrrr@{}}\n'
+    '\\toprule\n'
+    'Flag & benign (n=100) & dual\\_use (n=100) & hazard (n=100) \\\\\n',
+    '\\begin{longtable}[]{@{}p{0.45\\linewidth}rrr@{}}\n'
+    '\\toprule\n'
+    'Flag & benign & dual-use & hazard \\\\\n',
+    1,
+)
+tex = tex.replace(
+    'hazard\\_features\\_active\\_despite\\_refusal & 5\\% & 19\\% &\n\\textbf{39\\%} \\\\',
+    '{\\small\\ttfamily hazard\\_\\allowbreak features\\_\\allowbreak active\\_\\allowbreak'
+    ' despite\\_\\allowbreak refusal} & 5\\% & 19\\% &\n\\textbf{39\\%} \\\\',
+)
+tex = tex.replace(
+    'refusal\\_features\\_active\\_despite\\_compliance & \\textbf{82\\%} &\n\\textbf{76\\%} & 33\\% \\\\',
+    '{\\small\\ttfamily refusal\\_\\allowbreak features\\_\\allowbreak active\\_\\allowbreak'
+    ' despite\\_\\allowbreak compliance} & \\textbf{82\\%} &\n\\textbf{76\\%} & 33\\% \\\\',
+)
+
+# 3g. Fix 5-model table: reduce tabcolsep + use p-col for last col + abbreviate headers.
+tex = tex.replace(
+    '\\begin{longtable}[]{@{}lrrrl@{}}\n'
+    '\\toprule\n'
+    'Model & benign refuse\\% & hazard\\_adj refuse\\% & Hedge\\% & Primary\nfailure mode \\\\\n',
+    '{\\setlength{\\tabcolsep}{4pt}\n'
+    '\\begin{longtable}[]{@{}lrrrp{0.28\\linewidth}@{}}\n'
+    '\\toprule\n'
+    'Model & benign ref\\% & haz-adj ref\\% & Hedge\\% & Primary failure mode \\\\\n',
+    1,
+)
+tex = tex.replace(
+    'Phi-3-mini-4k & 87\\% & 95\\% & 0\\% & Nearly identical to Qwen despite\n2.5x params \\\\\n\\bottomrule\n\\end{longtable}',
+    'Phi-3-mini-4k & 87\\% & 95\\% & 0\\% & Nearly identical to Qwen despite\n2.5x params \\\\\n\\bottomrule\n\\end{longtable}}',
+    1,
+)
+
+# 3h. Abbreviate psilocybin table header to avoid column overflow.
+tex = tex.replace(
+    'Pharmacology refuse\\% & Cultivation refuse\\% & Hazard-adjacent\nrefuse\\% \\\\',
+    'Pharmacology refuse\\% & Cultivation refuse\\% & Hazard-adj\nrefuse\\% \\\\',
+)
+
 TEX_OUT.write_text(tex, encoding="utf-8")
 print(f"[3/4] Post-processed .tex saved")
 
@@ -208,14 +278,19 @@ html_content = re.sub(r'<script[^>]*>.*?</script>', '', html_content, flags=re.D
 html_content = re.sub(r'<style[^>]*>.*?</style>', '', html_content, flags=re.DOTALL)
 
 # Render LaTeX-style math as plain text approximations in HTML
-# (xhtml2pdf can't render MathJax)
+# (xhtml2pdf can't render MathJax or Unicode math chars like ℝ, ᵀ, ∈ — use ASCII only)
 def math_to_text(m):
     inner = m.group(1).strip()
-    # Basic readable substitutions
-    inner = inner.replace(r'\cos', 'cos').replace(r'\cdot', '·')
-    inner = inner.replace(r'\mathbb{R}', 'ℝ').replace(r'\in', '∈')
-    inner = inner.replace(r'^T', 'ᵀ').replace(r'^{5 \times 5}', '⁵ˣ⁵')
-    inner = inner.replace(r'\times', '×').replace('\\', '')
+    # Order matters: replace multi-char sequences before single-char ones
+    inner = inner.replace(r'\mathbb{R}', 'R')
+    inner = inner.replace(r'^{5 \times 5}', '^(5x5)')
+    inner = inner.replace(r'\times', 'x')
+    inner = inner.replace(r'\cos', 'cos')
+    inner = inner.replace(r'\cdot', '*')
+    inner = re.sub(r'\\in(?![a-zA-Z])', ' in ', inner)
+    inner = inner.replace(r'^T', '^T')   # keep literal ^T — ASCII-safe
+    inner = inner.replace(r'\ ', ' ')
+    inner = inner.replace('\\', '')
     return f'<code style="font-size:10pt">{inner}</code>'
 
 html_content = re.sub(r'\\\[(.*?)\\\]', math_to_text, html_content, flags=re.DOTALL)
@@ -231,7 +306,7 @@ css = """
   h3 { font-size: 11pt; margin-top: 16px; font-style: italic; }
   h4 { font-size: 11pt; margin-top: 12px; }
   .author, .date { text-align: center; font-size: 11pt; }
-  table { border-collapse: collapse; width: 100%; font-size: 9pt; margin: 12px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 9pt; margin: 12px 0; page-break-inside: avoid; }
   th, td { border: 1px solid #999; padding: 4px 8px; text-align: left; }
   th { background: #eee; font-weight: bold; }
   td[align="right"], th[align="right"] { text-align: right; }
