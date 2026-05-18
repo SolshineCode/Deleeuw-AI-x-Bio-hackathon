@@ -256,7 +256,7 @@ Zero overlap. 0.647-point separation. This is the cleanest evidence that D can d
 
 **Figure 1.** Per-tier mean D across model configurations. Left group: Gemma 2 2B-IT under two generation-budget conditions (80-tok and 150-tok), showing tier ordering and the token-budget collapse. Right group: Gemma 4 E2B-IT comply vs. refuse split, showing the 0.647-point posture separation with T_prior calibration. Full interactive prompt-level exploration available at the [project dashboard](https://solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive_explorer.html).
 
-![Figure 1: Per-tier mean D across model configurations](../demo/scaling_plot.png)
+![Per-tier mean D across model configurations](../demo/scaling_plot.png)
 
 ---
 

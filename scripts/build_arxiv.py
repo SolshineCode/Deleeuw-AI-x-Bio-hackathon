@@ -125,6 +125,13 @@ tex = re.sub(
     count=1,
 )
 
+# 3a-2. Constrain all \includegraphics to \linewidth so figures don't overflow arXiv margins
+tex = re.sub(
+    r'\\includegraphics\{',
+    r'\\includegraphics[width=\\linewidth,keepaspectratio]{',
+    tex,
+)
+
 # 3b. Remove duplicate \usepackage lines that header-includes would add
 #     (pandoc already adds these automatically; keep first occurrence only)
 seen_packages = set()
