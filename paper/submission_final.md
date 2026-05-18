@@ -40,9 +40,9 @@ BioRefusalAudit was built to measure this distinction. It is not a capability ev
 
 **Biosecurity benchmarks.** VCT (Götting et al., 2025) measures whether models produce hazardous biological assistance content. WMDP-Bio (Li et al., 2024) provides multiple-choice biology questions for evaluating capability unlearning. LAB-Bench (Laurent et al., 2024) covers practical biology research tasks. ABC-Bench (Liu et al., 2025) is an agentic biosecurity benchmark evaluating end-to-end task completion: liquid handling robot code, DNA fragment design, and screening evasion. All four measure surface output or task completion. None distinguish a shallow refusal from a deep one.
 
-**Refusal geometry.** Arditi et al. (2024) showed that refusal in open-weight LLMs is mediated by a single residual-stream direction whose ablation breaks safety training across model families. BioRefusalAudit extends this from a single direction to a 5-category SAE feature ensemble, trading resolution for robustness to polysemanticity failures documented in prior work (DeLeeuw, arXiv:2509.20393). Qi et al. (2024) and Wei et al. (2023) provide the theoretical backdrop: RLHF alignment is shallow and framing-sensitive.
+**Refusal geometry.** Arditi et al. (2024) showed that refusal in open-weight LLMs is mediated by a single residual-stream direction whose ablation breaks safety training across model families. BioRefusalAudit extends this from a single direction to a 5-category SAE feature ensemble, trading resolution for robustness to polysemanticity failures documented in prior work (Elhage et al., 2022; DeLeeuw, arXiv:2509.20393). Qi et al. (2024) and Wei et al. (2023) provide the theoretical backdrop: RLHF alignment is shallow and framing-sensitive; Zou et al. (2023) demonstrate that adversarial suffixes and framings transfer across model families, precisely the attack surface §1 describes.
 
-**SAE foundations.** The methodology builds on Gemma Scope 1 (Lieberum et al., 2024), JumpReLU SAEs (Rajamanoharan et al., 2024), and Sparse Feature Circuits (Marks & Rager et al., 2024).
+**SAE foundations.** The methodology builds on Gemma Scope 1 (Lieberum et al., 2024), JumpReLU SAEs (Rajamanoharan et al., 2024), Sparse Feature Circuits (Marks & Rager et al., 2024), and k-sparse autoencoders (Gao et al., 2024). The deception-correlate feature category is motivated by Hubinger et al. (2024), who showed that deceptive internal behaviors can persist through safety training invisible to surface evaluation.
 
 **Policy context.** Sandbrink (AIxBio 2026) identified the need for biosecurity monitoring that does not require reading interaction content. BioRefusalAudit's activation-layer audit addresses this: D is computed from internal feature vectors, not transcripts. Carter and Butchello (NTI Bio, 2026) describe tiered managed-access governance for biological AI tools, a distinct problem, but one that a validated refusal-depth measurement could eventually complement. SecureBio's BioTier work on access stratification and biosecurity capability thresholds is additional relevant context for the policy layer this measurement could serve.
 
@@ -433,9 +433,15 @@ Cunningham, H. et al. (2023). Sparse autoencoders find highly interpretable feat
 
 DeLeeuw, C. (2025). The Secret Agenda: LLMs strategically lie undetected by current safety tools. *arXiv:2509.20393.* AAAI 2026 AI GOV.
 
+Elhage, N. et al. (2022). Toy models of superposition. *Transformer Circuits Thread.* transformer-circuits.pub/2022/toy_model/index.html. *arXiv:2209.10652.*
+
+Gao, L. et al. (2024). Scaling and evaluating sparse autoencoders. *arXiv:2406.04093.*
+
 Google DeepMind. (2026). Gemma 4 Model Card. ai.google.dev/gemma/docs/core/model_card_4.
 
 Götting, J. et al. (2025). Virology Capabilities Test (VCT): A multimodal virology Q&A benchmark. *arXiv:2504.16137.*
+
+Hubinger, E. et al. (2024). Sleeper agents: Training deceptive LLMs that persist through safety training. *arXiv:2401.05566.*
 
 Laurent, J. et al. (2024). LAB-Bench: Measuring capabilities of language models for biology research. *arXiv:2407.10362.*
 
@@ -454,6 +460,8 @@ Sandbrink, J. (2026). Keynote presentation. AIxBio Hackathon 2026.
 SecureBio. (2026). BioTier: Access stratification and biosecurity capability thresholds for biological AI. securebio.org/biotier.
 
 Wei, A. et al. (2023). Jailbroken: How does LLM safety training fail? *arXiv:2307.02483.*
+
+Zou, A. et al. (2023). Universal and transferable adversarial attacks on aligned language models. *arXiv:2307.15043.*
 
 Carter, S. & Butchello, G. (2026). A Framework for Managed Access to Biological AI Tools. NTI Bio, January 2026.
 
