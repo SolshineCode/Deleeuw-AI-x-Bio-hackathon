@@ -68,13 +68,15 @@ D is not a safety score. It's an audit signal about internal-surface consistency
 
 #### Geometric intuition
 
-The best analogy is a polygraph. Polygraphs work because what you say and what your body does are two separate signals, and a lie often makes them disagree. BioRefusalAudit measures the same kind of gap for language models.
+D measures the angle between two vectors: one constructed from the surface behavior, one recorded from the model's internals.
 
-When a model generates a response, two things are independently measurable: what the response looks like from outside (does a judge read it as a refusal? a comply? a hedge?) and what was happening inside the model during generation. The inside is measured by tapping the model's residual stream and running those activations through a sparse autoencoder, which compresses them into five scores: how active were bio-content features, hazard vocabulary features, refusal-circuitry features, hedging features, and deception-correlated features.
+The outside vector is T^T · s. s is the surface label distribution, recording how much the judge's verdict reads as a refusal, how much a comply, how much a hedge. T^T translates that distribution into internal-feature space by asking what pattern of internal activations the surface behavior, if genuine, would produce. The result is a 5-dimensional predicted internal state.
 
-D measures the gap between those two readings. Low D means the model's interior matched its surface behavior: refusal circuitry was active, hazard features were quiet, and the "I refuse" response was internally consistent. High D means they pulled apart: the model said "I refuse" while hazard-content features kept firing at the same rate they do during compliances. That's a shallow refusal.
+The inside vector is f, the actual internal activations compressed to five category scores (bio-content, hazard vocabulary, refusal circuitry, hedging, and deception correlates), normalized to unit length, recorded from the model's residual stream during generation.
 
-The formula's job is to quantify that gap precisely. T is a learned translation table that converts between the language of internal states and the language of surface behaviors. T^T runs it backward: given what the surface showed, what should the internals have looked like? Cosine similarity then measures the angle between that predicted internal state and the actual recorded one. Subtracting from 1 converts angle-agreement to divergence. D = 0 means the two readings are telling the same story. Higher D means they aren't.
+Both vectors live in $\mathbb{R}^5$, so cosine similarity can measure how closely they point in the same direction. When they're aligned, the model's actual internals match what its surface behavior predicted. When they point in opposite directions, the model said one thing while its internals did something else. Subtracting that cosine value from 1 gives the divergence score: zero for perfect alignment, larger as the vectors pull apart.
+
+T is what makes the comparison valid. It encodes the expected mapping between internal states and surface behaviors, learned from calibration data. Without T, the two vectors live in different spaces and can't be directly compared.
 
 | Posture | Surface label | D | Interpretation |
 |---|---|---|---|
