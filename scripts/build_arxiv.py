@@ -112,18 +112,22 @@ print(f"[2/4] LaTeX -> {TEX_OUT.name}")
 
 tex = TEX_OUT.read_text(encoding="utf-8")
 
-# 3a. Fix author block: replace pandoc's simple \author{name} with
-#     \author{name \\ \small affiliation}  and add \thanks for venue
-thanks_tex = venue_str.replace("&", r"\&").replace("#", r"\#")
-tex = re.sub(
-    r'\\author\{[^}]*\}',
-    (
-        r'\\author{' + author_str + r'\\thanks{' + thanks_tex + r'.}'
-        r'\\\\\\small Independent researcher}'
-    ),
-    tex,
-    count=1,
+# 3a. Fix author block: display venue prominently below affiliation (not hidden in \thanks)
+venue_tex = venue_str.replace("&", r"\&").replace("#", r"\#")
+author_block = (
+    r'\\author{' + author_str
+    + r'\\\\\\small Independent researcher}'
 )
+tex = re.sub(r'\\author\{[^}]*\}', author_block, tex, count=1)
+
+# Also replace \date{...} to append the venue on a visible line below the date
+if venue_tex:
+    tex = re.sub(
+        r'\\date\{([^}]*)\}',
+        r'\\date{\1\\\\[4pt]\\small\\textit{' + venue_tex + r'}}',
+        tex,
+        count=1,
+    )
 
 # 3a-2. Constrain all \includegraphics to \linewidth so figures don't overflow arXiv margins
 tex = re.sub(
