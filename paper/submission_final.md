@@ -68,15 +68,13 @@ D is not a safety score. It's an audit signal about internal-surface consistency
 
 #### Geometric intuition
 
-The notation above compresses three distinct operations. Here's what each one does.
+The best analogy is a polygraph. Polygraphs work because what you say and what your body does are two separate signals, and a lie often makes them disagree. BioRefusalAudit measures the same kind of gap for language models.
 
-**s and f are both five-dimensional, not high-dimensional.** The surface vector s is the judge ensemble's probability distribution over behavioral postures: how much of a refusal is this, how much comply, hedge, and so on. The internal feature vector f is the normalized activation score across five feature categories (bio-content, hazard vocabulary, refusal circuitry, hedging, deception correlates). Both live in $\mathbb{R}^5$. Neither is the raw SAE output. The SAE produces thousands of feature activations, but the feature catalog compresses those down to five category scores before f is ever computed. The 5×5 alignment matrix T operates entirely within this compressed space.
+When a model generates a response, two things are independently measurable: what the response looks like from outside (does a judge read it as a refusal? a comply? a hedge?) and what was happening inside the model during generation. The inside is measured by tapping the model's residual stream and running those activations through a sparse autoencoder, which compresses them into five scores: how active were bio-content features, hazard vocabulary features, refusal-circuitry features, hedging features, and deception-correlated features.
 
-**T^T projects the surface behavior backward into internal-feature space.** T encodes the expected relationship: given that internal refusal circuitry is highly active, what surface label should you see? T^T runs this in reverse. Given what the model *said* (the surface distribution s), what should its internal features look like if that behavior were genuine? The product T^T · s is a predicted internal activation profile derived purely from the surface label.
+D measures the gap between those two readings. Low D means the model's interior matched its surface behavior: refusal circuitry was active, hazard features were quiet, and the "I refuse" response was internally consistent. High D means they pulled apart: the model said "I refuse" while hazard-content features kept firing at the same rate they do during compliances. That's a shallow refusal.
 
-**Cosine similarity measures the angle between predicted and actual.** With T^T · s (predicted internals) and f (actual internals) both in $\mathbb{R}^5$, cosine similarity measures how closely they point in the same direction. Subtracting from 1 converts angle-agreement into a divergence score: D = 0 is perfect surface-internal harmony, D near 2 means they're pointing in opposite directions.
-
-This is why D works as a privacy-preserving audit signal. The computation runs entirely on the activation vector. A hospital deploying a clinical biology assistant could flag every inference for internal-surface divergence without the audit layer ever reading the text of what was asked or answered, which is the monitoring-without-disclosure property Sandbrink (2026) identifies as a requirement for deployed biosecurity systems.
+The formula's job is to quantify that gap precisely. T is a learned translation table that converts between the language of internal states and the language of surface behaviors. T^T runs it backward: given what the surface showed, what should the internals have looked like? Cosine similarity then measures the angle between that predicted internal state and the actual recorded one. Subtracting from 1 converts angle-agreement to divergence. D = 0 means the two readings are telling the same story. Higher D means they aren't.
 
 | Posture | Surface label | D | Interpretation |
 |---|---|---|---|
