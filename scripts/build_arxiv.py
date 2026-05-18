@@ -287,7 +287,7 @@ def math_to_text(m):
     inner = inner.replace(r'\times', 'x')
     inner = inner.replace(r'\cos', 'cos')
     inner = inner.replace(r'\cdot', '*')
-    inner = inner.replace(r'\in', ' in ')
+    inner = re.sub(r'\\in(?![a-zA-Z])', ' in ', inner)
     inner = inner.replace(r'^T', '^T')   # keep literal ^T — ASCII-safe
     inner = inner.replace(r'\ ', ' ')
     inner = inner.replace('\\', '')

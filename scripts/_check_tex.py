@@ -39,9 +39,9 @@ arrows = [(i+1, line.strip()[:60]) for i, line in enumerate(tex.split('\n'))
           if '→' in line or '†' in line]
 check('arrow/dagger unicode gone', not arrows, arrows if arrows else 'none')
 
-# Tables with 8+ columns (might overflow)
+# Tables with 8+ columns (might overflow) — count l, r, c, and p columns
 wide = [m.group(0)[:50] for m in re.finditer(r'\\begin\{longtable\}[^{]*\{([^}]+)\}', tex)
-        if m.group(1).count('r') + m.group(1).count('l') >= 8]
+        if sum(m.group(1).count(c) for c in 'lrcp') >= 8]
 check('tables <=7 cols', not wide, f"{len(wide)} wide table(s)" if wide else 'OK')
 
 # hyperref setup present
