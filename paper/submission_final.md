@@ -32,7 +32,7 @@ BioRefusalAudit was built to measure this distinction. It is not a capability ev
 
 **Why framing, formatting, and token limits matter.** Capable adversaries use educational framing, roleplay scaffolding, and gradual context injection, the exact attack surface that direct-query benchmarks miss. If a model's safety behavior is also sensitive to chat-template tokens or generation caps, that gap compounds. BioRefusalAudit's four-axis eval (direct / educational / roleplay / obfuscated) and explicit token-budget experiments probe this directly.
 
-**What this paper does not do.** BioRefusalAudit is a measurement tool, not a governance framework. It does not implement tiered access or managed-access policy as described by Yassif and Carter (2026). Those are institutional access-control systems for biological AI tools. BioRefusalAudit provides a refusal-depth signal that could inform such frameworks, but the two are distinct systems.
+**What this paper does not do.** BioRefusalAudit is a measurement tool, not a governance framework. It does not implement tiered access or managed-access policy as described by Carter and Butchello (2026). Those are institutional access-control systems for biological AI tools. BioRefusalAudit provides a refusal-depth signal that could inform such frameworks, but the two are distinct systems.
 
 ---
 
@@ -44,7 +44,7 @@ BioRefusalAudit was built to measure this distinction. It is not a capability ev
 
 **SAE foundations.** The methodology builds on Gemma Scope 1 (Lieberum et al., 2024), JumpReLU SAEs (Rajamanoharan et al., 2024), and Sparse Feature Circuits (Marks & Rager et al., 2024).
 
-**Policy context.** Sandbrink (AIxBio 2026) identified the need for biosecurity monitoring that does not require reading interaction content. BioRefusalAudit's activation-layer audit addresses this: D is computed from internal feature vectors, not transcripts. Yassif and Carter (NTI Bio, 2026) describe tiered managed-access governance for biological AI tools, a distinct problem, but one that a validated refusal-depth measurement could eventually complement. SecureBio's BioTier work on access stratification and biosecurity capability thresholds is additional relevant context for the policy layer this measurement could serve.
+**Policy context.** Sandbrink (AIxBio 2026) identified the need for biosecurity monitoring that does not require reading interaction content. BioRefusalAudit's activation-layer audit addresses this: D is computed from internal feature vectors, not transcripts. Carter and Butchello (NTI Bio, 2026) describe tiered managed-access governance for biological AI tools, a distinct problem, but one that a validated refusal-depth measurement could eventually complement. SecureBio's BioTier work on access stratification and biosecurity capability thresholds is additional relevant context for the policy layer this measurement could serve.
 
 ---
 
@@ -427,7 +427,7 @@ Bloomfield, L., Black, J., Crook, O. et al. (2026). A Biosecurity Data Level fra
 
 Bricken, T. et al. (2023). Towards monosemanticity: Decomposing language models with dictionary learning. *Transformer Circuits Thread.*
 
-Crook, O. (2026). Keynote: Calibrated confidence in biosecurity AI evaluation. AIxBio Hackathon 2026.
+Crook, O. (2026). Keynote presentation. AIxBio Hackathon 2026.
 
 Cunningham, H. et al. (2023). Sparse autoencoders find highly interpretable features in language models. *arXiv:2309.08600.*
 
@@ -455,7 +455,7 @@ SecureBio. (2026). BioTier: Access stratification and biosecurity capability thr
 
 Wei, A. et al. (2023). Jailbroken: How does LLM safety training fail? *arXiv:2307.02483.*
 
-Yassif, J. & Carter, S. (2026). A Framework for Managed Access to Biological AI Tools. NTI Bio, January 2026.
+Carter, S. & Butchello, G. (2026). A Framework for Managed Access to Biological AI Tools. NTI Bio, January 2026.
 
 ---
 
