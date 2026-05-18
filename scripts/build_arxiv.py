@@ -190,6 +190,16 @@ subprocess.run(html_cmd, capture_output=True, cwd=str(PAPER))
 
 html_content = HTML_TEMP.read_text(encoding="utf-8")
 
+# Inject venue as a visible line after the date in the HTML title block
+if venue_str:
+    html_content = re.sub(
+        r'(<p class="date">)(.*?)(</p>)',
+        r'\1\2<br/><em style="font-size:10pt">' + venue_str + r'</em>\3',
+        html_content,
+        count=1,
+        flags=re.DOTALL,
+    )
+
 # Strip external CSS/JS that xhtml2pdf can't parse (MathJax etc.)
 html_content = re.sub(r'<link[^>]+rel=["\']stylesheet["\'][^>]*/>', '', html_content)
 html_content = re.sub(r'<script[^>]*>.*?</script>', '', html_content, flags=re.DOTALL)
