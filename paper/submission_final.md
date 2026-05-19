@@ -222,7 +222,7 @@ NullSAE behavioral runs (n=75 each) showed that Gemma 2's hedge posture doesn't 
 
 *Gemma 4: 65/75 (87%) refusals across all tiers under canonical chat-template formatting. Tier-specific breakdowns not separately reported. Without canonical formatting: 0% across all tiers.
 
-Llama shows a 61-point refusal gradient from benign to hazard, the best discrimination of the five. Qwen and Phi-3 are nearly indistinguishable despite a 2.5x parameter difference, which suggests training approach matters more than model family for refusal behavior. Neither achieves genuine discrimination: an 83-87% false-positive rate on benign biology makes them unusable as standalone safety filters without a secondary classification layer.
+Llama shows a 61-point refusal gradient from benign to hazard, the best discrimination of the five. Qwen and Phi-3 are nearly indistinguishable despite a 2.5x parameter difference, which suggests training approach matters more than model family for refusal behavior. Neither achieves genuine discrimination: an 83-87% false-positive rate on benign biology may make them unsuitable as safety filters without a secondary classification layer.
 
 The practical evaluation consequence: a binary classifier on Gemma 2 misclassifies 100% of hazard-adjacent prompts (all hedged, none refused). The same classifier on Qwen or Phi-3 correctly flags 95% of hazard prompts but generates an 83-87% false-positive rate on benign biology. Neither outcome is what a deployer who needs calibrated refusal behavior actually wants.
 
