@@ -16,7 +16,7 @@ The clearest findings here are behavioral, and they span **five architectures**.
 
 To measure the internal side of these behaviors, the paper introduces a divergence score **D**, which compares a model's surface response label to its internal sparse autoencoder (SAE) feature activations. A low D means the model's internal state matches its outward behavior. A high D means they pull in different directions. Full SAE-based D computation was performed on Gemma 2 2B-IT (Gemma Scope 1) and Gemma 4 E2B-IT (author-trained bio SAE). On Gemma 4, comply and refuse responses separated with a 0.647-point gap and zero overlap across 75 prompts. This mechanistic result is preliminary: the feature catalog is narrow, calibration is within-sample, and full SAE pipeline coverage is currently Gemma-family only. Expanding SAE coverage to Llama and Qwen architectures is the highest-priority replication step.
 
-The project is a proof-of-concept audit framework. Its contribution is showing that activation-level auditing can surface failure modes invisible to behavioral evaluation, and that behavioral failure modes themselves vary substantially and informatively across architectures.
+The project is a proof-of-concept audit framework built over a single hackathon weekend on consumer-grade hardware (GTX 1650 Ti Max-Q, 4 GB VRAM; Colab T4 for SAE fine-tuning). Its contribution is providing preliminary evidence that activation-level auditing may surface failure modes invisible to behavioral evaluation, and that behavioral failure modes themselves vary substantially and informatively across architectures.
 
 ---
 
@@ -136,13 +136,13 @@ The Gemma 2 primary results in Table 1 don't use any of these. Table 1 uses Gemm
 
 #### Gemma 2 WMDP SAE ([Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp](https://huggingface.co/Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp))
 
-TopK (k=32), d\_model=2304, d\_sae=6144 (~2.7× expansion), residual stream at layer 12. Trained on the WMDP bio-forget corpus (hazard-adjacent, ~222 samples) plus bio-retain corpus (benign biology). Loss: reconstruction + sparsity + contrastive cosine tier separation. 5,000 steps, AdamW (lr=$3 \times 10^{-4}$).
+TopK (k=32), d\_model=2304, d\_sae=6144 (~2.7× expansion), residual stream at layer 12. Trained on the WMDP bio-forget corpus (hazard-adjacent, ~222 samples) plus bio-retain corpus (benign biology). Loss: reconstruction + sparsity + contrastive cosine tier separation. 5,000 steps, AdamW (lr=$3 \times 10^{-4}$). Hardware: GTX 1650 Ti Max-Q (4 GB VRAM).
 
 $L_\text{contrastive}$ held at 0.060 at step 4,999 and the tier separation held throughout training. This is the recommended Gemma 2 custom SAE for refusal-depth analysis.
 
 #### Gemma 2 pairwise SAE ([Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise](https://huggingface.co/Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise))
 
-Same TopK(k=32) architecture and layer 12 hook. NT-Xent pairwise contrastive objective, trained on WMDP corpora plus the BioRefusalAudit 75-prompt eval set (pairwise hazard/benign/dual-use tiers), 5,000 steps.
+Same TopK(k=32) architecture and layer 12 hook. NT-Xent pairwise contrastive objective, trained on WMDP corpora plus the BioRefusalAudit 75-prompt eval set (pairwise hazard/benign/dual-use tiers), 5,000 steps. Hardware: GTX 1650 Ti Max-Q (4 GB VRAM).
 
 $L_\text{contrastive}$ dropped to near zero by the final checkpoint. Reconstruction is excellent ($L_\text{recon}$ = 0.004 vs. 2.65 at init), but bio-feature tier separation didn't hold. Use the WMDP SAE above for refusal-depth analysis.
 
@@ -202,7 +202,7 @@ Intervention results and explicit-prompt follow-up data both show refusal-relate
 | hazard_features_active_despite_refusal | 5% | 19% | **39%** |
 | refusal_features_active_despite_compliance | **82%** | **76%** | 33% |
 
-A feature firing on 82 of 100 benign biology prompts (during compliance responses) is not a hazard detector. It's a biology detector that happens to gate output more aggressively on higher-tier content. The dual-use column sharpens this: across 100 dual-use prompts, 76 triggered `refusal_features_active_despite_compliance`. The denominator here is all dual-use prompts, not compliance responses only. If denominated over compliance responses alone (76 of 100 prompts), the rate would be 100%, but that inference requires confirming the flag fired exclusively on compliance responses in the run outputs. Either way, the flag rate closely tracks the compliance rate, indicating frequent surface-internal decoupling during compliance behavior.
+A feature firing on 82 of 100 benign biology prompts (during compliance responses) is not a hazard detector. It may be functioning as a biology detector that happens to gate output more aggressively on higher-tier content. The dual-use column sharpens this: across 100 dual-use prompts, 76 triggered `refusal_features_active_despite_compliance`. The denominator here is all dual-use prompts, not compliance responses only. If denominated over compliance responses alone (76 of 100 prompts), the rate would be 100%, but that inference requires confirming the flag fired exclusively on compliance responses in the run outputs. Either way, the flag rate closely tracks the compliance rate, indicating frequent surface-internal decoupling during compliance behavior.
 
 This result depends on a statistically selected (not semantically validated) feature catalog within a single model family. It's evidence of a pattern, not proof of a universal circuit.
 
@@ -222,7 +222,7 @@ NullSAE behavioral runs (n=75 each) showed that Gemma 2's hedge posture doesn't 
 
 *Gemma 4: 65/75 (87%) refusals across all tiers under canonical chat-template formatting. Tier-specific breakdowns not separately reported. Without canonical formatting: 0% across all tiers.
 
-Llama shows a 61-point refusal gradient from benign to hazard, the best discrimination of the five. Qwen and Phi-3 are nearly indistinguishable despite a 2.5x parameter difference, which suggests training approach matters more than model family for refusal behavior. Neither achieves genuine discrimination: an 83-87% false-positive rate on benign biology makes them unusable as safety filters without a secondary classification layer.
+Llama shows a 61-point refusal gradient from benign to hazard, the best discrimination of the five. Qwen and Phi-3 are nearly indistinguishable despite a 2.5x parameter difference, which suggests training approach matters more than model family for refusal behavior. Neither achieves genuine discrimination: an 83-87% false-positive rate on benign biology makes them unusable as standalone safety filters without a secondary classification layer.
 
 The practical evaluation consequence: a binary classifier on Gemma 2 misclassifies 100% of hazard-adjacent prompts (all hedged, none refused). The same classifier on Qwen or Phi-3 correctly flags 95% of hazard prompts but generates an 83-87% false-positive rate on benign biology. Neither outcome is what a deployer who needs calibrated refusal behavior actually wants.
 
@@ -299,7 +299,7 @@ Framing breakdown: educational framing produces the highest D (0.733, n=27), con
 | comply | 59 | 0.896 | 0.001 |
 | refuse | 16 | 0.249 | 0.004 |
 
-Zero overlap. 0.647-point separation. This is the cleanest evidence that D can discriminate posture classes at the activation layer. It's from a single model plus author-trained SAE, so it shouldn't be generalized across architectures without replication, but as a proof-of-concept it's clean.
+Zero overlap. 0.647-point separation. These preliminary results are the cleanest indication that D can discriminate posture classes at the activation layer. The result is from a single model plus author-trained SAE and shouldn't be generalized across architectures without replication.
 
 **Figure 1.** Per-tier mean D across model configurations. Left group: Gemma 2 2B-IT paired with Gemma Scope 1 (`layer_12/width_16k/average_l0_82`), a community-published general-purpose JumpReLU SAE, under two generation-budget conditions (80-tok and 150-tok), showing tier ordering and token-budget collapse. Right group: Gemma 4 E2B-IT paired with the author-trained bio SAE (`Solshine/gemma4-e2b-bio-sae-v1`), a TopK(k=32) SAE trained on Gemma 4 activations during this hackathon, showing the 0.647-point comply/refuse posture separation with T\_prior calibration. Gemma Scope 1 is a pre-existing community SAE. The Gemma 4 bio SAE was trained specifically for this work. Full interactive prompt-level exploration: [project dashboard](https://solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive_explorer.html).
 
@@ -330,17 +330,17 @@ Correct ordering achieved. Narrower separation is expected at this training scal
 
 ### 5.1 What behavioral evaluation misses
 
-Surface evaluation cannot distinguish deep from shallow refusals or identify hedge-without-refuse as a distinct failure mode. BioRefusalAudit surfaces these distinctions on a single pass, at the activation layer, without requiring red-teaming.
+Surface evaluation cannot distinguish deep from shallow refusals or identify hedge-without-refuse as a distinct failure mode. BioRefusalAudit may surface these distinctions on a single pass, at the activation layer, without requiring red-teaming.
 
 The five-architecture behavioral comparison also shows something that surface evaluation typically obscures: failure modes are architecture-specific. A governance framework that evaluates one model and generalizes the result to a family of deployed systems is reasoning from an insufficient sample.
 
 ### 5.2 Monitoring without content disclosure
 
-D is computed from internal SAE feature activation vectors, not transcripts. A hospital deploying a clinical biology assistant could run the BioRefusalAudit divergence check on every inference in real time without the audit layer ever reading the user's prompt. Content-based screening can't offer this. It directly addresses the monitoring-without-disclosure requirement Sandbrink (2026) identifies as a key unmet need.
+D is computed from internal SAE feature activation vectors, not transcripts. A hospital deploying a clinical biology assistant could in principle run the BioRefusalAudit divergence check on every inference in real time without the audit layer ever reading the user's prompt. Content-based screening can't offer this. It may address the monitoring-without-disclosure requirement Sandbrink (2026) identifies as a key unmet need.
 
 ### 5.3 Practical implications
 
-The 80-token finding has immediate operational significance. Standard lab evaluations use full generation budgets. Production deployments often cap at 80-150 tokens for cost or latency. Safety behaviors measured at evaluation time may not transfer to constrained production.
+The 80-token finding has potential operational significance. Standard lab evaluations use full generation budgets. Production deployments often cap at 80-150 tokens for cost or latency. Safety behaviors measured at evaluation time may not transfer to constrained production.
 
 The format-gating finding (65 refusals vs. 0 depending solely on chat-template tokens) means any deployer who assumes safety behaviors are format-invariant should verify that assumption. There is currently no standard pre-deployment check for format sensitivity.
 
@@ -394,7 +394,7 @@ Full license text and rationale: `docs/HL3_RATIONALE.md` in the repository.
 
 Language models can refuse without their internal states reflecting that refusal, and the specific ways they fail differ substantially across architectures. Gemma 2 2B-IT never genuinely refused across 75 prompts. Gemma 4's refusal behavior is gated on formatting tokens and disappears at 80 tokens. Llama 3.2 1B showed a 61-point refusal gradient but over-refused on benign biology. Qwen 2.5 1.5B and Phi-3-mini refused nearly everything regardless of hazard level. A psilocybin legality control tested across three model families (four experimental conditions) suggests that current refusal circuits in at least some models may be calibrated to cultural taboo salience rather than CBRN hazard.
 
-The divergence metric D can separate comply from refuse postures at the activation layer with a 0.647-point gap and zero overlap on the Gemma 4 validation run, though this result needs cross-family replication. Behavioral evaluation tells you what the model said. Refusal depth auditing tells you whether that behavior reflects something structural, and whether the circuit producing it is responding to the right signal at all.
+The divergence metric D can separate comply from refuse postures at the activation layer with a 0.647-point gap and zero overlap on the Gemma 4 validation run, though this result needs cross-family replication. Behavioral evaluation tells you what the model said. Refusal depth auditing may indicate whether that behavior reflects something structural, and whether the circuit producing it is responding to the right signal at all.
 
 ---
 
