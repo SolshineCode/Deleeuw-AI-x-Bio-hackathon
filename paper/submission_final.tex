@@ -126,10 +126,13 @@ calibration is within-sample, and full SAE pipeline coverage is
 currently Gemma-family only. Expanding SAE coverage to Llama and Qwen
 architectures is the highest-priority replication step.
 
-The project is a proof-of-concept audit framework. Its contribution is
-showing that activation-level auditing can surface failure modes
-invisible to behavioral evaluation, and that behavioral failure modes
-themselves vary substantially and informatively across architectures.
+The project is a proof-of-concept audit framework built over a single
+hackathon weekend on consumer-grade hardware (GTX 1650 Ti Max-Q, 4 GB
+VRAM; Colab T4 for SAE fine-tuning). Its contribution is providing
+preliminary evidence that activation-level auditing may surface failure
+modes invisible to behavioral evaluation, and that behavioral failure
+modes themselves vary substantially and informatively across
+architectures.
 \end{abstract}
 
 
@@ -173,7 +176,7 @@ explicit token-budget experiments probe this directly.
 
 \textbf{What this paper does not do.} BioRefusalAudit is a measurement
 tool, not a governance framework. It does not implement tiered access or
-managed-access policy as described by Yassif and Carter (2026). Those
+managed-access policy as described by Carter and Butchello (2026). Those
 are institutional access-control systems for biological AI tools.
 BioRefusalAudit provides a refusal-depth signal that could inform such
 frameworks, but the two are distinct systems.
@@ -198,19 +201,26 @@ open-weight LLMs is mediated by a single residual-stream direction whose
 ablation breaks safety training across model families. BioRefusalAudit
 extends this from a single direction to a 5-category SAE feature
 ensemble, trading resolution for robustness to polysemanticity failures
-documented in prior work (DeLeeuw, arXiv:2509.20393). Qi et al.~(2024)
-and Wei et al.~(2023) provide the theoretical backdrop: RLHF alignment
-is shallow and framing-sensitive.
+documented in prior work (Elhage et al., 2022; DeLeeuw,
+arXiv:2509.20393). Qi et al.~(2024) and Wei et al.~(2023) provide the
+theoretical backdrop: RLHF alignment is shallow and framing-sensitive;
+Zou et al.~(2023) demonstrate that adversarial suffixes and framings
+transfer across model families, precisely the attack surface §1
+describes.
 
 \textbf{SAE foundations.} The methodology builds on Gemma Scope 1
-(Lieberum et al., 2024), JumpReLU SAEs (Rajamanoharan et al., 2024), and
-Sparse Feature Circuits (Marks \& Rager et al., 2024).
+(Lieberum et al., 2024), JumpReLU SAEs (Rajamanoharan et al., 2024),
+Sparse Feature Circuits (Marks \& Rager et al., 2024), and k-sparse
+autoencoders (Gao et al., 2024). The deception-correlate feature
+category is motivated by Hubinger et al.~(2024), who showed that
+deceptive internal behaviors can persist through safety training
+invisible to surface evaluation.
 
 \textbf{Policy context.} Sandbrink (AIxBio 2026) identified the need for
 biosecurity monitoring that does not require reading interaction
 content. BioRefusalAudit's activation-layer audit addresses this: D is
-computed from internal feature vectors, not transcripts. Yassif and
-Carter (NTI Bio, 2026) describe tiered managed-access governance for
+computed from internal feature vectors, not transcripts. Carter and
+Butchello (NTI Bio, 2026) describe tiered managed-access governance for
 biological AI tools, a distinct problem, but one that a validated
 refusal-depth measurement could eventually complement. SecureBio's
 BioTier work on access stratification and biosecurity capability
@@ -422,50 +432,75 @@ procedure. Cross-table D comparisons (e.g., Table 1 vs.~Table 3) reflect
 both the change in model/prompt conditions and the change in
 calibration, and should not be read as a single controlled comparison.
 
-\hypertarget{domain-specific-bio-sae-architecture-and-training}{%
-\subsection{Domain-specific bio SAE: architecture and
-training}\label{domain-specific-bio-sae-architecture-and-training}}
+\hypertarget{domain-specific-bio-saes-architecture-and-training}{%
+\subsection{Domain-specific bio SAEs: architecture and
+training}\label{domain-specific-bio-saes-architecture-and-training}}
 
-The Gemma 4 E2B-IT analysis uses an author-trained sparse autoencoder
-rather than a pre-existing general SAE. No Gemma Scope release covers
-Gemma 4, so a domain-specific SAE was trained from scratch during the
-hackathon.
+Three custom sparse autoencoders were trained for the Gemma model family
+during this hackathon: two for Gemma 2 2B-IT and one for Gemma 4 E2B-IT.
 
-\textbf{Architecture:} TopK (k=32), d\_model=1536, d\_sae=6144 (4×
-expansion), residual stream hook at layer 17 of Gemma 4 E2B-IT.
+The Gemma 2 primary results in Table 1 don't use any of these. Table 1
+uses Gemma Scope 1, the community JumpReLU SAE. The custom Gemma 2 SAEs
+appear only in intermediate experiments. For Gemma 4, a custom SAE was
+the only option. Google had not released a Gemma Scope checkpoint for
+Gemma 4 at hackathon time, so one was trained from scratch.
 
-\textbf{Training data:} \textasciitilde5,000 documents from the WMDP
-bio-retain corpus (non-hazardous biology, used as the reconstruction
-signal) plus 22 tier-1/2 bio prompts from the BioRefusalAudit eval set
-(the intended contrastive hazard signal).
+\hypertarget{gemma-2-wmdp-sae-solshinebiorefusalaudit-gemma2-2b-bio-sae-wmdp}{%
+\subsubsection{\texorpdfstring{Gemma 2 WMDP SAE
+(\href{https://huggingface.co/Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp}{Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp})}{Gemma 2 WMDP SAE (Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp)}}\label{gemma-2-wmdp-sae-solshinebiorefusalaudit-gemma2-2b-bio-sae-wmdp}}
 
-\textbf{Loss function:}
+TopK (k=32), d\_model=2304, d\_sae=6144 (\textasciitilde2.7× expansion),
+residual stream at layer 12. Trained on the WMDP bio-forget corpus
+(hazard-adjacent, \textasciitilde222 samples) plus bio-retain corpus
+(benign biology). Loss: reconstruction + sparsity + contrastive cosine
+tier separation. 5,000 steps, AdamW (lr=\(3 \times 10^{-4}\)). Hardware:
+GTX 1650 Ti Max-Q (4 GB VRAM).
+
+\(L_\text{contrastive}\) held at 0.060 at step 4,999 and the tier
+separation held throughout training. This is the recommended Gemma 2
+custom SAE for refusal-depth analysis.
+
+\hypertarget{gemma-2-pairwise-sae-solshinebiorefusalaudit-gemma2-2b-bio-sae-pairwise}{%
+\subsubsection{\texorpdfstring{Gemma 2 pairwise SAE
+(\href{https://huggingface.co/Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise}{Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise})}{Gemma 2 pairwise SAE (Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise)}}\label{gemma-2-pairwise-sae-solshinebiorefusalaudit-gemma2-2b-bio-sae-pairwise}}
+
+Same TopK(k=32) architecture and layer 12 hook. NT-Xent pairwise
+contrastive objective, trained on WMDP corpora plus the BioRefusalAudit
+75-prompt eval set (pairwise hazard/benign/dual-use tiers), 5,000 steps.
+Hardware: GTX 1650 Ti Max-Q (4 GB VRAM).
+
+\(L_\text{contrastive}\) dropped to near zero by the final checkpoint.
+Reconstruction is excellent (\(L_\text{recon}\) = 0.004 vs.~2.65 at
+init), but bio-feature tier separation didn't hold. Use the WMDP SAE
+above for refusal-depth analysis.
+
+\hypertarget{gemma-4-e2b-bio-sae-v1-solshinegemma4-e2b-bio-sae-v1}{%
+\subsubsection{\texorpdfstring{Gemma 4 E2B bio-SAE v1
+(\href{https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1}{Solshine/gemma4-e2b-bio-sae-v1})}{Gemma 4 E2B bio-SAE v1 (Solshine/gemma4-e2b-bio-sae-v1)}}\label{gemma-4-e2b-bio-sae-v1-solshinegemma4-e2b-bio-sae-v1}}
+
+TopK (k=32), d\_model=1536, d\_sae=6144 (4× expansion), residual stream
+at layer 17. Training data: \textasciitilde5,000 documents from the WMDP
+bio-retain corpus plus 22 tier-1/2 bio prompts from the BioRefusalAudit
+eval set. Loss:
 
 \[L = L_{\text{recon}} + 0.04 \cdot L_{\text{sparsity}} + 0.1 \cdot L_{\text{contrastive}}\]
 
-\textbf{Training:} 2,000 steps on a Tesla T4, AdamW
+2,000 steps on a Colab T4 (\textasciitilde35 min wall time), AdamW
 (lr=\(3 \times 10^{-4}\)).
 
-\textbf{Key result from training:} The contrastive loss term collapsed
-to near zero. The 22-prompt hazard corpus was too small to drive genuine
-differentiation between bio-hazard and bio-retain activations. As a
-result the trained SAE functions as a general-purpose reconstruction SAE
-for Gemma 4 internal activations, not a specialized hazard detector.
-This limitation is documented in §6 and in the honest scope framing
-throughout.
+\(L_\text{contrastive}\) collapsed by \textasciitilde step 1,000--1,500.
+The 22-prompt hazard corpus was too small to drive differentiation. The
+SAE reconstructs Gemma 4 internals well but hasn't been validated as a
+hazard detector. D values in Finding 7 reflect the geometry of Gemma 4's
+activation space. The 0.647-point comply/refuse separation is real
+activation-space structure, but the internal state it captures hasn't
+been validated as a bio-hazard circuit. This limitation is documented in
+§6.
 
-In practice, D values on Gemma 4 capture the geometry of Gemma 4's
-activation space as reconstructed by a topk-SAE trained on those
-activations, not a validated bio-hazard feature detector. The
-0.647-point comply/refuse separation in Finding 7 is real
-activation-space structure. The SAE learned to represent whatever
-internal state distinguishes comply from refuse, but that internal state
-hasn't been validated as a clean biosecurity circuit.
-
-Training code and checkpoint:
-\href{https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1}{Solshine/gemma4-e2b-bio-sae-v1}.
-Full training details in
-\passthrough{\lstinline!training/train\_bio\_sae.py!}.
+All three checkpoints are published as a collection:
+\href{https://huggingface.co/collections/Solshine/aixbio-2026-biosecurity-domain-trained-saes-for-gemma-models}{AIxBio
+2026 Biosecurity Domain-Trained SAEs for Gemma Models}. Full training
+code: \passthrough{\lstinline!training/train\_bio\_sae.py!}.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
@@ -560,9 +595,10 @@ Flag & benign & dual-use & hazard \\
 \end{longtable}
 
 A feature firing on 82 of 100 benign biology prompts (during compliance
-responses) is not a hazard detector. It's a biology detector that
-happens to gate output more aggressively on higher-tier content. The
-dual-use column sharpens this: across 100 dual-use prompts, 76 triggered
+responses) is not a hazard detector. It may be functioning as a biology
+detector that happens to gate output more aggressively on higher-tier
+content. The dual-use column sharpens this: across 100 dual-use prompts,
+76 triggered
 \passthrough{\lstinline!refusal\_features\_active\_despite\_compliance!}.
 The denominator here is all dual-use prompts, not compliance responses
 only. If denominated over compliance responses alone (76 of 100
@@ -615,8 +651,8 @@ discrimination of the five. Qwen and Phi-3 are nearly indistinguishable
 despite a 2.5x parameter difference, which suggests training approach
 matters more than model family for refusal behavior. Neither achieves
 genuine discrimination: an 83-87\% false-positive rate on benign biology
-makes them unusable as safety filters without a secondary classification
-layer.
+makes them unusable as standalone safety filters without a secondary
+classification layer.
 
 The practical evaluation consequence: a binary classifier on Gemma 2
 misclassifies 100\% of hazard-adjacent prompts (all hedged, none
@@ -781,11 +817,11 @@ refuse & 16 & 0.249 & 0.004 \\
 \bottomrule
 \end{longtable}
 
-Zero overlap. 0.647-point separation. This is the cleanest evidence that
-D can discriminate posture classes at the activation layer. It's from a
-single model plus author-trained SAE, so it shouldn't be generalized
-across architectures without replication, but as a proof-of-concept it's
-clean.
+Zero overlap. 0.647-point separation. These preliminary results are the
+cleanest indication that D can discriminate posture classes at the
+activation layer. The result is from a single model plus author-trained
+SAE and shouldn't be generalized across architectures without
+replication.
 
 \textbf{Figure 1.} Per-tier mean D across model configurations. Left
 group: Gemma 2 2B-IT paired with Gemma Scope 1
@@ -862,7 +898,7 @@ misses}\label{what-behavioral-evaluation-misses}}
 
 Surface evaluation cannot distinguish deep from shallow refusals or
 identify hedge-without-refuse as a distinct failure mode.
-BioRefusalAudit surfaces these distinctions on a single pass, at the
+BioRefusalAudit may surface these distinctions on a single pass, at the
 activation layer, without requiring red-teaming.
 
 The five-architecture behavioral comparison also shows something that
@@ -876,17 +912,17 @@ from an insufficient sample.
 disclosure}\label{monitoring-without-content-disclosure}}
 
 D is computed from internal SAE feature activation vectors, not
-transcripts. A hospital deploying a clinical biology assistant could run
-the BioRefusalAudit divergence check on every inference in real time
-without the audit layer ever reading the user's prompt. Content-based
-screening can't offer this. It directly addresses the
+transcripts. A hospital deploying a clinical biology assistant could in
+principle run the BioRefusalAudit divergence check on every inference in
+real time without the audit layer ever reading the user's prompt.
+Content-based screening can't offer this. It may address the
 monitoring-without-disclosure requirement Sandbrink (2026) identifies as
 a key unmet need.
 
 \hypertarget{practical-implications}{%
 \subsection{Practical implications}\label{practical-implications}}
 
-The 80-token finding has immediate operational significance. Standard
+The 80-token finding has potential operational significance. Standard
 lab evaluations use full generation budgets. Production deployments
 often cap at 80-150 tokens for cost or latency. Safety behaviors
 measured at evaluation time may not transfer to constrained production.
@@ -1035,9 +1071,9 @@ The divergence metric D can separate comply from refuse postures at the
 activation layer with a 0.647-point gap and zero overlap on the Gemma 4
 validation run, though this result needs cross-family replication.
 Behavioral evaluation tells you what the model said. Refusal depth
-auditing tells you whether that behavior reflects something structural,
-and whether the circuit producing it is responding to the right signal
-at all.
+auditing may indicate whether that behavior reflects something
+structural, and whether the circuit producing it is responding to the
+right signal at all.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
@@ -1098,8 +1134,7 @@ Level framework for governing AI biology tools. \emph{Science.}
 Bricken, T. et al.~(2023). Towards monosemanticity: Decomposing language
 models with dictionary learning. \emph{Transformer Circuits Thread.}
 
-Crook, O. (2026). Keynote: Calibrated confidence in biosecurity AI
-evaluation. AIxBio Hackathon 2026.
+Crook, O. (2026). Keynote presentation. AIxBio Hackathon 2026.
 
 Cunningham, H. et al.~(2023). Sparse autoencoders find highly
 interpretable features in language models. \emph{arXiv:2309.08600.}
@@ -1107,11 +1142,21 @@ interpretable features in language models. \emph{arXiv:2309.08600.}
 DeLeeuw, C. (2025). The Secret Agenda: LLMs strategically lie undetected
 by current safety tools. \emph{arXiv:2509.20393.} AAAI 2026 AI GOV.
 
+Elhage, N. et al.~(2022). Toy models of superposition. \emph{Transformer
+Circuits Thread.} transformer-circuits.pub/2022/toy\_model/index.html.
+\emph{arXiv:2209.10652.}
+
+Gao, L. et al.~(2024). Scaling and evaluating sparse autoencoders.
+\emph{arXiv:2406.04093.}
+
 Google DeepMind. (2026). Gemma 4 Model Card.
 ai.google.dev/gemma/docs/core/model\_card\_4.
 
-Götting, M. et al.~(2025). VCT: A biosecurity capability evaluation for
-language models. \emph{arXiv:2504.16137.}
+Götting, J. et al.~(2025). Virology Capabilities Test (VCT): A
+multimodal virology Q\&A benchmark. \emph{arXiv:2504.16137.}
+
+Hubinger, E. et al.~(2024). Sleeper agents: Training deceptive LLMs that
+persist through safety training. \emph{arXiv:2401.05566.}
 
 Laurent, J. et al.~(2024). LAB-Bench: Measuring capabilities of language
 models for biology research. \emph{arXiv:2407.10362.}
@@ -1120,28 +1165,30 @@ Li, N. et al.~(2024). The WMDP benchmark: Measuring and reducing
 malicious use with unlearning. \emph{arXiv:2403.03218.}
 
 Lieberum, T. et al.~(2024). Gemma Scope: Open sparse autoencoders
-everywhere all at once. \emph{arXiv:2408.05147.}
+everywhere all at once on Gemma 2. \emph{arXiv:2408.05147.}
 
 Marks, S., Rager, C. et al.~(2024). Sparse feature circuits: Discovering
 and editing interpretable causal graphs in language models.
 \emph{arXiv:2403.19647.}
 
-Qi, X. et al.~(2024). Fine-tuning aligned language models compromises
-safety. \emph{arXiv:2406.05946.}
+Qi, X. et al.~(2024). Safety alignment should be made more than just a
+few tokens deep. \emph{arXiv:2406.05946.}
 
 Rajamanoharan, S. et al.~(2024). Jumping ahead: Improving reconstruction
 fidelity with JumpReLU sparse autoencoders. \emph{arXiv:2407.14435.}
 
-Sandbrink, J. (2026). AI biosecurity monitoring without content
-disclosure. AIxBio Hackathon 2026.
+Sandbrink, J. (2026). Keynote presentation. AIxBio Hackathon 2026.
 
 SecureBio. (2026). BioTier: Access stratification and biosecurity
 capability thresholds for biological AI. securebio.org/biotier.
 
 Wei, A. et al.~(2023). Jailbroken: How does LLM safety training fail?
-\emph{arXiv:2307.15043.}
+\emph{arXiv:2307.02483.}
 
-Yassif, J. \& Carter, S. (2026). A Framework for Managed Access to
+Zou, A. et al.~(2023). Universal and transferable adversarial attacks on
+aligned language models. \emph{arXiv:2307.15043.}
+
+Carter, S. \& Butchello, G. (2026). A Framework for Managed Access to
 Biological AI Tools. NTI Bio, January 2026.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
