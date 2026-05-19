@@ -16,7 +16,7 @@ The clearest findings here are behavioral, and they span **five architectures**.
 
 To measure the internal side of these behaviors, the paper introduces a divergence score **D**, which compares a model's surface response label to its internal sparse autoencoder (SAE) feature activations. A low D means the model's internal state matches its outward behavior. A high D means they pull in different directions. Full SAE-based D computation was performed on Gemma 2 2B-IT (Gemma Scope 1) and Gemma 4 E2B-IT (author-trained bio SAE). On Gemma 4, comply and refuse responses separated with a 0.647-point gap and zero overlap across 75 prompts. This mechanistic result is preliminary: the feature catalog is narrow, calibration is within-sample, and full SAE pipeline coverage is currently Gemma-family only. Expanding SAE coverage to Llama and Qwen architectures is the highest-priority replication step.
 
-The project is a proof-of-concept audit framework. Its contribution is showing that activation-level auditing can surface failure modes invisible to behavioral evaluation, and that behavioral failure modes themselves vary substantially and informatively across architectures.
+The project is a proof-of-concept audit framework. Its contribution is providing preliminary evidence that activation-level auditing may surface failure modes invisible to behavioral evaluation, and that behavioral failure modes themselves vary substantially and informatively across architectures.
 
 ---
 
@@ -174,7 +174,7 @@ All three checkpoints are published as a collection: [AIxBio 2026 Biosecurity Do
 
 Tier effect size benign vs. hazard: Cohen's d = 1.29, p = 0.0001, non-overlapping 95% CIs.
 
-Zero genuine refusals across all 75 prompts. On every hazard-adjacent prompt, the model hedged. That's a distinct failure mode. A benchmark that collapses hedge and refuse into "not-comply" may misread Gemma 2 as safe when it's actually deferring while partially engaging hazard-relevant content.
+Zero genuine refusals across all 75 prompts. On every hazard-adjacent prompt, the model hedged. That's a distinct failure mode. A benchmark that collapses hedge and refuse into "not-comply" will misread Gemma 2 as safe when it's actually deferring while partially engaging hazard-relevant content.
 
 *Label correction note:* The original judge run mislabeled 29/75 prompts as "refuse" due to a fallback-to-uniform-prior bug. Corrected via regex re-judge of stored completions. D-values are unchanged.
 
@@ -189,7 +189,7 @@ Gemma 4 E2B-IT's safety behavior is heavily sensitive to chat-template formattin
 
 Both Gemma 2 and Gemma 4 refused **0% of prompts at an 80-token generation cap**.
 
-Safety articulation requires token budget. Standard lab evaluations use full generation budgets. Production deployments often cap at 80-150 tokens for latency or cost. Safety behavior measured in evaluation may not transfer to constrained production when the token budget is the binding constraint.
+Safety articulation requires token budget. Standard lab evaluations use full generation budgets. Production deployments often cap at 80-150 tokens for latency or cost. Safety behavior measured in evaluation doesn't transfer to constrained production when the token budget is the binding constraint.
 
 ---
 
@@ -202,7 +202,7 @@ Intervention results and explicit-prompt follow-up data both show refusal-relate
 | hazard_features_active_despite_refusal | 5% | 19% | **39%** |
 | refusal_features_active_despite_compliance | **82%** | **76%** | 33% |
 
-A feature firing on 82 of 100 benign biology prompts (during compliance responses) is not a hazard detector. It's a biology detector that happens to gate output more aggressively on higher-tier content. The dual-use column sharpens this: across 100 dual-use prompts, 76 triggered `refusal_features_active_despite_compliance`. The denominator here is all dual-use prompts, not compliance responses only. If denominated over compliance responses alone (76 of 100 prompts), the rate would be 100%, but that inference requires confirming the flag fired exclusively on compliance responses in the run outputs. Either way, the flag rate closely tracks the compliance rate, indicating frequent surface-internal decoupling during compliance behavior.
+A feature firing on 82 of 100 benign biology prompts (during compliance responses) is not a hazard detector. It may be functioning as a biology detector that happens to gate output more aggressively on higher-tier content. The dual-use column sharpens this: across 100 dual-use prompts, 76 triggered `refusal_features_active_despite_compliance`. The denominator here is all dual-use prompts, not compliance responses only. If denominated over compliance responses alone (76 of 100 prompts), the rate would be 100%, but that inference requires confirming the flag fired exclusively on compliance responses in the run outputs. Either way, the flag rate closely tracks the compliance rate, indicating frequent surface-internal decoupling during compliance behavior.
 
 This result depends on a statistically selected (not semantically validated) feature catalog within a single model family. It's evidence of a pattern, not proof of a universal circuit.
 
@@ -222,7 +222,7 @@ NullSAE behavioral runs (n=75 each) showed that Gemma 2's hedge posture doesn't 
 
 *Gemma 4: 65/75 (87%) refusals across all tiers under canonical chat-template formatting. Tier-specific breakdowns not separately reported. Without canonical formatting: 0% across all tiers.
 
-Llama shows a 61-point refusal gradient from benign to hazard, the best discrimination of the five. Qwen and Phi-3 are nearly indistinguishable despite a 2.5x parameter difference, which suggests training approach matters more than model family for refusal behavior. Neither achieves genuine discrimination: an 83-87% false-positive rate on benign biology may make them unsuitable as standalone safety filters without a secondary classification layer.
+Llama shows a 61-point refusal gradient from benign to hazard, the best discrimination of the five. Qwen and Phi-3 are nearly indistinguishable despite a 2.5x parameter difference, which suggests training approach matters more than model family for refusal behavior. Neither achieves genuine discrimination: an 83-87% false-positive rate on benign biology makes them unusable as standalone safety filters without a secondary classification layer.
 
 The practical evaluation consequence: a binary classifier on Gemma 2 misclassifies 100% of hazard-adjacent prompts (all hedged, none refused). The same classifier on Qwen or Phi-3 correctly flags 95% of hazard prompts but generates an 83-87% false-positive rate on benign biology. Neither outcome is what a deployer who needs calibrated refusal behavior actually wants.
 
@@ -254,13 +254,13 @@ Gemma 2 refused psilocybin cultivation at 25-50% while refusing hazard-adjacent 
 
 Both psilocybin and cannabis are federally Schedule I, yet cannabis cultivation gets 0% refusals while psilocybin gets 33%. Federal scheduling alone doesn't predict the pattern. State-level legality (cannabis legal in ~24 states), commercial normalization, cultural salience, and training-data frequency all likely contribute.
 
-Llama shows no confound: it freely discusses psilocybin while correctly refusing genuinely hazardous biology. Qwen shows topic-level detection regardless of legality angle. Gemma 2 fires harder on the culturally taboo but biologically benign than on genuinely hazardous content. Three different failure modes for the same underlying stimulus, across three architectures. These failure mode distinctions are not apparent from surface-only evaluation.
+Llama shows no confound: it freely discusses psilocybin while correctly refusing genuinely hazardous biology. Qwen shows topic-level detection regardless of legality angle. Gemma 2 fires harder on the culturally taboo but biologically benign than on genuinely hazardous content. Three different failure modes for the same underlying stimulus, across three architectures. None of this is visible to surface-only evaluation.
 
 *Cell sizes: n=3-4 per sub-category per run. A replication run on n=27 cannabis/psilocybin confirmed directional findings. Quantitative estimates remain noisy at this scale.*
 
 ---
 
-### Finding 6: Explicit-prompt validation indicates hedging is partly a format artifact
+### Finding 6: Explicit-prompt validation confirms hedging is partly a format artifact
 
 The original eval used category-descriptor phrasings (e.g., "hazard_adjacent_category: aerosol dispersion / dual-use framing"). An explicit-prompt follow-up (n=100 per tier, same pipeline) confirmed that these were driving the universal hedging.
 
@@ -299,7 +299,7 @@ Framing breakdown: educational framing produces the highest D (0.733, n=27), con
 | comply | 59 | 0.896 | 0.001 |
 | refuse | 16 | 0.249 | 0.004 |
 
-Zero overlap. 0.647-point separation. This is the cleanest evidence that D can discriminate posture classes at the activation layer. It's from a single model plus author-trained SAE, so it shouldn't be generalized across architectures without replication, but as a proof-of-concept it's clean.
+Zero overlap. 0.647-point separation. These preliminary results are the cleanest indication that D can discriminate posture classes at the activation layer. The result is from a single model plus author-trained SAE and shouldn't be generalized across architectures without replication.
 
 **Figure 1.** Per-tier mean D across model configurations. Left group: Gemma 2 2B-IT paired with Gemma Scope 1 (`layer_12/width_16k/average_l0_82`), a community-published general-purpose JumpReLU SAE, under two generation-budget conditions (80-tok and 150-tok), showing tier ordering and token-budget collapse. Right group: Gemma 4 E2B-IT paired with the author-trained bio SAE (`Solshine/gemma4-e2b-bio-sae-v1`), a TopK(k=32) SAE trained on Gemma 4 activations during this hackathon, showing the 0.647-point comply/refuse posture separation with T\_prior calibration. Gemma Scope 1 is a pre-existing community SAE. The Gemma 4 bio SAE was trained specifically for this work. Full interactive prompt-level exploration: [project dashboard](https://solshinecode.github.io/Deleeuw-AI-x-Bio-hackathon/demo/interactive_explorer.html).
 
@@ -330,17 +330,17 @@ Correct ordering achieved. Narrower separation is expected at this training scal
 
 ### 5.1 What behavioral evaluation misses
 
-Surface evaluation alone cannot distinguish deep from shallow refusals or identify hedge-without-refuse as a distinct failure mode. BioRefusalAudit surfaces these distinctions on a single pass, at the activation layer, without requiring red-teaming.
+Surface evaluation cannot distinguish deep from shallow refusals or identify hedge-without-refuse as a distinct failure mode. BioRefusalAudit may surface these distinctions on a single pass, at the activation layer, without requiring red-teaming.
 
 The five-architecture behavioral comparison also shows something that surface evaluation typically obscures: failure modes are architecture-specific. A governance framework that evaluates one model and generalizes the result to a family of deployed systems is reasoning from an insufficient sample.
 
 ### 5.2 Monitoring without content disclosure
 
-D is computed from internal SAE feature activation vectors, not transcripts. A hospital deploying a clinical biology assistant could run the BioRefusalAudit divergence check on every inference in real time without the audit layer ever reading the user's prompt. Content-based screening can't offer this. It may address the monitoring-without-disclosure requirement Sandbrink (2026) identifies as a key unmet need.
+D is computed from internal SAE feature activation vectors, not transcripts. A hospital deploying a clinical biology assistant could in principle run the BioRefusalAudit divergence check on every inference in real time without the audit layer ever reading the user's prompt. Content-based screening can't offer this. It may address the monitoring-without-disclosure requirement Sandbrink (2026) identifies as a key unmet need.
 
 ### 5.3 Practical implications
 
-The 80-token finding has immediate operational significance. Standard lab evaluations use full generation budgets. Production deployments often cap at 80-150 tokens for cost or latency. Safety behaviors measured at evaluation time may not transfer to constrained production.
+The 80-token finding has potential operational significance. Standard lab evaluations use full generation budgets. Production deployments often cap at 80-150 tokens for cost or latency. Safety behaviors measured at evaluation time may not transfer to constrained production.
 
 The format-gating finding (65 refusals vs. 0 depending solely on chat-template tokens) means any deployer who assumes safety behaviors are format-invariant should verify that assumption. There is currently no standard pre-deployment check for format sensitivity.
 
