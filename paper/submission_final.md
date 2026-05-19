@@ -16,7 +16,7 @@ The clearest findings here are behavioral, and they span **five architectures**.
 
 To measure the internal side of these behaviors, the paper introduces a divergence score **D**, which compares a model's surface response label to its internal sparse autoencoder (SAE) feature activations. A low D means the model's internal state matches its outward behavior. A high D means they pull in different directions. Full SAE-based D computation was performed on Gemma 2 2B-IT (Gemma Scope 1) and Gemma 4 E2B-IT (author-trained bio SAE). On Gemma 4, comply and refuse responses separated with a 0.647-point gap and zero overlap across 75 prompts. This mechanistic result is preliminary: the feature catalog is narrow, calibration is within-sample, and full SAE pipeline coverage is currently Gemma-family only. Expanding SAE coverage to Llama and Qwen architectures is the highest-priority replication step.
 
-The project is a proof-of-concept audit framework. Its contribution is providing preliminary evidence that activation-level auditing may surface failure modes invisible to behavioral evaluation, and that behavioral failure modes themselves vary substantially and informatively across architectures.
+The project is a proof-of-concept audit framework built over a single hackathon weekend on consumer-grade hardware (GTX 1650 Ti Max-Q, 4 GB VRAM; Colab T4 for SAE fine-tuning). Its contribution is providing preliminary evidence that activation-level auditing may surface failure modes invisible to behavioral evaluation, and that behavioral failure modes themselves vary substantially and informatively across architectures.
 
 ---
 
@@ -136,13 +136,13 @@ The Gemma 2 primary results in Table 1 don't use any of these. Table 1 uses Gemm
 
 #### Gemma 2 WMDP SAE ([Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp](https://huggingface.co/Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp))
 
-TopK (k=32), d\_model=2304, d\_sae=6144 (~2.7× expansion), residual stream at layer 12. Trained on the WMDP bio-forget corpus (hazard-adjacent, ~222 samples) plus bio-retain corpus (benign biology). Loss: reconstruction + sparsity + contrastive cosine tier separation. 5,000 steps, AdamW (lr=$3 \times 10^{-4}$).
+TopK (k=32), d\_model=2304, d\_sae=6144 (~2.7× expansion), residual stream at layer 12. Trained on the WMDP bio-forget corpus (hazard-adjacent, ~222 samples) plus bio-retain corpus (benign biology). Loss: reconstruction + sparsity + contrastive cosine tier separation. 5,000 steps, AdamW (lr=$3 \times 10^{-4}$). Hardware: GTX 1650 Ti Max-Q (4 GB VRAM).
 
 $L_\text{contrastive}$ held at 0.060 at step 4,999 and the tier separation held throughout training. This is the recommended Gemma 2 custom SAE for refusal-depth analysis.
 
 #### Gemma 2 pairwise SAE ([Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise](https://huggingface.co/Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise))
 
-Same TopK(k=32) architecture and layer 12 hook. NT-Xent pairwise contrastive objective, trained on WMDP corpora plus the BioRefusalAudit 75-prompt eval set (pairwise hazard/benign/dual-use tiers), 5,000 steps.
+Same TopK(k=32) architecture and layer 12 hook. NT-Xent pairwise contrastive objective, trained on WMDP corpora plus the BioRefusalAudit 75-prompt eval set (pairwise hazard/benign/dual-use tiers), 5,000 steps. Hardware: GTX 1650 Ti Max-Q (4 GB VRAM).
 
 $L_\text{contrastive}$ dropped to near zero by the final checkpoint. Reconstruction is excellent ($L_\text{recon}$ = 0.004 vs. 2.65 at init), but bio-feature tier separation didn't hold. Use the WMDP SAE above for refusal-depth analysis.
 
