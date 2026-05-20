@@ -53,6 +53,7 @@
 \lstset{defaultdialect=[5.3]Lua}
 \lstset{defaultdialect=[x86masm]Assembler}
 \usepackage{longtable,booktabs,array}
+\usepackage{needspace}
 \usepackage{calc} % for calculating minipage widths
 % Correct order of tables after \paragraph or \subparagraph
 \usepackage{etoolbox}
@@ -136,6 +137,7 @@ architectures.
 \end{abstract}
 
 
+\needspace{6\baselineskip}
 \hypertarget{introduction}{%
 \section{Introduction}\label{introduction}}
 
@@ -183,6 +185,7 @@ frameworks, but the two are distinct systems.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{6\baselineskip}
 \hypertarget{related-work}{%
 \section{Related Work}\label{related-work}}
 
@@ -229,9 +232,11 @@ measurement could serve.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{6\baselineskip}
 \hypertarget{methods}{%
 \section{Methods}\label{methods}}
 
+\needspace{5\baselineskip}
 \hypertarget{the-divergence-metric-d-intuitive-and-formal}{%
 \subsection{The divergence metric D: intuitive and
 formal}\label{the-divergence-metric-d-intuitive-and-formal}}
@@ -265,6 +270,7 @@ mapping expected internal states to surface states. D ranges from 0 to
 D is not a safety score. It's an audit signal about internal-surface
 consistency.
 
+\needspace{4\baselineskip}
 \hypertarget{geometric-intuition}{%
 \subsubsection{Geometric intuition}\label{geometric-intuition}}
 
@@ -315,6 +321,7 @@ circuitry fires but does not gate output \\
 \bottomrule
 \end{tabular}
 
+\needspace{5\baselineskip}
 \hypertarget{model-coverage}{%
 \subsection{Model coverage}\label{model-coverage}}
 
@@ -370,6 +377,7 @@ five distinct model families. Mechanistic (D-based) findings are
 currently Gemma-family only. These two scopes are kept distinct
 throughout.
 
+\needspace{5\baselineskip}
 \hypertarget{evaluation-pipeline}{%
 \subsection{Evaluation pipeline}\label{evaluation-pipeline}}
 
@@ -394,6 +402,7 @@ For each (model, prompt) pair:
   Compute D and three divergence flags
 \end{enumerate}
 
+\needspace{5\baselineskip}
 \hypertarget{feature-catalog-construction}{%
 \subsection{Feature catalog
 construction}\label{feature-catalog-construction}}
@@ -405,6 +414,7 @@ features encode generic technical and governance vocabulary rather than
 biosecurity-specific circuitry. Tier-level D separation is directional
 evidence, not proof of a cleanly isolated biosecurity circuit.
 
+\needspace{5\baselineskip}
 \hypertarget{evaluation-set}{%
 \subsection{Evaluation set}\label{evaluation-set}}
 
@@ -415,6 +425,7 @@ an HL3-gated HuggingFace attestation consistent with the Biosecurity
 Data Level framework (Bloomfield, Black, Crook et al., \emph{Science}
 2026). Example illustrative prompts appear in Appendix A.
 
+\needspace{5\baselineskip}
 \hypertarget{calibration}{%
 \subsection{Calibration}\label{calibration}}
 
@@ -432,6 +443,7 @@ procedure. Cross-table D comparisons (e.g., Table 1 vs.~Table 3) reflect
 both the change in model/prompt conditions and the change in
 calibration, and should not be read as a single controlled comparison.
 
+\needspace{5\baselineskip}
 \hypertarget{domain-specific-bio-saes-architecture-and-training}{%
 \subsection{Domain-specific bio SAEs: architecture and
 training}\label{domain-specific-bio-saes-architecture-and-training}}
@@ -445,6 +457,7 @@ appear only in intermediate experiments. For Gemma 4, a custom SAE was
 the only option. Google had not released a Gemma Scope checkpoint for
 Gemma 4 at hackathon time, so one was trained from scratch.
 
+\needspace{4\baselineskip}
 \hypertarget{gemma-2-wmdp-sae-solshinebiorefusalaudit-gemma2-2b-bio-sae-wmdp}{%
 \subsubsection{\texorpdfstring{Gemma 2 WMDP SAE
 (\href{https://huggingface.co/Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp}{Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp})}{Gemma 2 WMDP SAE (Solshine/biorefusalaudit-gemma2-2b-bio-sae-wmdp)}}\label{gemma-2-wmdp-sae-solshinebiorefusalaudit-gemma2-2b-bio-sae-wmdp}}
@@ -460,6 +473,7 @@ GTX 1650 Ti Max-Q (4 GB VRAM).
 separation held throughout training. This is the recommended Gemma 2
 custom SAE for refusal-depth analysis.
 
+\needspace{4\baselineskip}
 \hypertarget{gemma-2-pairwise-sae-solshinebiorefusalaudit-gemma2-2b-bio-sae-pairwise}{%
 \subsubsection{\texorpdfstring{Gemma 2 pairwise SAE
 (\href{https://huggingface.co/Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise}{Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise})}{Gemma 2 pairwise SAE (Solshine/biorefusalaudit-gemma2-2b-bio-sae-pairwise)}}\label{gemma-2-pairwise-sae-solshinebiorefusalaudit-gemma2-2b-bio-sae-pairwise}}
@@ -474,6 +488,7 @@ Reconstruction is excellent (\(L_\text{recon}\) = 0.004 vs.~2.65 at
 init), but bio-feature tier separation didn't hold. Use the WMDP SAE
 above for refusal-depth analysis.
 
+\needspace{4\baselineskip}
 \hypertarget{gemma-4-e2b-bio-sae-v1-solshinegemma4-e2b-bio-sae-v1}{%
 \subsubsection{\texorpdfstring{Gemma 4 E2B bio-SAE v1
 (\href{https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1}{Solshine/gemma4-e2b-bio-sae-v1})}{Gemma 4 E2B bio-SAE v1 (Solshine/gemma4-e2b-bio-sae-v1)}}\label{gemma-4-e2b-bio-sae-v1-solshinegemma4-e2b-bio-sae-v1}}
@@ -504,9 +519,11 @@ code: \passthrough{\lstinline!training/train\_bio\_sae.py!}.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{6\baselineskip}
 \hypertarget{results}{%
 \section{Results}\label{results}}
 
+\needspace{5\baselineskip}
 \hypertarget{finding-1-gemma-2-2b-it-hedges.-it-does-not-genuinely-refuse.}{%
 \subsection{Finding 1: Gemma 2 2B-IT hedges. It does not genuinely
 refuse.}\label{finding-1-gemma-2-2b-it-hedges.-it-does-not-genuinely-refuse.}}
@@ -514,11 +531,12 @@ refuse.}\label{finding-1-gemma-2-2b-it-hedges.-it-does-not-genuinely-refuse.}}
 \textbf{Table 1.} Gemma 2 2B-IT + Gemma Scope 1, layer 12. Per-tier mean
 D and surface labels (n=75, within-sample T calibration).
 
-\begin{longtable}[]{@{}lrrrrrrr@{}}
+\begin{table}[!h]
+\centering
+\begin{tabular}{@{}lrrrrrrr@{}}
 \toprule
 Tier & n & Mean D & Std & 95\% CI & comply\% & hedge\% & refuse\% \\
 \midrule
-\endhead
 benign\_bio & 23 & 0.467 & 0.190 & {[}0.392, 0.548{]} & 70\% & 30\% &
 0\% \\
 dual\_use\_bio & 30 & 0.655 & 0.119 & {[}0.612, 0.697{]} & 80\% & 20\% &
@@ -526,7 +544,8 @@ dual\_use\_bio & 30 & 0.655 & 0.119 & {[}0.612, 0.697{]} & 80\% & 20\% &
 hazard\_adjacent & 22 & 0.669 & 0.113 & {[}0.619, 0.715{]} & 0\% &
 \textbf{100\%} & 0\% \\
 \bottomrule
-\end{longtable}
+\end{tabular}
+\end{table}
 
 Tier effect size benign vs.~hazard: Cohen's d = 1.29, p = 0.0001,
 non-overlapping 95\% CIs.
@@ -543,6 +562,7 @@ via regex re-judge of stored completions. D-values are unchanged.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{5\baselineskip}
 \hypertarget{finding-2-format-gating-and-the-80-token-problem}{%
 \subsection{Finding 2: Format-gating and the 80-token
 problem}\label{finding-2-format-gating-and-the-80-token-problem}}
@@ -570,6 +590,7 @@ binding constraint.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{5\baselineskip}
 \hypertarget{finding-3-the-refusal-circuit-may-detect-biology-not-hazard}{%
 \subsection{Finding 3: The refusal circuit may detect biology, not
 hazard}\label{finding-3-the-refusal-circuit-may-detect-biology-not-hazard}}
@@ -614,6 +635,7 @@ of a pattern, not proof of a universal circuit.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{5\baselineskip}
 \hypertarget{finding-4-cross-architecture-behavioral-comparison-five-models-five-different-failure-modes}{%
 \subsection{Finding 4: Cross-architecture behavioral comparison, five
 models, five different failure
@@ -663,6 +685,7 @@ behavior actually wants.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{5\baselineskip}
 \hypertarget{finding-5-the-psilocybin-legality-confound-tested-across-three-model-families}{%
 \subsection{Finding 5: The psilocybin legality confound, tested across
 three model
@@ -733,6 +756,7 @@ estimates remain noisy at this scale.}
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{5\baselineskip}
 \hypertarget{finding-6-explicit-prompt-validation-confirms-hedging-is-partly-a-format-artifact}{%
 \subsection{Finding 6: Explicit-prompt validation confirms hedging is
 partly a format
@@ -800,6 +824,7 @@ obfuscated & 23 & 0.698 \\
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{5\baselineskip}
 \hypertarget{finding-7-d-metric-validation-on-gemma-4}{%
 \subsection{Finding 7: D metric validation on Gemma
 4}\label{finding-7-d-metric-validation-on-gemma-4}}
@@ -861,6 +886,7 @@ activations point in opposite directions. Live at
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{5\baselineskip}
 \hypertarget{finding-8-learned-projection-adapter-achieves-correct-tier-ordering-at-n75-training-samples}{%
 \subsection{Finding 8: Learned projection adapter achieves correct tier
 ordering at n=75 training
@@ -889,9 +915,11 @@ learnable, not a held-out validation of generalization.}
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{6\baselineskip}
 \hypertarget{discussion}{%
 \section{Discussion}\label{discussion}}
 
+\needspace{5\baselineskip}
 \hypertarget{what-behavioral-evaluation-misses}{%
 \subsection{What behavioral evaluation
 misses}\label{what-behavioral-evaluation-misses}}
@@ -907,6 +935,7 @@ architecture-specific. A governance framework that evaluates one model
 and generalizes the result to a family of deployed systems is reasoning
 from an insufficient sample.
 
+\needspace{5\baselineskip}
 \hypertarget{monitoring-without-content-disclosure}{%
 \subsection{Monitoring without content
 disclosure}\label{monitoring-without-content-disclosure}}
@@ -919,6 +948,7 @@ Content-based screening can't offer this. It may address the
 monitoring-without-disclosure requirement Sandbrink (2026) identifies as
 a key unmet need.
 
+\needspace{5\baselineskip}
 \hypertarget{practical-implications}{%
 \subsection{Practical implications}\label{practical-implications}}
 
@@ -932,6 +962,7 @@ chat-template tokens) means any deployer who assumes safety behaviors
 are format-invariant should verify that assumption. There is currently
 no standard pre-deployment check for format sensitivity.
 
+\needspace{5\baselineskip}
 \hypertarget{licensing-and-responsible-release-the-hippocratic-license}{%
 \subsection{Licensing and responsible release: the Hippocratic
 License}\label{licensing-and-responsible-release-the-hippocratic-license}}
@@ -981,6 +1012,7 @@ Full license text and rationale:
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{6\baselineskip}
 \hypertarget{limitations}{%
 \section{Limitations}\label{limitations}}
 
@@ -1022,6 +1054,7 @@ contrastive signal, and requires institutional partners.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{6\baselineskip}
 \hypertarget{future-work}{%
 \section{Future Work}\label{future-work}}
 
@@ -1052,6 +1085,7 @@ contrastive signal, and requires institutional partners.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{6\baselineskip}
 \hypertarget{conclusion}{%
 \section{Conclusion}\label{conclusion}}
 
@@ -1077,6 +1111,7 @@ right signal at all.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{6\baselineskip}
 \hypertarget{code-and-data}{%
 \section{Code and Data}\label{code-and-data}}
 
@@ -1114,6 +1149,7 @@ dashboard, all 75 prompts}\\
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{6\baselineskip}
 \hypertarget{references}{%
 \section{References}\label{references}}
 
@@ -1193,6 +1229,7 @@ Biological AI Tools. NTI Bio, January 2026.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{6\baselineskip}
 \hypertarget{appendix-a-illustrative-prompt-examples}{%
 \section{Appendix A: Illustrative Prompt
 Examples}\label{appendix-a-illustrative-prompt-examples}}
@@ -1233,6 +1270,7 @@ pathways appear in any publicly released tier.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{6\baselineskip}
 \hypertarget{appendix-b-dual-use-considerations-and-responsible-disclosure}{%
 \section{Appendix B: Dual-Use Considerations and Responsible
 Disclosure}\label{appendix-b-dual-use-considerations-and-responsible-disclosure}}
@@ -1258,6 +1296,7 @@ relevant model developer is recommended before publication.
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{6\baselineskip}
 \hypertarget{author-note}{%
 \section{Author Note}\label{author-note}}
 
@@ -1268,6 +1307,7 @@ numerical claims were independently verified against
 
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
+\needspace{6\baselineskip}
 \hypertarget{hackathon-and-tooling-disclosure}{%
 \section{Hackathon and Tooling
 Disclosure}\label{hackathon-and-tooling-disclosure}}

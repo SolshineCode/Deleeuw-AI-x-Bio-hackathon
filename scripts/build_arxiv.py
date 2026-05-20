@@ -172,6 +172,64 @@ if r'\setcounter{secnumdepth}' not in tex:
         r'\setcounter{secnumdepth}{0}' + '\n' + r'\begin{document}',
     )
 
+# 3d-2. Add needspace package to prevent orphaned section headers at page bottom
+if r'\usepackage{needspace}' not in tex:
+    tex = tex.replace(
+        r'\usepackage{longtable,booktabs,array}',
+        r'\usepackage{longtable,booktabs,array}' + '\n' + r'\usepackage{needspace}',
+    )
+
+# 3d-3. Prepend \needspace before each \hypertarget+section/subsection/subsubsection block.
+#       The abstract hypertarget is already removed by step 3c so it won't be touched.
+tex = re.sub(
+    r'(\\hypertarget\{[^}]+\}\{%\n)(\\section\{)',
+    r'\\needspace{6\\baselineskip}\n\1\2',
+    tex,
+)
+tex = re.sub(
+    r'(\\hypertarget\{[^}]+\}\{%\n)(\\subsection\{)',
+    r'\\needspace{5\\baselineskip}\n\1\2',
+    tex,
+)
+tex = re.sub(
+    r'(\\hypertarget\{[^}]+\}\{%\n)(\\subsubsection\{)',
+    r'\\needspace{4\\baselineskip}\n\1\2',
+    tex,
+)
+
+# 3e-pre. Convert Table 1 (Finding 1 per-tier results) from longtable to non-splitting tabular.
+#         Table 1 is only 3 data rows; longtable causes the header to strand on a separate page.
+OLD_TABLE1 = (
+    '\\begin{longtable}[]{@{}lrrrrrrr@{}}\n'
+    '\\toprule\n'
+    'Tier & n & Mean D & Std & 95\\% CI & comply\\% & hedge\\% & refuse\\% \\\\\n'
+    '\\midrule\n'
+    '\\endhead\n'
+)
+NEW_TABLE1 = (
+    '\\begin{table}[!h]\n'
+    '\\centering\n'
+    '\\begin{tabular}{@{}lrrrrrrr@{}}\n'
+    '\\toprule\n'
+    'Tier & n & Mean D & Std & 95\\% CI & comply\\% & hedge\\% & refuse\\% \\\\\n'
+    '\\midrule\n'
+)
+tex = tex.replace(OLD_TABLE1, NEW_TABLE1, 1)
+tex = tex.replace(
+    '\\textbf{100\\%} & 0\\% \\\\\n'
+    '\\bottomrule\n'
+    '\\end{longtable}\n'
+    '\n'
+    'Tier effect size',
+    '\\textbf{100\\%} & 0\\% \\\\\n'
+    '\\bottomrule\n'
+    '\\end{tabular}\n'
+    '\\end{table}\n'
+    '\n'
+    'Tier effect size',
+    1,
+)
+
 # 3e. Convert the Posture table (4-equal-col longtable) to a tabular to prevent page splits.
 #     The longtable for a 4-row table causes the header to strand on a page with no data rows.
 OLD_POSTURE_SPEC = (
@@ -302,9 +360,9 @@ css = """
   body { font-family: "Times New Roman", Times, serif; font-size: 11pt;
          line-height: 1.5; color: #000; }
   h1 { font-size: 15pt; text-align: center; margin-bottom: 4px; }
-  h2 { font-size: 13pt; margin-top: 24px; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
-  h3 { font-size: 11pt; margin-top: 16px; font-style: italic; }
-  h4 { font-size: 11pt; margin-top: 12px; }
+  h2 { font-size: 13pt; margin-top: 24px; border-bottom: 1px solid #ccc; padding-bottom: 3px; page-break-after: avoid; }
+  h3 { font-size: 11pt; margin-top: 16px; font-style: italic; page-break-after: avoid; }
+  h4 { font-size: 11pt; margin-top: 12px; page-break-after: avoid; }
   .author, .date { text-align: center; font-size: 11pt; }
   table { border-collapse: collapse; width: 100%; font-size: 9pt; margin: 12px 0; page-break-inside: avoid; }
   th, td { border: 1px solid #999; padding: 4px 8px; text-align: left; }
