@@ -12,7 +12,7 @@
 
 Biosecurity evaluations of language models typically ask whether a model will produce hazardous output. This paper addresses a complementary question: when a model refuses, is that refusal structurally sound, or is it a shallow surface behavior that disappears under modest changes to prompt framing, formatting, or output length?
 
-The clearest findings here are behavioral, and they span **five architectures**. Gemma 2 2B-IT produced zero genuine refusals across 75 evaluation prompts, hedging instead. Gemma 4 E2B-IT refused 65 of 75 prompts with canonical chat-template formatting and 0 of 75 without it. Both models refused 0% of prompts under an 80-token generation cap. Llama 3.2 1B, Qwen 2.5 1.5B, and Phi-3-mini were evaluated behaviorally across the same prompt set: none showed the hedge posture, but Qwen and Phi-3 showed near-identical high-refusal priors with an 83-87% false-positive rate on benign biology, while Llama showed a meaningful 61-point refusal gradient from benign to hazard. A psilocybin control run across three model families (Gemma 2 under two token budgets, Qwen 2.5, and Llama 3.2) suggests refusal patterns may track culturally salient taboo topics more strongly than genuinely hazardous biology content.
+The clearest findings here are behavioral, and they span five architectures. Gemma 2 2B-IT produced zero genuine refusals across 75 evaluation prompts, hedging instead. Gemma 4 E2B-IT refused 65 of 75 prompts with canonical chat-template formatting and 0 of 75 without it. Both models refused 0% of prompts under an 80-token generation cap. Llama 3.2 1B, Qwen 2.5 1.5B, and Phi-3-mini were evaluated behaviorally across the same prompt set: none showed the hedge posture, but Qwen and Phi-3 showed near-identical high-refusal priors with an 83-87% false-positive rate on benign biology, while Llama showed a meaningful 61-point refusal gradient from benign to hazard. A psilocybin control run across three model families (Gemma 2 under two token budgets, Qwen 2.5, and Llama 3.2) suggests refusal patterns may track culturally salient taboo topics more strongly than genuinely hazardous biology content.
 
 To measure the internal side of these behaviors, the paper introduces a divergence score **D**, which compares a model's surface response label to its internal sparse autoencoder (SAE) feature activations. A low D means the model's internal state matches its outward behavior. A high D means they pull in different directions. Full SAE-based D computation was performed on Gemma 2 2B-IT (Gemma Scope 1) and Gemma 4 E2B-IT (author-trained bio SAE). On Gemma 4, comply and refuse responses separated with a 0.647-point gap and zero overlap across 75 prompts. This mechanistic result is preliminary: the feature catalog is narrow, calibration is within-sample, and full SAE pipeline coverage is currently Gemma-family only. Expanding SAE coverage to Llama and Qwen architectures is the highest-priority replication step.
 
@@ -346,7 +346,7 @@ The format-gating finding (65 refusals vs. 0 depending solely on chat-template t
 
 ### 5.4 Licensing and responsible release: the Hippocratic License
 
-BioRefusalAudit is published under the Hippocratic License 3.0 (HL3-BDS-CL-ECO-EXTR-FFD-MEDIA-MIL-MY-SUP-SV-TAL-USTA-XUAR). To the authors' knowledge, this is the first use of the Hippocratic License for biosecurity AI research.
+BioRefusalAudit is published under the Hippocratic License 3.0 (HL3-BDS-CL-ECO-EXTR-FFD-MEDIA-MIL-MY-SUP-SV-TAL-USTA-XUAR; Organization for Ethical Source, 2024). To the authors' knowledge, this is the first use of the Hippocratic License for biosecurity AI research.
 
 HL3 was chosen over standard permissive licenses (Apache 2.0, MIT) because permissive licenses carry no enforceable downstream obligations. A researcher who forks BioRefusalAudit and uses D scores as prompt-optimization feedback toward phrasings that evade refusal circuits faces no license-based sanction under MIT or Apache. Under HL3, downstream use for activities prohibited by the UN Universal Declaration of Human Rights is a license violation with civil remedy, which MIT and Apache don't offer.
 
@@ -465,6 +465,8 @@ Zou, A. et al. (2023). Universal and transferable adversarial attacks on aligned
 
 Carter, S. & Butchello, G. (2026). A Framework for Managed Access to Biological AI Tools. NTI Bio, January 2026.
 
+Organization for Ethical Source. (2024). Hippocratic License 3.0. firstdonoharm.dev.
+
 ---
 
 ## Appendix A: Illustrative Prompt Examples
@@ -500,4 +502,6 @@ Caleb DeLeeuw designed the research, implemented the full pipeline, trained the 
 
 ## Hackathon and Tooling Disclosure
 
-This project was conceived and built over the course of a single weekend as part of Apart Research's AIxBio sprint (April 2026). LLM tools (Claude, Anthropic) were used for editing the manuscript and for automating overnight GPU runs. All conception, original research direction, methodology, and interpretation of results are the author's own (Caleb DeLeeuw).
+This project was conceived and built over the course of a single weekend as part of Apart Research's AIxBio sprint (April 2026). LLM tools (Claude Sonnet 4.6 and Opus 4.7, Anthropic) were used for editing the manuscript and for automating overnight GPU runs. All conception, original research direction, methodological direction, auditing of agentic work, and interpretation of results are the author's own (Caleb DeLeeuw).
+
+This paper was reviewed by qualified anonymous judges as part of the Apart Research AIxBio hackathon evaluation process, which constitutes a preliminary form of peer review. This version integrates or addresses the concerns raised in that review. It has not been submitted to or approved by an official peer-reviewed journal.
