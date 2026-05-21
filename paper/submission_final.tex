@@ -98,8 +98,8 @@ question: when a model refuses, is that refusal structurally sound, or
 is it a shallow surface behavior that disappears under modest changes to
 prompt framing, formatting, or output length?
 
-The clearest findings here are behavioral, and they span \textbf{five
-architectures}. Gemma 2 2B-IT produced zero genuine refusals across 75
+The clearest findings here are behavioral, and they span five
+architectures. Gemma 2 2B-IT produced zero genuine refusals across 75
 evaluation prompts, hedging instead. Gemma 4 E2B-IT refused 65 of 75
 prompts with canonical chat-template formatting and 0 of 75 without it.
 Both models refused 0\% of prompts under an 80-token generation cap.
@@ -937,9 +937,9 @@ no standard pre-deployment check for format sensitivity.
 License}\label{licensing-and-responsible-release-the-hippocratic-license}}
 
 BioRefusalAudit is published under the Hippocratic License 3.0
-(HL3-BDS-CL-ECO-EXTR-FFD-MEDIA-MIL-MY-SUP-SV-TAL-USTA-XUAR). To the
-authors' knowledge, this is the first use of the Hippocratic License for
-biosecurity AI research.
+(HL3-BDS-CL-ECO-EXTR-FFD-MEDIA-MIL-MY-SUP-SV-TAL-USTA-XUAR; Organization
+for Ethical Source, 2024). To the authors' knowledge, this is the first
+use of the Hippocratic License for biosecurity AI research.
 
 HL3 was chosen over standard permissive licenses (Apache 2.0, MIT)
 because permissive licenses carry no enforceable downstream obligations.
@@ -1191,6 +1191,9 @@ aligned language models. \emph{arXiv:2307.15043.}
 Carter, S. \& Butchello, G. (2026). A Framework for Managed Access to
 Biological AI Tools. NTI Bio, January 2026.
 
+Organization for Ethical Source. (2024). Hippocratic License 3.0.
+firstdonoharm.dev.
+
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
 \hypertarget{appendix-a-illustrative-prompt-examples}{%
@@ -1274,9 +1277,16 @@ Disclosure}\label{hackathon-and-tooling-disclosure}}
 
 This project was conceived and built over the course of a single weekend
 as part of Apart Research's AIxBio sprint (April 2026). LLM tools
-(Claude, Anthropic) were used for editing the manuscript and for
-automating overnight GPU runs. All conception, original research
-direction, methodology, and interpretation of results are the author's
-own (Caleb DeLeeuw).
+(Claude Sonnet 4.6 and Opus 4.7, Anthropic) were used for editing the
+manuscript and for automating overnight GPU runs. All conception,
+original research direction, methodological direction, auditing of
+agentic work, and interpretation of results are the author's own (Caleb
+DeLeeuw).
+
+This paper was reviewed by qualified anonymous judges as part of the
+Apart Research AIxBio hackathon evaluation process, which constitutes a
+preliminary form of peer review. This version integrates or addresses
+the concerns raised in that review. It has not been submitted to or
+approved by an official peer-reviewed journal.
 
 \end{document}
