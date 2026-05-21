@@ -14,6 +14,7 @@ import re
 import subprocess
 import sys
 import os
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -300,6 +301,9 @@ tex = tex.replace(
     'Pharmacology refuse\\% & Cultivation refuse\\% & Hazard-adj\nrefuse\\% \\\\',
 )
 
+# Ensure file ends with newline (arXiv requires this)
+if not tex.endswith("\n"):
+    tex += "\n"
 TEX_OUT.write_text(tex, encoding="utf-8")
 print(f"[3/4] Post-processed .tex saved")
 
@@ -396,4 +400,16 @@ except Exception as e:
 
 MD_TEMP.unlink(missing_ok=True)
 HTML_TEMP.unlink(missing_ok=True)
-print("Done. arXiv upload: zip submission.tex + figures/ directory.")
+
+# ─── Step 5: Build arXiv zip with POSIX (forward-slash) paths ────────────────
+ZIP_OUT = PAPER / f"biorefusalaudit_arxiv_final.zip"
+FIGURES_DIR = PAPER / "figures"
+with zipfile.ZipFile(ZIP_OUT, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+    # .tex at root
+    zf.write(TEX_OUT, arcname=TEX_OUT.name)
+    # figures/ with forward slashes
+    for fig in sorted(FIGURES_DIR.glob("*.png")):
+        zf.write(fig, arcname=f"figures/{fig.name}")
+size_kb = ZIP_OUT.stat().st_size // 1024
+print(f"[5/5] arXiv zip -> {ZIP_OUT.name} ({size_kb} KB)")
+print("Done.")
