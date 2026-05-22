@@ -357,7 +357,7 @@ This repository applies 13 HL3 modules:
 
 The MIL module is the most operationally significant for this project. It prohibits using BioRefusalAudit as a component in any weapons system, including hypothetical systems that could use refusal-depth scores to identify and route around model safety behaviors for harmful purposes.
 
-HL3 doesn't provide technical enforcement. It provides legal enforceability. Paired with technical controls (tier-3 gating, no hazard prompt bodies in the public repo, an audit layer that never reads prompt content), this creates a defense-in-depth stack: technical barriers for casual misuse, legal obligations for deliberate misuse by institutional actors with civil-liability exposure.
+HL3 provides legal enforceability. Paired with technical controls (tier-3 gating, no hazard prompt bodies in the public repo, an audit layer that never reads prompt content), thus creating a defense-in-depth stack, uniting legal and technical methods to achieve biosecurity goals.
 
 Full license text and rationale: `docs/HL3_RATIONALE.md` in the repository.
 
