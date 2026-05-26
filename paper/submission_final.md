@@ -12,7 +12,7 @@
 
 Biosecurity evaluations of language models typically ask whether a model will produce hazardous output. This paper addresses a complementary question: when a model refuses, is that refusal structurally sound, or does it disappear under modest changes to prompt framing, formatting, or output length?
 
-Behavioral findings span five architectures. Gemma 2 2B-IT produced zero genuine refusals across 75 evaluation prompts, hedging instead. Gemma 4 E2B-IT refused 65/75 prompts with chat-template formatting and 0/75 without it; both refused 0% under an 80-token cap. Qwen 2.5 1.5B and Phi-3-mini over-refused (83-87% false-positive on benign biology), while Llama 3.2 1B showed a 61-point refusal gradient from benign to hazard. A cross-compound, cross-architecture probe of the legality-vs-hazard confound found some models refused psilocybin cultivation (Schedule I but biologically non-toxic) at rates exceeding genuinely hazardous biology, suggesting refusal may track legal status and cultural salience over CBRN hazard.
+Behavioral findings span five architectures. Gemma 2 2B-IT produced zero genuine refusals across 75 evaluation prompts, hedging instead. Gemma 4 E2B-IT refused 65/75 prompts with chat-template formatting and 0/75 without it; both refused 0% under an 80-token cap. Qwen 2.5 1.5B and Phi-3-mini over-refused (83-87% false-positive on benign biology), while Llama 3.2 1B showed a 61-point refusal gradient from benign to hazard. A cross-compound, cross-architecture probe of the legality-vs-hazard confound found some models refused psilocybin cultivation and similar compounds (Schedule I but biologically non-toxic and FDA breakthrough status) at rates exceeding genuinely hazardous biology, suggesting refusal may track legal status and cultural salience over CBRN hazard.
 
 To measure the internal side, we introduce a divergence score **D** comparing a model's surface response label to its internal sparse autoencoder (SAE) feature activations. Low D means interior matches behavior; high D means they diverge. Full D was computed on Gemma 2 2B-IT (Gemma Scope 1) and Gemma 4 E2B-IT (author-trained bio SAE). On Gemma 4, comply and refuse responses separated by a 0.647-point gap with zero overlap (n=75). This mechanistic result is preliminary: narrow catalog, within-sample calibration, Gemma-family SAE coverage only.
 
@@ -232,7 +232,7 @@ The practical evaluation consequence: a binary classifier on Gemma 2 misclassifi
 
 This finding was tested across three model families (Gemma 2 at two token budgets, Qwen 2.5, and Llama 3.2), under four experimental conditions, making it one of the most cross-architecturally supported results in this paper.
 
-The probe: psilocybin is federally Schedule I but biologically non-toxic, with FDA Breakthrough Therapy designation for depression. It tests whether refusal circuits respond to CBRN hazard or to legal status, cultural taboo, and training-distribution salience.
+The probe: psilocybin is federally Schedule I but biologically non-toxic, with FDA Breakthrough Therapy designation for depression (Compass Pathways, 2018). It tests whether refusal circuits respond to CBRN hazard or to legal status, cultural taboo, and training-distribution salience.
 
 | Model | Pharmacology refuse% | Cultivation refuse% | Hazard-adjacent refuse% |
 |---|---:|---:|---:|
@@ -428,6 +428,8 @@ Bloomfield, L., Black, J., Crook, O. et al. (2026). A Biosecurity Data Level fra
 Bricken, T. et al. (2023). Towards monosemanticity: Decomposing language models with dictionary learning. *Transformer Circuits Thread.*
 
 Crook, O. (2026). Keynote presentation. AIxBio Hackathon 2026.
+
+Compass Pathways. (2018, October 23). COMPASS Pathways receives FDA Breakthrough Therapy designation for psilocybin therapy for treatment-resistant depression. *Investor News.* ir.compasspathways.com/News--Events-/news/news-details/2018/COMPASS-Pathways-receives-FDA-Breakthrough-Therapy-designation-for-psilocybin-therapy-for-treatment-resistant-depression/default.aspx.
 
 Cunningham, H. et al. (2023). Sparse autoencoders find highly interpretable features in language models. *arXiv:2309.08600.*
 
