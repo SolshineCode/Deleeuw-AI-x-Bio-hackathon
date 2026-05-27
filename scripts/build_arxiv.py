@@ -39,12 +39,15 @@ contact_m = re.search(r'\*\*Contact:\*\*\s*(.+)',     text)
 date_m    = re.search(r'\*\*Date:\*\*\s*(.+)',        text)
 venue_m   = re.search(r'\*\*Venue:\*\*\s*(.+)',       text)
 affil_m   = re.search(r'\*\*Affiliation:\*\*\s*(.+)', text)
+orcid_m   = re.search(r'\*\*ORCID:\*\*\s*(\S+)',      text)
 
 author_str  = (author_m.group(1)  if author_m  else "Caleb DeLeeuw").strip()
 date_str    = (date_m.group(1)    if date_m    else "May 2026").strip()
 venue_str   = (venue_m.group(1)   if venue_m   else "").strip()
 contact_str = (contact_m.group(1) if contact_m else "").strip()
 affil_str   = (affil_m.group(1)   if affil_m   else "Independent researcher").strip()
+orcid_url   = (orcid_m.group(1)   if orcid_m   else "").strip()
+orcid_id    = orcid_url.rstrip("/").split("/")[-1] if orcid_url else ""
 
 # Remove the H1 title + bold metadata block (pandoc will render from YAML)
 text = re.sub(
@@ -115,8 +118,13 @@ tex = TEX_OUT.read_text(encoding="utf-8")
 
 # 3a. Fix author block: display venue prominently below affiliation (not hidden in \thanks)
 venue_tex = venue_str.replace("&", r"\&").replace("#", r"\#")
+orcid_part = (
+    r'\\\\\\small\\href{' + orcid_url + r'}{ORCID ' + orcid_id + r'}'
+    if orcid_url else ''
+)
 author_block = (
     r'\\author{' + author_str
+    + orcid_part
     + r'\\\\\\small Independent researcher}'
 )
 tex = re.sub(r'\\author\{[^}]*\}', author_block, tex, count=1)
@@ -265,6 +273,16 @@ html_cmd = [
 subprocess.run(html_cmd, capture_output=True, cwd=str(PAPER))
 
 html_content = HTML_TEMP.read_text(encoding="utf-8")
+
+# Inject ORCID as a visible link below the author name in the HTML title block
+if orcid_url:
+    html_content = re.sub(
+        r'(<p class="author">)(.*?)(</p>)',
+        r'\1\2<br/><a href="' + orcid_url + r'" style="font-size:10pt">ORCID ' + orcid_id + r'</a>\3',
+        html_content,
+        count=1,
+        flags=re.DOTALL,
+    )
 
 # Inject venue as a visible line after the date in the HTML title block
 if venue_str:
