@@ -1,6 +1,7 @@
 # BioRefusalAudit: Auditing Biosecurity Refusal Depth Using General and Domain-Fine-Tuned Sparse Autoencoders
 
 **Author:** Caleb DeLeeuw  
+**ORCID:** https://orcid.org/0009-0002-0131-4151  
 **Affiliation:** Independent researcher  
 **Contact:** caleb.deleeuw@gmail.com  
 **Date:** May 2026  
