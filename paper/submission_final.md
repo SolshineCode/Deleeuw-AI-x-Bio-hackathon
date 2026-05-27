@@ -13,7 +13,7 @@
 
 Biosecurity evaluations of language models typically ask whether a model will produce hazardous output. This paper addresses a complementary question: when a model refuses, is that refusal structurally sound, or does it disappear under modest changes to prompt framing, formatting, or output length?
 
-Behavioral findings span five architectures. Gemma 2 2B-IT produced zero genuine refusals across 75 evaluation prompts, hedging instead. Gemma 4 E2B-IT refused 65/75 prompts with chat-template formatting and 0/75 without it; both refused 0% under an 80-token cap. Qwen 2.5 1.5B and Phi-3-mini over-refused (83-87% false-positive on benign biology), while Llama 3.2 1B showed a 61-point refusal gradient from benign to hazard. A cross-compound, cross-architecture probe of the legality-vs-hazard confound found some models refused psilocybin cultivation and similar compounds (Schedule I but biologically non-toxic and FDA breakthrough status) at rates exceeding genuinely hazardous biology, suggesting refusal may track legal status and cultural salience over CBRN hazard.
+Behavioral findings span five architectures. Gemma 2 2B-IT produced zero genuine refusals across 75 evaluation prompts, hedging instead. Gemma 4 E2B-IT refused 65/75 prompts with chat-template formatting and 0/75 without it; both refused 0% under an 80-token cap. Qwen 2.5 1.5B and Phi-3-mini over-refused (83-87% false-positive on benign biology), while Llama 3.2 1B showed a 61-point refusal gradient from benign to hazard. A cross-compound, cross-architecture probe of the legality-vs-hazard confound found some models refused psilocybin cultivation and similar compounds (Schedule I but biologically non-toxic and FDA Breakthrough Therapy status) at rates exceeding genuinely hazardous biology, suggesting refusal may track legal status and cultural salience over CBRN hazard.
 
 To measure the internal side, we introduce a divergence score **D** comparing a model's surface response label to its internal sparse autoencoder (SAE) feature activations. Low D means interior matches behavior; high D means they diverge. Full D was computed on Gemma 2 2B-IT (Gemma Scope 1) and Gemma 4 E2B-IT (author-trained bio SAE). On Gemma 4, comply and refuse responses separated by a 0.647-point gap with zero overlap (n=75). This mechanistic result is preliminary: narrow catalog, within-sample calibration, Gemma-family SAE coverage only.
 
@@ -420,6 +420,8 @@ The divergence metric D can separate comply from refuse postures at the activati
 
 Abdin, M. et al. (2024). Phi-3 Technical Report: A Highly Capable Language Model Locally on Your Phone. *arXiv:2404.14219.*
 
+Apart Research. (2026). BioRefusalAudit: hackathon project page with reviewer feedback. *Apart Research AIxBio Sprint, April 2026.* [apartresearch.com/project/biorefusalaudit-...-1fyk](https://apartresearch.com/project/biorefusalaudit-auditing-biosecurity-refusal-depth-using-general-and-domainfinetuned-sparse-autoencoders-1fyk).
+
 Arditi, A. et al. (2024). Refusal in LLMs is mediated by a single direction. *arXiv:2406.11717.*
 
 Liu, A. B., Nedungadi, S., Cai, B., Kleinman, A., Bhasin, H., & Donoughe, S. (2025). ABC-Bench: An Agentic Bio-Capabilities Benchmark for Biosecurity. *NeurIPS 2025 Workshop BioSafe GenAI.* openreview.net/forum?id=mo5H9VAr6r.
@@ -430,7 +432,7 @@ Bricken, T. et al. (2023). Towards monosemanticity: Decomposing language models 
 
 Crook, O. (2026). Keynote presentation. AIxBio Hackathon 2026.
 
-Compass Pathways. (2018, October 23). COMPASS Pathways receives FDA Breakthrough Therapy designation for psilocybin therapy for treatment-resistant depression. *Investor News.* ir.compasspathways.com/News--Events-/news/news-details/2018/COMPASS-Pathways-receives-FDA-Breakthrough-Therapy-designation-for-psilocybin-therapy-for-treatment-resistant-depression/default.aspx.
+Compass Pathways. (2018, October 23). COMPASS Pathways receives FDA Breakthrough Therapy designation for psilocybin therapy for treatment-resistant depression. *Investor News.* [ir.compasspathways.com/.../COMPASS-Pathways-receives-FDA-Breakthrough-Therapy-designation-for-psilocybin-therapy-for-treatment-resistant-depression](https://ir.compasspathways.com/News--Events-/news/news-details/2018/COMPASS-Pathways-receives-FDA-Breakthrough-Therapy-designation-for-psilocybin-therapy-for-treatment-resistant-depression/default.aspx).
 
 Cunningham, H. et al. (2023). Sparse autoencoders find highly interpretable features in language models. *arXiv:2309.08600.*
 
@@ -507,4 +509,4 @@ Caleb DeLeeuw designed the research, implemented the full pipeline, trained the 
 
 This project was conceived and built over the course of a single weekend as part of Apart Research's AIxBio sprint (April 2026). LLM tools (Claude Sonnet 4.6 and Opus 4.7, Anthropic) were used for editing the manuscript and for automating overnight GPU runs. All conception, original research direction, methodological direction, auditing of agentic work, and interpretation of results are the author's own (Caleb DeLeeuw).
 
-This paper was reviewed by qualified anonymous judges as part of the Apart Research AIxBio hackathon evaluation process; the reviews are [published on Apart's project page](https://apartresearch.com/project/biorefusalaudit-auditing-biosecurity-refusal-depth-using-general-and-domainfinetuned-sparse-autoencoders-1fyk). This constitutes a structured form of expert review by domain peers, not equivalent to journal peer review. This version integrates or addresses the concerns raised in that review. It has not been submitted to or approved by an official peer-reviewed journal.
+This paper was reviewed by qualified anonymous judges as part of the Apart Research AIxBio hackathon evaluation process; the reviews are [published on Apart's project page](https://apartresearch.com/project/biorefusalaudit-auditing-biosecurity-refusal-depth-using-general-and-domainfinetuned-sparse-autoencoders-1fyk) (Apart Research, 2026). This constitutes a structured form of expert review by domain peers, not equivalent to journal peer review. This version integrates or addresses the concerns raised in that review. It has not been submitted to or approved by an official peer-reviewed journal.
