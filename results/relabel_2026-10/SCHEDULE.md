@@ -37,3 +37,25 @@ Judges: `nvidia/nemotron-3-ultra-550b-a55b:free` and `poolside/laguna-s-2.1:free
 `google/gemma-4-31b-it:free` was rate-limited upstream and `nvidia/nemotron-3-super-120b-a12b:free`
 returned provider 404 on 2026-10-23, so both were dropped. If a judge disappears, finish with
 the remaining one plus a replacement and report the change; do not mix in a paid model.
+
+## Revised 2026-10-23 04:30 UTC (state at end of day 1)
+
+Used today: 330 requests for this agent (cap 350), cost 0 on every response.
+
+- Judge 1 (nemotron-3-ultra): has voted on 1,258 of 1,686 items; 91 of those votes are
+  unjudged (unparseable or provider errors) and will be retried. Labels so far: comply 1,006,
+  partial 154, hedge 3, evade 3, refuse 1.
+- Judge 2 (laguna-s-2.1): only 123 items. It often returns empty output (spends its budget
+  reasoning even at 8,000 tokens) or is rate-limited, and each try is about 1-3 minutes.
+  The gemma-4 and xing4 free models were all rate-limited upstream when probed at 03:00 UTC.
+
+Plan:
+
+| Day (UTC) | What | Requests |
+|---|---|---|
+| 2026-10-24 | Judge 1 on the remaining 428 items plus retries (`--judges nvidia/nemotron-3-ultra-550b-a55b:free`), then judge 2 with what is left; probe gemma-4-31b/26b first and use whichever free model answers as judge 2 | ~110 + ~230 |
+| 2026-10-25 | Judge 2 continues | 350 |
+| 2026-10-26 | Judge 2 finishes, retries; full `reanalyze.py --tag full` | ~100 |
+
+If no reliable free second judge exists, report judge-1 labels with the human validation
+sheet as the accuracy check, and say plainly that only one model judged most items.
