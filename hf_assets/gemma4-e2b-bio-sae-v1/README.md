@@ -13,7 +13,7 @@ tags:
 base_model: google/gemma-4-E2B-it
 datasets:
   - cais/wmdp-corpora
-  - SolshineCode/biorefusalaudit-eval-public
+  - Solshine/biorefusalaudit-public
 language:
   - en
 ---

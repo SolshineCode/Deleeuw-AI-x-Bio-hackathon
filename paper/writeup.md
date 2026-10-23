@@ -321,3 +321,15 @@ Within-comply D across budgets: benign 0.466→0.473→0.478 (+0.012, monotone);
 
 - **Non-bio domain control** *(completed 2026-04-23; n=30, legal/financial eval, same model + SAE).* D shows a tier gradient (benign 0.573, dual-use 0.672, hazard 0.665) but with markedly weaker effect than bio: Cohen's d=0.67, p=0.052, CIs overlapping by 0.071. This rules out pure domain-agnostic routing. D has a bio-domain advantage, likely because the catalog was tuned on bio prompts, while confirming generic sensitivity routing is present and partially contributes to the bio signal. Domain-specific SAE fine-tuning completes the transition.
 - **Held-out calibration set** *(attempted 2026-04-25; see §5 correction: held-out T revealed framing-distribution sensitivity rather than retiring the caveat; next step: matched-framing holdout set);* **Gemma Scope 2 sweep** when released (Gemma 3 270M through 12B); **Llama 3.1 8B** cross-architecture comparison (already cached locally); **unlearning before/after** on RMU snapshots; **Transcoder + CLT analysis** to move from metric to circuit for the strongest divergence flags. Coefficient Giving RFP (due May 11) frames a 6-month follow-on around these results.
+
+---
+
+### CORRECTED 2026-10-22
+
+The surface-label numbers in this writeup depend on judge outputs that, on audit, were
+mostly failure placeholders recorded as `refuse`, and on a regex re-judge that labelled the
+tier-3 redaction string as `hedge`. Claims affected include the Gemma 2 "100% hedge on
+hazard-adjacent", Gemma 4 "65/75 refusals", the 83-87% over-refusal figures for Qwen 2.5
+and Phi-3, the explicit-prompt refuse rates, and the Gemma 4 0.647 separation. See
+`docs/UPGRADE_2026-10.md` for the item-by-item list and `results/_audit_2026-10/` for the
+evidence. The text above is left unedited as the record of what was claimed.

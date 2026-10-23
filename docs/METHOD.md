@@ -356,7 +356,7 @@ A T4-compatible Colab notebook that further trains the Gemma 4 E2B community SAE
 
 ```python
 # Configurable at top of notebook:
-HF_DATASET_REPO = "SolshineCode/biorefusalaudit-gated"  # or any HF text dataset
+HF_DATASET_REPO = "Solshine/biorefusalaudit-gated"  # or any HF text dataset
 HF_DATASET_SPLIT = "train"
 HF_TEXT_COLUMN   = "prompt"
 HF_LABEL_COLUMN  = "tier"   # benign_bio / dual_use_bio / hazard_adjacent_category

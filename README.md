@@ -7,7 +7,7 @@
 [![Gemma Scope 1](https://img.shields.io/badge/SAEs-Gemma%20Scope%201-green)](https://deepmind.google/models/gemma/gemma-scope/)
 [![Custom bio SAE](https://img.shields.io/badge/SAEs-Custom%20bio%20SAE-orange)](https://huggingface.co/Solshine/gemma4-e2b-bio-sae-v1)
 [![Dataset: CC-BY-4.0](https://img.shields.io/badge/dataset%20tiers%201--2-CC--BY--4.0-yellow)](https://creativecommons.org/licenses/by/4.0/)
-[![Dataset: HL3-Gated](https://img.shields.io/badge/dataset%20tier%203-HL3--gated-red)](https://huggingface.co/datasets/SolshineCode/biorefusalaudit-gated)
+[![Dataset: HL3-Gated](https://img.shields.io/badge/dataset%20tier%203-HL3--gated-red)](https://huggingface.co/datasets/Solshine/biorefusalaudit-gated)
 
 ---
 
@@ -15,7 +15,7 @@ Submitted to the [AIxBio Hackathon 2026](https://apartresearch.com/sprints/aixbi
 
 **Author:** Caleb DeLeeuw ([SolshineCode](https://github.com/SolshineCode))
 
-**Prior work:** [arXiv 2509.20393](https://arxiv.org/abs/2509.20393): "The Secret Agenda: LLMs Strategically Lie Undetected by Current Safety Tools" (AAAI 2026 AI GOV)
+**Prior work:** [arXiv 2509.20393](https://arxiv.org/abs/2509.20393): DeLeeuw, Chawla, Sharma, Dietze, "The Secret Agenda: LLMs Strategically Lie and Our Current Safety Tools Are Blind" (AAAI 2026 AI GOV) (title and author list corrected 2026-10-22 against the arXiv record)
 
 **Demo video:** [https://youtu.be/PY9WztZKFh4](https://youtu.be/PY9WztZKFh4)
 
@@ -23,6 +23,31 @@ Submitted to the [AIxBio Hackathon 2026](https://apartresearch.com/sprints/aixbi
 
 **Biosecurity Domain Specific SAEs Published:** [Hugging Face Collection](https://huggingface.co/collections/Solshine/aixbio-2026-biosecurity-domain-trained-saes-for-gemma-models)
 
+
+---
+
+> **Correction notice, 2026-10-22.** An audit of the committed results found that several
+> headline numbers in this README and in arXiv:2605.30162v1 are not supported by the data in
+> this repository. In brief:
+>
+> 1. When no judge returned a usable label, the judge consortium recorded the label
+>    `refuse` as a placeholder (`biorefusalaudit/judges/consortium.py`, fixed on a separate
+>    branch). 1,172 of the 1,283 `refuse` labels across all committed reports are these
+>    placeholders. This affects the Gemma 4 "65/75 refusals", the Qwen 2.5 / Phi-3
+>    "83-87% over-refusal" figures, the explicit-prompt refuse rates, and the Gemma 4
+>    "0.647 separation" (whose `refuse` group is entirely placeholders).
+> 2. The corrected Gemma 2 table below reports "100% hedge" on the hazard-adjacent tier.
+>    Those 22 labels were computed by the regex re-judge from the redaction placeholder
+>    string, not from model output, so the tier-3 behaviour of Gemma 2 is unknown.
+> 3. The Hugging Face dataset names were wrong (`SolshineCode/...` does not exist; the
+>    datasets are `Solshine/...`), and generated tier-3 prompt bodies were committed to this
+>    repository despite `SAFETY.md` saying they would not be. They have been removed from
+>    the working tree; they remain in git history.
+>
+> Per-run evidence: `results/_audit_2026-10/placeholder_audit.md`. Full change list:
+> [`docs/UPGRADE_2026-10.md`](docs/UPGRADE_2026-10.md). Numbers below are left as originally
+> written, with correction markers, so the record stays readable. A corrected analysis is
+> in progress and a correction will be posted to arXiv when it is done.
 
 ---
 
@@ -135,6 +160,12 @@ On Gemma 2 2B-IT + Gemma Scope 1 (primary result, 75 prompts, corrected surface 
 | benign_bio | 70% | 30% | 0% | 0.467 |
 | dual_use_bio | 80% | 20% | 0% | 0.655 |
 | hazard_adjacent | 0% | **100%** | 0% | 0.669 |
+
+> **CORRECTED 2026-10-22:** the hazard_adjacent row's 100% hedge is the regex re-judge's
+> fallback applied to the redaction placeholder text, not to model output (see the
+> correction notice at the top). The 70/30 and 80/20 splits rest on the same regex, whose
+> "no pattern matched → hedge" fallback produced every hedge label in the table. The
+> 60/75 intervention figure cites `runs/interventions/`, which is not in this repository.
 
 **0 genuine refusals** across all 75 prompts at both 80 and 200 token budgets. The hazard-adjacent tier hedges universally: the model knows something is sensitive but won't refuse outright. Named-circuit qualification: **60/75 prompts (80%)**, with inverted tier ordering (benign 87% > dual-use 80% > hazard-adjacent 73%), consistent with the auto-tuned catalog encoding general technical-governance vocabulary rather than bio-specific features.
 
@@ -370,9 +401,9 @@ Each tier is split across: direct, educational, roleplay, obfuscated framings. T
 
 ### Data access
 
-**Tiers 1 and 2** are fully public in this repository under CC-BY-4.0. They are also on Hugging Face at `SolshineCode/biorefusalaudit-public`.
+**Tiers 1 and 2** are fully public in this repository under CC-BY-4.0. They are also on Hugging Face at `Solshine/biorefusalaudit-public`. (Corrected 2026-10-22: this line previously named `SolshineCode/biorefusalaudit-public`, which does not exist.)
 
-**Tier 3** is available under Hippocratic License 3.0 from the gated Hugging Face dataset `SolshineCode/biorefusalaudit-gated`. Access requires attestation that you are a biosecurity or AI safety researcher using the data for defensive purposes and will not reproduce specific prompts publicly. Request access at the HuggingFace link or email [contact in SAFETY.md].
+**Tier 3** prompt bodies are on the gated Hugging Face dataset `Solshine/biorefusalaudit-gated` under Hippocratic License 3.0. The intended access condition is an attestation that you are a biosecurity or AI safety researcher using the data for defensive purposes and will not reproduce specific prompts publicly. As of 2026-10-22 the dataset uses Hugging Face automatic approval, so that attestation is not reviewed by a person; see `SAFETY.md`. (Corrected 2026-10-22: this paragraph previously named `SolshineCode/biorefusalaudit-gated`.)
 
 **Why tiered?** The tiering follows two frameworks. The Biosecurity Data Level (BDL) framework (Bloomfield, Black, Crook et al., Science 2026) provides the data-governance precedent. The NTI managed access framework (Yassif & Carter, *A Framework for Managed Access to Biological AI Tools*, NTI Bio January 2026) provides the policy motivation: tools that probe hazard-adjacent model behavior sit in the category where "users should meet criteria for access." The HL3 license on tier 3 gives that criterion a legally enforceable form. For details on the rationale, see [docs/HL3_RATIONALE.md](docs/HL3_RATIONALE.md).
 
@@ -419,6 +450,12 @@ Source: `runs/gemma-2-2b-it-L12-tuned/report.json` (D-values); corrected surface
 | refuse | 16 | 0.249 | 0.004 |
 
 Zero overlap. 0.647-point separation. The metric is tracking the thing it was designed to track.
+
+> **CORRECTED 2026-10-22:** all 16 `refuse` records in this run are judge-failure
+> placeholders, and the feature vector `f` is almost constant across the 75 prompts, so a
+> regression of D on the surface label alone gives R² = 1.000. The separation is a
+> restatement of the judge's (placeholder) label, not evidence that D tracks activations.
+> This claim is withdrawn pending re-analysis.
 
 **Limitations:** Feature catalogs are Cohen's-d auto-tuned from 75-prompt activation dumps, not Neuronpedia hand-validated. Calibration T for Gemma 2 results is fit within-sample (a held-out v3 calibration inverted tier ordering, confirming T is framing-distribution-sensitive). Gemma 4 results use T_prior (identity-biased permutation). The Gemma 2 tier-D separation (d=1.29) likely reflects vocabulary routing as much as genuine hazard detection. See §4.2 and §5 of the paper for full caveats.
 
@@ -532,8 +569,8 @@ See [SAFETY.md](SAFETY.md) for the full release policy. Summary:
 
 - **Code:** Hippocratic License 3.0 (this repo). You may use, modify, and distribute this code for biosecurity research, AI safety research, and related defensive purposes. You may not use it to harm people, surveil populations, or facilitate bioweapon development.
 - **Eval set tiers 1+2:** CC-BY-4.0, fully open.
-- **Eval set tier 3:** HL3-Gated on a separate Hugging Face dataset repo. Access requires attestation.
-- **Model outputs in this repo:** All tier-3 model responses are redacted. Specific prompts from tier 3 do not appear in any public file in this repository.
+- **Eval set tier 3:** HL3-Gated on a separate Hugging Face dataset repo (`Solshine/biorefusalaudit-gated`, automatic approval as of 2026-10-22).
+- **Model outputs in this repo:** All tier-3 model responses are redacted. Specific prompts from tier 3 are not in the current working tree. (Corrected 2026-10-22: generated tier-3 prompt bodies were committed under `data/eval_set_gated/` from 2026-05-01 to 2026-10-22 and remain in git history; four format-ablation reports carried unredacted 120-character tier-3 output previews until the same date.)
 
 **Why HL3 for the code?** This tool was built to strengthen biosecurity, not to weaken it. Standard permissive licenses (Apache, MIT) allow any use including weaponization. HL3 provides a legally enforceable human rights requirement that aligns with how every organization involved in this work, including SecureBio, Fourth Eon Bio, Sentinel Bio, and CLTR, actually thinks about responsible AI. We think it's the right choice for a biosecurity tool, and we think that licensing signal matters to the community this tool is for.
 

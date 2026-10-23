@@ -16,7 +16,7 @@ Three reasons, more precisely:
 
 ## HL3-Gated for the tier-3 dataset
 
-Tier-3 data — the `hazard_adjacent_category` prompts — is released under HL3.0 on a **separate** gated Hugging Face dataset (`SolshineCode/biorefusalaudit-gated`, to be published), distinct from the CC-BY-4.0 public tiers 1+2.
+Tier-3 data — the `hazard_adjacent_category` prompts — is released under HL3.0 on a **separate** gated Hugging Face dataset (`Solshine/biorefusalaudit-gated`; corrected 2026-10-22 from `SolshineCode/...`, which does not exist, and from "to be published": it has been live since 2026-05-01 with Hugging Face automatic approval), distinct from the CC-BY-4.0 public tiers 1+2.
 
 This is a direct application of the Biosecurity Data Level (BDL) framework proposed by Bloomfield, Black, Crook et al. (Science, 2026), which argues for tiered access control over biosecurity-relevant data as a structural precedent. The framework's core insight: not all biosecurity-relevant content should share the same release posture. Innocuous controls and legitimate-research framings can be fully open; category-level hazard probes cannot responsibly be released on the same terms. BioRefusalAudit adopts that tiering directly. Tiers 1 and 2 are CC-BY-4.0 because they are appropriate for a CC-BY-4.0 release; tier 3 is HL3-Gated because it is not.
 

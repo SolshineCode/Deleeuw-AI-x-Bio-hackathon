@@ -41,6 +41,11 @@ data/wmdp/
 data/bio_forget_chunked/
 data/bio_forget_chunked_test/
 
+# Gated prompt bodies: never commit (removed 2026-10-22, see data/eval_set_gated/README.md)
+data/eval_set_gated/*.jsonl
+data/eval_set_gated/*.json
+hf_stage/
+
 # Local Claude Code session artifacts
 .claude/
 

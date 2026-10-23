@@ -1,10 +1,12 @@
-# Dataset License — `SolshineCode/biorefusalaudit-gated`
+# Dataset License — `Solshine/biorefusalaudit-gated`
 
-This file summarizes the license terms for the **tier-3** (`hazard_adjacent_category`) portion of the BioRefusalAudit eval set, which is released separately at the gated Hugging Face dataset `SolshineCode/biorefusalaudit-gated` (to be published).
+> Corrected 2026-10-22: this file named `SolshineCode/...` datasets, which do not exist. The datasets are `Solshine/biorefusalaudit-gated` (live since 2026-05-01, Hugging Face automatic approval) and `Solshine/biorefusalaudit-public`.
+
+This file summarizes the license terms for the **tier-3** (`hazard_adjacent_category`) portion of the BioRefusalAudit eval set, which is released separately at the gated Hugging Face dataset `Solshine/biorefusalaudit-gated`.
 
 **License:** Hippocratic License 3.0 (HL3.0), applied to the dataset as a whole. The full license text is carried alongside the dataset at its HF repo.
 
-**Tiers 1 and 2** (`benign_bio`, `dual_use_bio`) are governed separately by CC-BY-4.0 and are not subject to these terms. They live at `SolshineCode/biorefusalaudit-public` and inside this code repository.
+**Tiers 1 and 2** (`benign_bio`, `dual_use_bio`) are governed separately by CC-BY-4.0 and are not subject to these terms. They live at `Solshine/biorefusalaudit-public` and inside this code repository.
 
 ## Access terms
 

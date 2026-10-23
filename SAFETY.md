@@ -34,21 +34,45 @@ See [docs/HL3_RATIONALE.md](docs/HL3_RATIONALE.md) for the longer argument, incl
 
 ## Data release tiering
 
-The eval set is released in tiers, matching the structure described in the README:
+> **CORRECTED 2026-10-22.** The table and paragraph below, as written before this date, did
+> not match the actual state of the repository or of Hugging Face. What was wrong:
+>
+> 1. *"tier-3 prompts never land in this repository or its history"* was false. From
+>    2026-04-30 until 2026-10-22, `data/eval_set_gated/` (and, before a move, the same files
+>    under `data/eval_set_public/`) held 404 generated prompt rows in 9 files, 204 of them
+>    tier-3 explicit prompt bodies and 200 explicit tier-1/2 prompts. They were removed from
+>    the working tree on 2026-10-22. **They remain in git history**; whether to rewrite
+>    history is an open decision, see `docs/UPGRADE_2026-10.md` §4.
+> 2. The Hugging Face dataset names were wrong. `SolshineCode/biorefusalaudit-public` and
+>    `SolshineCode/biorefusalaudit-gated` do not exist (HTTP 401). The datasets exist as
+>    `Solshine/biorefusalaudit-public` and `Solshine/biorefusalaudit-gated`.
+> 3. The gated dataset is not "not yet created": it has existed since 2026-05-01. Its access
+>    setting is Hugging Face **automatic** approval, which grants access to any logged-in
+>    account that submits the request form. No person reviews the attestation in section
+>    "Tier-3 access attestation" below.
+> 4. Four format-ablation reports carried 120-character previews of model outputs for tier-3
+>    rows without redaction. Those previews were replaced by the redaction placeholder on
+>    2026-10-22 (labels unchanged).
+>
+> The table below is the corrected state as of 2026-10-22.
 
-| Tier | Content | License | Location |
+The eval set is released in tiers:
+
+| Tier | Content | License | Location (verified 2026-10-22) |
 |---|---|---|---|
-| 1 — `benign_bio` | Innocuous biology control prompts | CC-BY-4.0 | This repo; HF `SolshineCode/biorefusalaudit-public` |
-| 2 — `dual_use_bio` | Legitimate research framings, hazard-adjacent | CC-BY-4.0 | This repo; HF `SolshineCode/biorefusalaudit-public` |
-| 3 — `hazard_adjacent_category` | Category-level hazard probes | HL3-Gated | Will be published at HF `SolshineCode/biorefusalaudit-gated` (gated dataset not yet created) |
+| 1 — `benign_bio` | Innocuous biology control prompts | CC-BY-4.0 | This repo (`data/eval_set_public/`); HF `Solshine/biorefusalaudit-public` (public) |
+| 2 — `dual_use_bio` | Legitimate research framings, hazard-adjacent | CC-BY-4.0 | This repo (`data/eval_set_public/`); HF `Solshine/biorefusalaudit-public` (public) |
+| 3 — `hazard_adjacent_category` | Category-level hazard probes | HL3-Gated | This repo holds category descriptors only. Prompt bodies: HF `Solshine/biorefusalaudit-gated` (access setting: automatic approval; see correction note above) |
 
-Tiers 1 and 2 are fully open. Tier 3 is access-controlled behind an attestation gate on a **separate** Hugging Face dataset repo, so tier-3 prompts never land in this repository or its history.
+This repository's working tree carries tier-3 category descriptors only. The generated
+explicit prompt files (tier 3 and the explicit tier-1/2 100-sample sets) are no longer in
+the working tree; `data/eval_set_gated/README.md` explains where they are.
 
-Model outputs generated from tier-3 prompts are redacted before any public artifact (reports, figures, paper tables) is produced. See `biorefusalaudit/reporting/redaction.py`.
+Model outputs generated from tier-3 prompts are redacted before any public artifact (reports, figures, paper tables) is produced. See `biorefusalaudit/reporting/redaction.py`. A consequence for auditing: no tier-3 behavioural label in `results/` can be checked from this repository, because the text it describes is not stored here.
 
 ## Tier-3 access attestation
 
-Access to `SolshineCode/biorefusalaudit-gated` (once published) requires an attestation with the following elements:
+Access to `Solshine/biorefusalaudit-gated` is intended to require an attestation with the following elements. (As of 2026-10-22 the dataset uses Hugging Face automatic approval, so the attestation is requested but not reviewed; see the correction note above.)
 
 1. **Identity and affiliation** — your name and the organization or independent research context you are working in.
 2. **Purpose** — a one-paragraph statement that your intended use is biosecurity research, AI safety research, or defensive red-teaming.
@@ -88,4 +112,4 @@ HL3 is backed by firstdonoharm.dev and has been adopted by several AI safety too
 
 ## Scope notes
 
-This policy governs BioRefusalAudit. It does not govern the underlying models (Gemma 3 family, Llama 3.1 8B), the SAE releases (Gemma Scope 2, Llama Scope), the judge APIs (Gemini, Claude, OpenRouter), or any external data source. Use of those is governed by their respective terms.
+This policy governs BioRefusalAudit. It does not govern the underlying models (as run: Gemma 2 2B-IT, Gemma 4 E2B-IT, Llama 3.2 1B-Instruct, Qwen 2.5 1.5B-Instruct, Phi-3-mini-4k-instruct; this line listed "Gemma 3 family, Llama 3.1 8B" before 2026-10-22), the SAE releases (as used: Gemma Scope 1 and the author-trained SAEs under `Solshine/`; listed before 2026-10-22 as "Gemma Scope 2, Llama Scope"), the judge APIs (Gemini, Claude, OpenRouter), or any external data source. Use of those is governed by their respective terms.
