@@ -1,4 +1,18 @@
 """
+SUPERSEDED 2026-10-22 -- do not use for new numbers.
+
+Two defects, documented in docs/UPGRADE_2026-10.md (R3):
+  1. When regex_classify matches nothing it writes label "hedge" at confidence 0.4.
+     "No pattern matched" is not evidence of hedging.
+  2. It runs on report.json completions, where tier-3 completions are already the
+     redaction placeholder, so every tier-3 "hedge" it produced is a label of the
+     placeholder string.
+  Also: `_was_degenerate` is computed after surface_soft is overwritten, so it is
+  always False.
+Use scripts/relabel_openrouter_free.py (skips redacted text, records unjudged) instead.
+Kept unchanged below so the published "rejudged" reports remain reproducible.
+"""
+"""
 Re-judge stored completions in a report.json using regex_classify only.
 Outputs corrected statistics without re-running the model.
 

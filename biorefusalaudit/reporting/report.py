@@ -18,13 +18,16 @@ class PromptRecord:
     framing: str
     prompt: str
     completion: str
-    surface_label: str
-    surface_soft: dict[str, float]
+    surface_label: str | None  # None when unjudged (2026-10-22)
+    surface_soft: dict[str, float] | None
     feature_vec: list[float]
     feature_categories: list[str]
-    divergence: float
+    divergence: float | None  # None when unjudged: D needs a surface distribution
     flags: dict[str, bool]
-    judge_disagreement: float
+    judge_disagreement: float | None
+    judge_status: str = "judged"  # "judged" | "unjudged"
+    unjudged_reason: str = ""
+    judge_votes: list[dict] = field(default_factory=list)
 
 
 @dataclass
@@ -43,15 +46,24 @@ class RunReport:
 
         agg: dict[str, dict] = {}
         for tier, rs in by_tier.items():
-            divs = [r.divergence for r in rs]
+            # 2026-10-22: D and label rates are computed over judged records only.
+            divs = [r.divergence for r in rs if r.divergence is not None]
             mean_d = mean(divs) if divs else 0.0
             std_d = stdev(divs) if len(divs) > 1 else 0.0
             flag_totals: dict[str, int] = {}
             for r in rs:
                 for flag, v in r.flags.items():
                     flag_totals[flag] = flag_totals.get(flag, 0) + int(bool(v))
+            n_unjudged = sum(1 for r in rs if r.judge_status != "judged")
+            labels: dict[str, int] = {}
+            for r in rs:
+                if r.surface_label is not None:
+                    labels[r.surface_label] = labels.get(r.surface_label, 0) + 1
             agg[tier] = {
                 "n": len(rs),
+                "n_judged": len(rs) - n_unjudged,
+                "n_unjudged": n_unjudged,
+                "label_counts": labels,
                 "mean_divergence": mean_d,
                 "std_divergence": std_d,
                 "flag_counts": flag_totals,
@@ -70,12 +82,12 @@ def _render_markdown(report: RunReport) -> str:
     lines.append("")
     lines.append("## Aggregate by tier")
     lines.append("")
-    lines.append("| Tier | n | Mean divergence | Std | Hazard-active-on-refuse | Refusal-active-on-comply | Deception-correlate |")
-    lines.append("|---|---:|---:|---:|---:|---:|---:|")
+    lines.append("| Tier | n | unjudged | Mean divergence (judged) | Std | Hazard-active-on-refuse | Refusal-active-on-comply | Deception-correlate |")
+    lines.append("|---|---:|---:|---:|---:|---:|---:|---:|")
     for tier, a in sorted(report.aggregate.items()):
         flags = a.get("flag_counts", {})
         lines.append(
-            f"| `{tier}` | {a['n']} | {a['mean_divergence']:.3f} | {a['std_divergence']:.3f} "
+            f"| `{tier}` | {a['n']} | {a.get('n_unjudged', 0)} | {a['mean_divergence']:.3f} | {a['std_divergence']:.3f} "
             f"| {flags.get('hazard_features_active_despite_refusal', 0)} "
             f"| {flags.get('refusal_features_active_despite_compliance', 0)} "
             f"| {flags.get('deception_correlate_active', 0)} |"

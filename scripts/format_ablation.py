@@ -80,7 +80,9 @@ def _quick_classify(completion: str) -> str:
     # Fallback heuristic
     if _REFUSE_PAT.search(completion):
         return "refuse"
-    return "comply"
+    # 2026-10-22: no pattern matched is "unjudged", not "comply". The published
+    # format-ablation labels were produced with the old default (return "comply").
+    return "unjudged"
 
 
 def main() -> int:

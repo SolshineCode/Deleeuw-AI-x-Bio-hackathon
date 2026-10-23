@@ -28,7 +28,7 @@ from biorefusalaudit.judges.consortium import (
     aggregate_votes,
     soft_distribution_vector,
 )
-from biorefusalaudit.judges.regex_classifier import regex_classify
+from biorefusalaudit.judges.regex_classifier import regex_classify, regex_vote  # noqa: F401
 from biorefusalaudit.models.model_adapter import (
     LoadedModel,
     generate_completion,
@@ -49,14 +49,9 @@ JudgeFn = Callable[[str, str], JudgeVote]
 
 
 def _regex_as_vote(text: str) -> JudgeVote:
-    v = regex_classify(text)
-    label = v.label if v.label is not None else "refuse"
-    return JudgeVote(
-        judge_name="regex",
-        label=label,
-        confidence=v.confidence,
-        raw_response=", ".join(v.matched_patterns)[:200],
-    )
+    # 2026-10-22: no-match is an abstention (UNJUDGED), not a "refuse" vote. See
+    # judges/consortium.py changelog.
+    return regex_vote(text)
 
 
 def run_one_prompt(
@@ -101,10 +96,16 @@ def run_one_prompt(
         except Exception as e:  # noqa: BLE001
             log.warning("judge %s failed: %s", getattr(judge, "__name__", judge), e)
     verdict = aggregate_votes(votes)
-    s_vec = soft_distribution_vector(verdict)
 
-    d = divergence(s_vec, f_vec, T)
-    flags = divergence_flags(s_vec, f_vec)
+    # 2026-10-22: an unjudged record has no surface distribution, so no D and no
+    # label-dependent flags. Previously a uniform placeholder was used.
+    if verdict.is_judged:
+        s_vec = soft_distribution_vector(verdict)
+        d = divergence(s_vec, f_vec, T)
+        flags = divergence_flags(s_vec, f_vec)
+    else:
+        d = None
+        flags = {}
 
     return PromptRecord(
         id=prompt.id,
@@ -113,12 +114,19 @@ def run_one_prompt(
         prompt=prompt.prompt,
         completion=completion,
         surface_label=verdict.label,
-        surface_soft=dict(verdict.soft_distribution),
+        surface_soft=dict(verdict.soft_distribution) if verdict.soft_distribution else None,
         feature_vec=list(f_vec),
         feature_categories=list(FEATURE_CATEGORIES),
         divergence=d,
         flags=flags,
         judge_disagreement=verdict.disagreement,
+        judge_status=verdict.judge_status,
+        unjudged_reason=verdict.unjudged_reason,
+        judge_votes=[
+            {"judge": v.judge_name, "label": v.label, "confidence": v.confidence,
+             "raw": v.raw_response[:200]}
+            for v in verdict.votes
+        ],
     )
 
 
@@ -158,8 +166,10 @@ def run_eval(
             elapsed = time.time() - t_prompt
             total_elapsed = time.time() - t_start
             log.info(
-                "[%d/%d] %s (%s/%s) D=%.3f label=%s (%.1fs; eta=%.0fs)",
-                i + 1, n, p.id, p.tier, p.framing, rec.divergence, rec.surface_label,
+                "[%d/%d] %s (%s/%s) D=%s label=%s (%.1fs; eta=%.0fs)",
+                i + 1, n, p.id, p.tier, p.framing,
+                "n/a" if rec.divergence is None else f"{rec.divergence:.3f}",
+                rec.surface_label or rec.judge_status,
                 elapsed, (total_elapsed / (i + 1)) * (n - i - 1),
             )
         except Exception as e:  # noqa: BLE001
