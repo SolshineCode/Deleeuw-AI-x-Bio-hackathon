@@ -61,14 +61,14 @@ RATE_RUNS = (
 )
 
 
-def new_label_index(relabel_dir: Path) -> tuple[dict, dict, int, int]:
+def new_label_index(relabel_dir: Path, min_judges: int = 2) -> tuple[dict, dict, int, int]:
     """(run, record id) -> final relabel verdict; plus coverage numbers."""
     manifest = [json.loads(x) for x in (relabel_dir / "manifest.jsonl").read_text().splitlines()]
     final = RL.consolidate(relabel_dir) if (relabel_dir / "votes.jsonl").exists() else {}
     idx = {}
     for m in manifest:
         f = final.get(m["item_id"])
-        if not f or f["n_judges"] < 2:
+        if not f or f["n_judges"] < min_judges:
             continue
         for o in m["occurrences"]:
             idx[(o["run"], o["id"], o.get("condition"))] = f
@@ -104,12 +104,20 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--relabel-dir", default=str(RESULTS / "relabel_2026-10"))
     ap.add_argument("--tag", default="pilot")
+    ap.add_argument("--min-judges", type=int, default=2,
+                    help="items need votes from this many judges (a failed vote still counts as a vote)")
     args = ap.parse_args()
-    idx, final, complete, total = new_label_index(Path(args.relabel_dir))
+    idx, final, complete, total = new_label_index(Path(args.relabel_dir), args.min_judges)
     is_pilot = complete < total
-    out = {"coverage": {"items_with_both_judges": complete, "manifest_items": total, "pilot": is_pilot}}
+    n_used = len({f["item_id"] for f in idx.values()})
+    agree_pool = [f for f in final.values() if f["n_usable"] == 2]
+    out = {"coverage": {"items_with_both_judges": complete, "manifest_items": total, "pilot": is_pilot,
+                        "items_used": n_used, "min_judges": args.min_judges,
+                        "both_answered": len(agree_pool), "both_agree": sum(f["agree"] for f in agree_pool)}}
     md = [f"# Re-analysis {'(PILOT, descriptive only)' if is_pilot else '(full relabel)'}: generated", "",
-          f"Relabelled items with both judges: {complete} of {total} unique non-tier-3 completions.",
+          f"Items used: {n_used} of {total} unique non-tier-3 completions (min judges {args.min_judges});",
+          f"both judges answered on {len(agree_pool)} and agreed on {sum(f['agree'] for f in agree_pool)}.",
+          "An item with one usable vote takes that vote's label; an exact tie between judges is unjudged.",
           "Rates below cover only records whose completion has been relabelled, so per-run n is",
           "smaller than the published n and the subset is a stratified pilot sample, not the full run." if is_pilot else "",
           "Tier-3 records are not relabelled (completions redacted in every committed run).", ""]
@@ -234,7 +242,8 @@ def main() -> int:
            f"- Relabelled records: {len(sel)} with labels {dict(newc)}.",
            f"- Same test with relabelled classes: p = {p_new if p_new is not None else 'not computable (a class has fewer than 3 records)'}.",
            "", "Reading: if D's separation were activation-driven, f would differ between the label",
-           "groups. A p-value near 1 with near-zero f variance means the separation is the label."]
+           "groups. A large p-value together with near-zero f variance means the separation comes",
+           "from the label, not from the activations."]
 
     o = RESULTS / "reanalysis_2026-10"
     o.mkdir(parents=True, exist_ok=True)

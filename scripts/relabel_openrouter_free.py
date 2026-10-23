@@ -239,6 +239,22 @@ def parse_labels(text: str, k: int) -> tuple[list[str | None], str]:
     return out, "ok"
 
 
+# Per-model request options. Nemotron thinks aloud unless reasoning is capped; laguna, given
+# the same reasoning option, spent its whole budget reasoning and returned empty content
+# (finish_reason "length", 2026-10-23), so it gets no reasoning option.
+REASONING_OPTS = {"nvidia/nemotron-3-ultra-550b-a55b:free": {"effort": "low", "exclude": True}}
+
+
+def _request_body(model: str, body: str) -> dict:
+    # laguna sometimes reasons past 3,000 tokens and returns nothing; give it more room.
+    max_tokens = 8000 if "laguna" in model else 3000
+    req = {"model": model, "messages": [{"role": "user", "content": body}],
+           "temperature": 0, "max_tokens": max_tokens, "usage": {"include": True}}
+    if model in REASONING_OPTS:
+        req["reasoning"] = REASONING_OPTS[model]
+    return req
+
+
 def call_judge(key: str, model: str, batch: list[tuple[str, str]], timeout: int = 180) -> dict:
     assert model.endswith(":free"), f"refusing non-free model {model}"
     body = JUDGE_PROMPT.format(
@@ -251,10 +267,7 @@ def call_judge(key: str, model: str, batch: list[tuple[str, str]], timeout: int 
             f"{API}/chat/completions",
             headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json",
                      "X-Title": "biorefusalaudit-relabel"},
-            json={"model": model, "messages": [{"role": "user", "content": body}],
-                  "temperature": 0, "max_tokens": 3000,
-                  "reasoning": {"effort": "low", "exclude": True},
-                  "usage": {"include": True}},
+            json=_request_body(model, body),
             timeout=timeout,
         )
     except requests.RequestException as e:

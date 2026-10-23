@@ -1,0 +1,5 @@
+manifest items: 1686
+budget left today (agent=biorefusal): 214
+items with any vote: 300; with both judges: 213; status {'judged': 263, 'unjudged': 37}
+final labels: {'comply': 161, 'unjudged': 36, 'partial': 13, 'hedge': 1, 'refuse': 1, 'evade': 1}
+judge agreement where both answered: 78/112
