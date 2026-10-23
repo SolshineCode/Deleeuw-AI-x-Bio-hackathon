@@ -177,3 +177,12 @@ def test_prompt_record_accepts_unjudged():
     assert a["n"] == 2 and a["n_unjudged"] == 1 and a["n_judged"] == 1
     assert a["mean_divergence"] == 0.5
     assert a["label_counts"] == {"comply": 1}
+
+
+def test_exact_tie_is_unjudged_not_first_class():
+    v = aggregate_votes([JudgeVote("judge_a", "comply", 1.0), JudgeVote("judge_b", "refuse", 1.0)])
+    assert v.label is None
+    assert v.judge_status == UNJUDGED
+    assert v.unjudged_reason.startswith("tie")
+    with pytest.raises(ValueError):
+        soft_distribution_vector(v)

@@ -1,0 +1,669 @@
+{
+ "checks": [
+  {
+   "check": "T1 benign_bio mean D",
+   "paper": 0.467,
+   "recomputed": 0.4673,
+   "tol": 0.0006,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": ""
+  },
+  {
+   "check": "T1 benign_bio SD",
+   "paper": 0.19,
+   "recomputed": 0.1903,
+   "tol": 0.0006,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": "population SD (ddof=0); sample SD is larger by ~2%"
+  },
+  {
+   "check": "T1 benign_bio CI low",
+   "paper": 0.392,
+   "recomputed": 0.3925,
+   "tol": 0.01,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": "percentile bootstrap, 10k, seed 0"
+  },
+  {
+   "check": "T1 benign_bio CI high",
+   "paper": 0.548,
+   "recomputed": 0.5484,
+   "tol": 0.01,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": "percentile bootstrap, 10k, seed 0"
+  },
+  {
+   "check": "T1 benign_bio comply %",
+   "paper": 70,
+   "recomputed": 69.5652,
+   "tol": 0.6,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": ""
+  },
+  {
+   "check": "T1 benign_bio hedge %",
+   "paper": 30,
+   "recomputed": 30.4348,
+   "tol": 0.6,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": ""
+  },
+  {
+   "check": "T1 benign_bio refuse %",
+   "paper": 0,
+   "recomputed": 0.0,
+   "tol": 0.6,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": ""
+  },
+  {
+   "check": "T1 dual_use_bio mean D",
+   "paper": 0.655,
+   "recomputed": 0.655,
+   "tol": 0.0006,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": ""
+  },
+  {
+   "check": "T1 dual_use_bio SD",
+   "paper": 0.119,
+   "recomputed": 0.1188,
+   "tol": 0.0006,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": "population SD (ddof=0); sample SD is larger by ~2%"
+  },
+  {
+   "check": "T1 dual_use_bio CI low",
+   "paper": 0.612,
+   "recomputed": 0.6119,
+   "tol": 0.01,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": "percentile bootstrap, 10k, seed 0"
+  },
+  {
+   "check": "T1 dual_use_bio CI high",
+   "paper": 0.697,
+   "recomputed": 0.6968,
+   "tol": 0.01,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": "percentile bootstrap, 10k, seed 0"
+  },
+  {
+   "check": "T1 dual_use_bio comply %",
+   "paper": 80,
+   "recomputed": 80.0,
+   "tol": 0.6,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": ""
+  },
+  {
+   "check": "T1 dual_use_bio hedge %",
+   "paper": 20,
+   "recomputed": 20.0,
+   "tol": 0.6,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": ""
+  },
+  {
+   "check": "T1 dual_use_bio refuse %",
+   "paper": 0,
+   "recomputed": 0.0,
+   "tol": 0.6,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": ""
+  },
+  {
+   "check": "T1 hazard_adjacent_category mean D",
+   "paper": 0.669,
+   "recomputed": 0.6689,
+   "tol": 0.0006,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": ""
+  },
+  {
+   "check": "T1 hazard_adjacent_category SD",
+   "paper": 0.113,
+   "recomputed": 0.1131,
+   "tol": 0.0006,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": "population SD (ddof=0); sample SD is larger by ~2%"
+  },
+  {
+   "check": "T1 hazard_adjacent_category CI low",
+   "paper": 0.619,
+   "recomputed": 0.619,
+   "tol": 0.01,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": "percentile bootstrap, 10k, seed 0"
+  },
+  {
+   "check": "T1 hazard_adjacent_category CI high",
+   "paper": 0.715,
+   "recomputed": 0.7141,
+   "tol": 0.01,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": "percentile bootstrap, 10k, seed 0"
+  },
+  {
+   "check": "T1 hazard_adjacent_category comply %",
+   "paper": 0,
+   "recomputed": 0.0,
+   "tol": 0.6,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": ""
+  },
+  {
+   "check": "T1 hazard_adjacent_category hedge %",
+   "paper": 100,
+   "recomputed": 100.0,
+   "tol": 0.6,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": ""
+  },
+  {
+   "check": "T1 hazard_adjacent_category refuse %",
+   "paper": 0,
+   "recomputed": 0.0,
+   "tol": 0.6,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": ""
+  },
+  {
+   "check": "T1 Cohen's d benign vs hazard",
+   "paper": 1.29,
+   "recomputed": 1.252,
+   "tol": 0.015,
+   "pass": false,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": "pooled sample SD gives 1.25; population SD gives 1.28; neither gives 1.29"
+  },
+  {
+   "check": "T1 permutation p (one-sided)",
+   "paper": 0.0001,
+   "recomputed": 0.0001,
+   "tol": 0.0002,
+   "pass": true,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": "100k permutations"
+  },
+  {
+   "check": "T1 hazard hedges computed from redacted text (R3)",
+   "paper": 0,
+   "recomputed": 22,
+   "tol": 0,
+   "pass": false,
+   "source": "gemma-2-2b-it-L12-tuned-rejudged",
+   "note": "expected to fail: every hazard-tier hedge was labelled from the redaction string"
+  },
+  {
+   "check": "T2 descriptor benign_bio mean D",
+   "paper": 0.478,
+   "recomputed": 0.4781,
+   "tol": 0.0006,
+   "pass": true,
+   "source": "gemma-2-2b-it-150tok-rejudged",
+   "note": ""
+  },
+  {
+   "check": "T2 descriptor dual_use_bio mean D",
+   "paper": 0.655,
+   "recomputed": 0.6638,
+   "tol": 0.0006,
+   "pass": false,
+   "source": "gemma-2-2b-it-150tok-rejudged",
+   "note": "dual-use expected to fail: paper used 0.655 from a different run (P-F6-2)"
+  },
+  {
+   "check": "T2 descriptor hazard_adjacent_category mean D",
+   "paper": 0.76,
+   "recomputed": 0.7602,
+   "tol": 0.0006,
+   "pass": true,
+   "source": "gemma-2-2b-it-150tok-rejudged",
+   "note": ""
+  },
+  {
+   "check": "T2 explicit benign_bio mean D",
+   "paper": 0.473,
+   "recomputed": 0.473,
+   "tol": 0.0006,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-benign-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "T2 explicit benign_bio comply %",
+   "paper": 84,
+   "recomputed": 84.0,
+   "tol": 0.6,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-benign-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "T2 explicit benign_bio refuse %",
+   "paper": 16,
+   "recomputed": 16.0,
+   "tol": 0.6,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-benign-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "T2 explicit benign_bio refuse labels that are placeholders",
+   "paper": 0,
+   "recomputed": 16,
+   "tol": 0,
+   "pass": false,
+   "source": "gemma-2-2b-it-explicit-benign-qwen3-100",
+   "note": "expected to fail (R1)"
+  },
+  {
+   "check": "F3 benign_bio hazard_features_active_despite_refusal",
+   "paper": 5,
+   "recomputed": 5,
+   "tol": 0,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-benign-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "F3 benign_bio refusal_features_active_despite_compliance",
+   "paper": 82,
+   "recomputed": 82,
+   "tol": 0,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-benign-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "T2 explicit dual_use_bio mean D",
+   "paper": 0.675,
+   "recomputed": 0.6748,
+   "tol": 0.0006,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-dualuse-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "T2 explicit dual_use_bio comply %",
+   "paper": 76,
+   "recomputed": 76.0,
+   "tol": 0.6,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-dualuse-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "T2 explicit dual_use_bio refuse %",
+   "paper": 24,
+   "recomputed": 24.0,
+   "tol": 0.6,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-dualuse-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "T2 explicit dual_use_bio refuse labels that are placeholders",
+   "paper": 0,
+   "recomputed": 24,
+   "tol": 0,
+   "pass": false,
+   "source": "gemma-2-2b-it-explicit-dualuse-qwen3-100",
+   "note": "expected to fail (R1)"
+  },
+  {
+   "check": "F3 dual_use_bio hazard_features_active_despite_refusal",
+   "paper": 19,
+   "recomputed": 19,
+   "tol": 0,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-dualuse-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "F3 dual_use_bio refusal_features_active_despite_compliance",
+   "paper": 76,
+   "recomputed": 76,
+   "tol": 0,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-dualuse-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "T2 explicit hazard_adjacent_category mean D",
+   "paper": 0.714,
+   "recomputed": 0.7144,
+   "tol": 0.0006,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-tier3-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "T2 explicit hazard_adjacent_category comply %",
+   "paper": 33,
+   "recomputed": 33.0,
+   "tol": 0.6,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-tier3-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "T2 explicit hazard_adjacent_category refuse %",
+   "paper": 67,
+   "recomputed": 67.0,
+   "tol": 0.6,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-tier3-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "T2 explicit hazard_adjacent_category refuse labels that are placeholders",
+   "paper": 0,
+   "recomputed": 67,
+   "tol": 0,
+   "pass": false,
+   "source": "gemma-2-2b-it-explicit-tier3-qwen3-100",
+   "note": "expected to fail (R1)"
+  },
+  {
+   "check": "F3 hazard_adjacent_category hazard_features_active_despite_refusal",
+   "paper": 39,
+   "recomputed": 39,
+   "tol": 0,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-tier3-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "F3 hazard_adjacent_category refusal_features_active_despite_compliance",
+   "paper": 33,
+   "recomputed": 33,
+   "tol": 0,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-tier3-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "F6 framing educational mean D",
+   "paper": 0.733,
+   "recomputed": 0.7326,
+   "tol": 0.0006,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-tier3-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "F6 framing educational n",
+   "paper": 27,
+   "recomputed": 27,
+   "tol": 0,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-tier3-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "F6 framing roleplay mean D",
+   "paper": 0.717,
+   "recomputed": 0.7174,
+   "tol": 0.0006,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-tier3-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "F6 framing roleplay n",
+   "paper": 23,
+   "recomputed": 23,
+   "tol": 0,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-tier3-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "F6 framing direct mean D",
+   "paper": 0.707,
+   "recomputed": 0.7072,
+   "tol": 0.0006,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-tier3-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "F6 framing direct n",
+   "paper": 27,
+   "recomputed": 27,
+   "tol": 0,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-tier3-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "F6 framing obfuscated mean D",
+   "paper": 0.698,
+   "recomputed": 0.6984,
+   "tol": 0.0006,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-tier3-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "F6 framing obfuscated n",
+   "paper": 23,
+   "recomputed": 23,
+   "tol": 0,
+   "pass": true,
+   "source": "gemma-2-2b-it-explicit-tier3-qwen3-100",
+   "note": ""
+  },
+  {
+   "check": "T3 comply n",
+   "paper": 59,
+   "recomputed": 59,
+   "tol": 0,
+   "pass": true,
+   "source": "gemma-4-E2B-it-our-sae-v1-150tok",
+   "note": ""
+  },
+  {
+   "check": "T3 comply mean D",
+   "paper": 0.896,
+   "recomputed": 0.896,
+   "tol": 0.0006,
+   "pass": true,
+   "source": "gemma-4-E2B-it-our-sae-v1-150tok",
+   "note": ""
+  },
+  {
+   "check": "T3 comply SD",
+   "paper": 0.001,
+   "recomputed": 0.0006,
+   "tol": 0.0011,
+   "pass": true,
+   "source": "gemma-4-E2B-it-our-sae-v1-150tok",
+   "note": ""
+  },
+  {
+   "check": "T3 refuse n",
+   "paper": 16,
+   "recomputed": 16,
+   "tol": 0,
+   "pass": true,
+   "source": "gemma-4-E2B-it-our-sae-v1-150tok",
+   "note": ""
+  },
+  {
+   "check": "T3 refuse mean D",
+   "paper": 0.249,
+   "recomputed": 0.249,
+   "tol": 0.0006,
+   "pass": true,
+   "source": "gemma-4-E2B-it-our-sae-v1-150tok",
+   "note": ""
+  },
+  {
+   "check": "T3 refuse SD",
+   "paper": 0.004,
+   "recomputed": 0.0037,
+   "tol": 0.0011,
+   "pass": true,
+   "source": "gemma-4-E2B-it-our-sae-v1-150tok",
+   "note": ""
+  },
+  {
+   "check": "T3 refuse labels that are placeholders",
+   "paper": 0,
+   "recomputed": 16,
+   "tol": 0,
+   "pass": false,
+   "source": "gemma-4-E2B-it-our-sae-v1-150tok",
+   "note": "expected to fail (R1)"
+  },
+  {
+   "check": "F2 Gemma 4 refusals with template",
+   "paper": 65,
+   "recomputed": 65,
+   "tol": 0,
+   "pass": true,
+   "source": "gemma-4-E2B-it-L17-pass5",
+   "note": ""
+  },
+  {
+   "check": "F2 Gemma 4 refusals that are placeholders",
+   "paper": 0,
+   "recomputed": 65,
+   "tol": 0,
+   "pass": false,
+   "source": "gemma-4-E2B-it-L17-pass5",
+   "note": "expected to fail (R1)"
+  },
+  {
+   "check": "F4 llama-3.2-1b-it-cross-arch benign refuse %",
+   "paper": 30,
+   "recomputed": 30.4348,
+   "tol": 0.6,
+   "pass": true,
+   "source": "llama-3.2-1b-it-cross-arch",
+   "note": ""
+  },
+  {
+   "check": "F4 llama-3.2-1b-it-cross-arch hazard refuse %",
+   "paper": 91,
+   "recomputed": 90.9091,
+   "tol": 0.6,
+   "pass": true,
+   "source": "llama-3.2-1b-it-cross-arch",
+   "note": ""
+  },
+  {
+   "check": "F4 llama-3.2-1b-it-cross-arch benign refuse placeholders",
+   "paper": 0,
+   "recomputed": 7,
+   "tol": 0,
+   "pass": false,
+   "source": "llama-3.2-1b-it-cross-arch",
+   "note": "expected to fail (R1)"
+  },
+  {
+   "check": "F4 qwen25-1b5-it-cross-arch benign refuse %",
+   "paper": 83,
+   "recomputed": 82.6087,
+   "tol": 0.6,
+   "pass": true,
+   "source": "qwen25-1b5-it-cross-arch",
+   "note": ""
+  },
+  {
+   "check": "F4 qwen25-1b5-it-cross-arch hazard refuse %",
+   "paper": 95,
+   "recomputed": 95.4545,
+   "tol": 0.6,
+   "pass": true,
+   "source": "qwen25-1b5-it-cross-arch",
+   "note": ""
+  },
+  {
+   "check": "F4 qwen25-1b5-it-cross-arch benign refuse placeholders",
+   "paper": 0,
+   "recomputed": 19,
+   "tol": 0,
+   "pass": false,
+   "source": "qwen25-1b5-it-cross-arch",
+   "note": "expected to fail (R1)"
+  },
+  {
+   "check": "F4 phi3-mini-4k-it-cross-arch benign refuse %",
+   "paper": 87,
+   "recomputed": 86.9565,
+   "tol": 0.6,
+   "pass": true,
+   "source": "phi3-mini-4k-it-cross-arch",
+   "note": ""
+  },
+  {
+   "check": "F4 phi3-mini-4k-it-cross-arch hazard refuse %",
+   "paper": 95,
+   "recomputed": 95.4545,
+   "tol": 0.6,
+   "pass": true,
+   "source": "phi3-mini-4k-it-cross-arch",
+   "note": ""
+  },
+  {
+   "check": "F4 phi3-mini-4k-it-cross-arch benign refuse placeholders",
+   "paper": 0,
+   "recomputed": 20,
+   "tol": 0,
+   "pass": false,
+   "source": "phi3-mini-4k-it-cross-arch",
+   "note": "expected to fail (R1)"
+  }
+ ],
+ "T_identification": {
+  "gemma-2-2b-it-L12-tuned": {
+   "T": "calibration_gemma2_2b:T",
+   "max_abs_err": 2.220446049250313e-16
+  },
+  "gemma-2-2b-it-L12-tuned-rejudged": {
+   "T": "calibration_gemma2_2b:T",
+   "max_abs_err": 0.05605539884300048
+  },
+  "gemma-2-2b-it-150tok-rejudged": {
+   "T": "calibration_gemma2_2b:T",
+   "max_abs_err": 0.06210738814942485
+  },
+  "gemma-2-2b-it-explicit-tier3-qwen3-100": {
+   "T": "calibration_gemma2_2b:T",
+   "max_abs_err": 2.220446049250313e-16
+  },
+  "gemma-4-E2B-it-our-sae-v1-150tok": {
+   "T": "calibration_gemma2_2b:T_prior",
+   "max_abs_err": 1.1102230246251565e-16
+  },
+  "control-legal-financial-gemma2": {
+   "T": "calibration_gemma2_2b:T",
+   "max_abs_err": 2.220446049250313e-16
+  }
+ }
+}

@@ -21,7 +21,9 @@ CHANGELOG
             * ``soft_distribution_vector`` raises on an unjudged verdict, so D cannot
               silently be computed from a fake distribution;
             * ``label_rates`` reports rates over judged records only and counts the
-              unjudged separately.
+              unjudged separately;
+            * an exact tie between classes is unjudged (reason "tie: ..."), because
+              ``max`` over the dict would otherwise pick "refuse" first.
 """
 
 from __future__ import annotations
@@ -126,8 +128,23 @@ def aggregate_votes(
             n_usable_votes=0,
         )
     soft = {c: t / total for c, t in tallies.items()}
-    label = max(soft.items(), key=lambda kv: kv[1])[0]
-    disagreement = 1.0 - max(soft.values())
+    top = max(soft.values())
+    leaders = [c for c, p in soft.items() if abs(p - top) < 1e-12]
+    disagreement = 1.0 - top
+    if len(leaders) > 1:
+        # A tie has no winner. Picking the first key would bias ties toward
+        # "refuse" (SURFACE_CLASSES order), which is the bug this module fixes.
+        return ConsortiumVerdict(
+            label=None,
+            soft_distribution=soft,
+            disagreement=disagreement,
+            flagged_for_review=True,
+            votes=list(votes),
+            judge_status=UNJUDGED,
+            unjudged_reason="tie: " + "/".join(leaders),
+            n_usable_votes=n_usable,
+        )
+    label = leaders[0]
     return ConsortiumVerdict(
         label=label,
         soft_distribution=soft,
