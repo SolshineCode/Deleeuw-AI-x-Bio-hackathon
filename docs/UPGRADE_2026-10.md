@@ -342,3 +342,29 @@ and `results/` are the ones a reader is most likely to land on. Counts are match
 
 (Counts taken before the 2026-10-22 edits; several of the non-paper files above were fixed
 the same day, see §6.)
+
+---
+
+## 10. Additions, 2026-10-23 (UTC)
+
+Status updates and new findings after the cleanup merge. Rows above are not edited except
+where noted.
+
+**Done.**
+
+- Cleanup merged to `main` by a normal fast-forward push (`85e6a55..55b6325`, PR #57).
+  DOC-1 to DOC-5 and D-1, D-3, D-4 (repo side) are on `main`. D-2 verified: the gated tier-3
+  file now returns 404 on GitHub Pages and the dashboard banner is live.
+- K-1 to K-8 are on branch `fix/2026-10-judge-unjudged` (not merged).
+- Citation checks (§3) logged in `docs/UPGRADE_2026-10_citation_check.md`. C-7 and C-10
+  resolved; C-4 still needs the Science DOI.
+
+**New findings from Step 0 (`results/reanalysis_2026-10/step0_reproduce.md`).**
+
+| ID | Finding | Evidence | Fix |
+|---|---|---|---|
+| N-1 | Table 1 SDs are population SDs (ddof=0); Cohen's d printed as 1.29 recomputes to 1.25 (pooled sample SD) or 1.28 (population SD) | Step 0 | State the SD convention; print 1.25 |
+| N-2 | Table 2's note says the explicit-prompt rows use T_prior fitted on the combined set. The stored D in the explicit runs is reproduced exactly (error 2e-16) by `configs/calibration_gemma2_2b.yaml:T`, the within-sample T fitted on the 75-prompt set | Step 0 T identification | Correct the note |
+| N-3 | In the re-judged Gemma 2 reports, stored D cannot be reproduced from stored `surface_soft` with any stored T (max error 0.056-0.062). D came from the original placeholder distributions (R4, confirmed) | Step 0 | Recompute D after relabel |
+| N-4 | Variance decomposition: with Gemma Scope SAEs, the Gemma 2 runs' D is activation-driven (label explains under 2%, f explains 96-99%). With the domain-tuned Gemma 2 SAE (bio-sae-v1, 150 tok) the label explains 85%, and with the Gemma 4 SAEs 99-100%. | `scripts/reanalysis/reanalyze.py` section C | Report D only where it carries activation information |
+| N-5 | The account-usage guard in the relabel script fired on spend by other agents sharing the OpenRouter key. Per-response cost for these free calls was 0 (checked with usage accounting on both judges); the guard now checks each response's reported cost | 2026-10-23 test | done |

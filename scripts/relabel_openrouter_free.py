@@ -8,8 +8,10 @@ fixed consortium (explicit 'unjudged' state).
 Hard rules enforced in code:
 
 * CPU / HTTP only. No model is loaded locally.
-* Free models only: every model id must end in ":free"; the account's usage counter is
-  read before and after each run and the run aborts if it moved.
+* Free models only: every model id must end in ":free", every request asks OpenRouter for
+  usage accounting, and the run aborts if any response reports a cost above zero. (An
+  earlier version aborted on any change in the account counter; the key is shared with
+  other agents that use paid models, so that guard fired on their spend, 2026-10-23.)
 * Never sends redacted text or any record whose tier is hazard_adjacent_category.
 * Request budget: every request is appended to the shared log
   /home/darkstar/openrouter-free-usage.log as
@@ -251,7 +253,8 @@ def call_judge(key: str, model: str, batch: list[tuple[str, str]], timeout: int 
                      "X-Title": "biorefusalaudit-relabel"},
             json={"model": model, "messages": [{"role": "user", "content": body}],
                   "temperature": 0, "max_tokens": 3000,
-                  "reasoning": {"effort": "low", "exclude": True}},
+                  "reasoning": {"effort": "low", "exclude": True},
+                  "usage": {"include": True}},
             timeout=timeout,
         )
     except requests.RequestException as e:
@@ -313,6 +316,7 @@ def cmd_run(args) -> int:
             n_req += 1
             with (raw_dir / f"{dt.date.today().isoformat()}.jsonl").open("a") as f:
                 f.write(json.dumps({"batch_id": batch_id, "judge": judge, "item_ids": batch_ids,
+                                    "cost": (res.get("usage") or {}).get("cost"),
                                     **{k: v for k, v in res.items() if k != "usage"}}) + "\n")
             if "text" in res:
                 labels, status = parse_labels(res["text"], len(batch_ids))
@@ -328,16 +332,21 @@ def cmd_run(args) -> int:
             if res.get("http") == 429:
                 time.sleep(60)
             time.sleep(args.sleep)
-            if account_usage(key) > usage0 + 1e-9:
-                print("ACCOUNT USAGE MOVED: aborting (paid spend detected)", flush=True)
+            cost = float(((res.get("usage") or {}).get("cost")) or 0.0)
+            if cost > 0:
+                print(f"PAID SPEND on {batch_id}: cost={cost}; aborting", flush=True)
                 return 3
     return _finish(key, usage0, n_req)
 
 
 def _finish(key: str, usage0: float, n_req: int) -> int:
     usage1 = account_usage(key)
-    print(f"requests this run: {n_req}; account usage before {usage0:.6f} after {usage1:.6f}")
-    return 3 if usage1 > usage0 + 1e-9 else 0
+    # The key is shared with other agents, some of which use paid models, so the account
+    # counter can move without this script. Per-response cost (checked after every request)
+    # is the authoritative guard; the account delta is printed for the record only.
+    print(f"requests this run: {n_req}; account usage before {usage0:.6f} after {usage1:.6f} "
+          "(shared key; per-response cost was 0 for every request or the run would have aborted)")
+    return 0
 
 
 def consolidate(out: Path) -> dict[str, dict]:
