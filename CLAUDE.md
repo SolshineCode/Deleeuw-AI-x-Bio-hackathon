@@ -71,6 +71,8 @@ This applies to every run — smoke tests, pass1 runs, rescored reports, calibra
 
 If an experiment plan looks like it might violate any of the above, stop and escalate to Caleb before running.
 
+**Incident note (2026-10-22):** rule 1 was broken from 2026-05-01 to 2026-10-22: generated tier-3 bodies sat in `data/eval_set_gated/` (also served by GitHub Pages). They were removed from the working tree and `.gitignore` now blocks that directory; they remain in history. The gated HF dataset is `Solshine/biorefusalaudit-gated` (automatic approval), not `SolshineCode/...`. Never commit any file from that directory, and never run the regex re-judge on redacted completions. See `docs/UPGRADE_2026-10.md`.
+
 ---
 
 ## Non-negotiable user directives (broader patterns)

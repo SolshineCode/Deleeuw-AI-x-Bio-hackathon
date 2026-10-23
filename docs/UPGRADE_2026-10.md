@@ -72,7 +72,7 @@ fix. "Re-analysis" means the claim cannot be restated until the relabel in §7 l
 | P-REL-1 | tex:181-182 | VCT measures whether models produce hazardous assistance | VCT is a virology troubleshooting *capability* benchmark (see §3) | Correct the description | open |
 | P-REL-2 | tex:194-197 | Polysemanticity failures "documented in" DeLeeuw arXiv:2509.20393 | That paper is about strategic lying and deception-feature failures, not polysemanticity; it has four authors | Correct cite or drop | open |
 | P-REL-3 | tex:211-213 | Sandbrink keynote identified the need for monitoring without reading content | Unpublished keynote; not citable in a journal | Drop or replace with a written source | open |
-| P-REL-4 | tex:214-217 | Carter and Butchello (NTI Bio, 2026) | Author list differs from the README ("Yassif & Carter"); see §3 | Verify against the NTI report and use one form | open |
+| P-REL-4 | tex:214-217 | Carter and Butchello (NTI Bio, 2026) | Correct in the paper; the README's "Yassif & Carter" is the error (C-10) | Fix README | done 2026-10-22 (README) |
 | P-REL-5 | tex:217-220 | SecureBio "BioTier" on access stratification | The SecureBio artefact is BioTIER, a refusal benchmark (arXiv:2607.14479, posted after v1); it is the closest comparator and must be discussed as such in any resubmission | Rewrite | open |
 | P-REL-6 | §2 overall | Missing: XSTest, OR-Bench, SORRY-Bench, HarmBench, StrongREJECT, WildGuard, ChatBug, O'Brien et al. 2024 (SAE refusal steering), and the 2025 SAE analysis of refusal on Gemma-2-2B-IT (arXiv:2509.09708) | Novelty threat and reviewer expectation | Add a related-work section; see `docs/` manuscript skeleton | open |
 
@@ -142,13 +142,13 @@ first author). The verification log is in `docs/UPGRADE_2026-10_citation_check.m
 | C-1 | Götting et al. 2025, VCT (tex:1155) | Mischaracterised in the body (tex:181) as measuring production of hazardous assistance; it is a virology troubleshooting capability benchmark | Fix body text |
 | C-2 | SecureBio 2026, "BioTier: Access stratification ..." (tex:1182) | Real artefact is BioTIER, a refusal benchmark, arXiv:2607.14479 (post-dates v1) | Replace reference; discuss as comparator |
 | C-3 | DeLeeuw 2025, arXiv:2509.20393 (tex:1142) | Wrong title and missing co-authors. Correct: DeLeeuw, Chawla, Sharma, Dietze, "The Secret Agenda: LLMs Strategically Lie and Our Current Safety Tools Are Blind" | Fix reference; fix the claim it supports (P-REL-2) |
-| C-4 | Bloomfield, Black, Crook et al. 2026, Science (tex:1126) | Title not confirmable (science.org blocks automated fetch); an overlapping-author preprint is arXiv:2602.08061 with a different title | Caleb to confirm the Science title and DOI, or cite the preprint |
+| C-4 | Bloomfield, Black, Crook et al. 2026, Science (tex:1126) | Title not confirmable (science.org blocks automated fetch); the related preprint is arXiv:2602.08061, "Securing Dual-Use Pathogen Data of Concern", first author Doni Bloomfield (v1 prints "Bloomfield, L.") | Caleb to confirm the Science title and DOI, or cite the preprint |
 | C-5 | Bricken et al. 2023; Cunningham et al. 2023 (tex:1129, 1139) | Listed, never cited in the body | Cite or remove |
 | C-6 | Sandbrink 2026; Crook 2026 keynotes (tex:1180, 1132) | No public record | Remove or cite a written source |
-| C-7 | Liu et al. 2025, ABC-Bench (tex:1121-1124) | Venue named "NeurIPS 2025 Workshop BioSafe GenAI"; workshop name is "Biosecurity Safeguards for Generative AI"; OpenReview ID unverified | Verify ID; fix venue |
+| C-7 | Liu et al. 2025, ABC-Bench (tex:1121-1124) | Authors verified. Workshop name is "Biosecurity Safeguards for Generative AI"; OpenReview ID unverified; an arXiv version exists (2606.11150, 2026-06-09) | Cite arXiv 2606.11150; fix venue |
 | C-8 | Compass Pathways 2018 (tex:1134) | Body says "for depression" (tex:669); designation is treatment-resistant depression | Fix body |
 | C-9 | Organization for Ethical Source 2024, HL3 (tex:1194) | MIL module mis-described (P-DIS-5) | Fix body |
-| C-10 | Carter & Butchello 2026, NTI (tex:1191) | README names the same report "Yassif & Carter"; one is wrong | Verify against nti.org; harmonise |
+| C-10 | Carter & Butchello 2026, NTI (tex:1191) | Paper is right (Sarah R. Carter and Greg Butchello, NTI \| bio, January 2026, verified 2026-10-22); the README's "Yassif & Carter" is wrong | Fix README |
 | C-11 | Missing related work (P-REL-6) | | Add, each verified at source |
 
 ---
@@ -295,7 +295,7 @@ Re-analysis steps (scripts on branch `fix/2026-10-judge-unjudged`, `scripts/rean
 
 1. HF gated dataset access mode (§4.3).
 2. Delete the 10 stale branches? Purge history? (§4.2, §4.3)
-3. Science reference title (C-4) and the NTI author list (C-10).
+3. Science reference title and DOI (C-4).
 4. New generation runs for tier 3 with a private unredacted copy (GPU work; off this box for
    any HF-transformers generation path).
 5. Who rates tier assignment (hazard-tier validity, a reviewer will ask).

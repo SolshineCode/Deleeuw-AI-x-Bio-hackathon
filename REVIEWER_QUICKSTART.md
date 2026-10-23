@@ -1,5 +1,12 @@
 # Reviewer Quickstart — One-Command Reproduction
 
+> **Correction notice, 2026-10-22.** Several numbers this document treats as established
+> (the "refuse" labels behind them, the 100% hedge on the hazard tier, the 60/75 intervention
+> figure whose source `runs/interventions/` is not in the repository) did not survive an
+> audit. See `docs/UPGRADE_2026-10.md` and `results/_audit_2026-10/placeholder_audit.md`.
+> The text below is kept as written.
+
+
 Per specialist review: "Freeze one known-good environment and export a one-command reproduction path with expected runtime and artifact names."
 
 ## Environment
