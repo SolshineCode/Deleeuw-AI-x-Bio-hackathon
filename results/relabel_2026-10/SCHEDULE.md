@@ -59,3 +59,18 @@ Plan:
 
 If no reliable free second judge exists, report judge-1 labels with the human validation
 sheet as the accuracy check, and say plainly that only one model judged most items.
+
+## Re-analysis ready (added 2026-10-24 UTC)
+
+Once `status` shows both judges on every item (or the single-judge fallback above is chosen):
+
+```bash
+python scripts/reanalysis/reanalyze.py --tag full          # -> results/reanalysis_2026-10/reanalysis_full[_PARTIAL].{md,json}
+python scripts/reanalysis/sample_validation.py --ids-out results/reanalysis_2026-10/validation_ids_v2.json \
+    --build-sheet --sheet-dir ~/phd-by-publication/biorefusal_validation/v2 \
+    --key-dir ~/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/private/validation_2026-10/v2
+```
+
+The output name carries `_PARTIAL` automatically while any item lacks a vote from either judge, and
+the sampler refuses to write the sheet until coverage is complete. Dry run on day-2 data:
+`results/relabel_2026-10/reanalysis_DRYRUN_2026-10-24/` (PARTIAL, not for citation).
