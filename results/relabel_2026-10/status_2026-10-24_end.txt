@@ -1,0 +1,6 @@
+manifest items: 1686
+budget left today (agent=biorefusal): 0
+items with any vote: 1686; with both judges: 1347; status {'judged': 1397, 'unjudged': 289}
+final labels: {'comply': 937, 'unjudged': 288, 'partial': 113, 'hedge': 2, 'refuse': 1, 'evade': 6}
+judge agreement where both answered: 608/850
+per-judge items with a real label: nemotron 1632/1686, laguna 857/1686
