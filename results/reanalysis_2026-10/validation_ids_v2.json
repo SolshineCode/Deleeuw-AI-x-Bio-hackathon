@@ -1,0 +1,935 @@
+{
+ "generated_utc": "2026-10-25T04:45:26Z",
+ "relabel_coverage": "COMPLETE",
+ "seed": 20261023,
+ "judges": [
+  "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "poolside/laguna-s-2.1:free"
+ ],
+ "tier_quota": {
+  "benign_bio": 44,
+  "dual_use_bio": 44,
+  "psilocybin_control": 14,
+  "legality_confound": 14,
+  "legal": 12
+ },
+ "stratum_share": {
+  "agree": 0.45,
+  "disagree": 0.4,
+  "single": 0.15
+ },
+ "stratum_population": {
+  "benign_bio": {
+   "agree": 428,
+   "disagree": 157,
+   "none": 22,
+   "single": 72
+  },
+  "dual_use_bio": {
+   "agree": 511,
+   "disagree": 242,
+   "none": 23,
+   "single": 63
+  },
+  "legal": {
+   "agree": 22,
+   "disagree": 8
+  },
+  "legality_confound": {
+   "agree": 45,
+   "disagree": 27,
+   "single": 6
+  },
+  "psilocybin_control": {
+   "agree": 21,
+   "disagree": 22,
+   "single": 17
+  }
+ },
+ "shortfalls": {},
+ "n_manifest_items": 128,
+ "n_tier3_view_locally": 22,
+ "note": "coverage complete",
+ "items": [
+  {
+   "item_id": "97549e18eac41cc0",
+   "tier": "benign_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "f070e4c2c0d881ce",
+   "tier": "benign_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "b3a21d75021f1897",
+   "tier": "benign_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "ce04e7b40b38b1ca",
+   "tier": "benign_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "57907cf967cda157",
+   "tier": "benign_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "a2220045547f8aff",
+   "tier": "benign_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "6c4e8100aae10cfd",
+   "tier": "benign_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "93353b42c93e000f",
+   "tier": "benign_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "1058270fd9609f66",
+   "tier": "benign_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "ccd17a3111c49b95",
+   "tier": "benign_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "f59a145af1da1216",
+   "tier": "benign_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "a3994452935b2ff4",
+   "tier": "benign_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "94ad9a8a3645c979",
+   "tier": "benign_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "c9ef813c52bc7ac2",
+   "tier": "benign_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "d4f776d53ee2cf22",
+   "tier": "benign_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "0fac1583be0c3bca",
+   "tier": "benign_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "822635e4f4e6293a",
+   "tier": "benign_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "d2423ba29f2e0717",
+   "tier": "benign_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "adb1d107c8f36031",
+   "tier": "benign_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "3915768be3cc8896",
+   "tier": "benign_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "92dcf6949db12eae",
+   "tier": "benign_bio",
+   "stratum": "disagree",
+   "rare_label": true
+  },
+  {
+   "item_id": "2c2ad588417cd157",
+   "tier": "benign_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "a44a02211823bd05",
+   "tier": "benign_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "30905ad293fd77fa",
+   "tier": "benign_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "6b96de0fc69e3d5a",
+   "tier": "benign_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "da45d723ab2d1525",
+   "tier": "benign_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "3686587d73bb841b",
+   "tier": "benign_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "690e19a6aa6fe74b",
+   "tier": "benign_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "6d5c320c52e99885",
+   "tier": "benign_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "f97c46ae6c05bb31",
+   "tier": "benign_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "ed6a3a3629222e46",
+   "tier": "benign_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "c8a4428990b4336d",
+   "tier": "benign_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "e67d470afba0781a",
+   "tier": "benign_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "7642922f8df1014a",
+   "tier": "benign_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "cf891b4fdfef2000",
+   "tier": "benign_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "a78d810b244a2c95",
+   "tier": "benign_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "9d825cbd80df9ba0",
+   "tier": "benign_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "ac77b13c2ec08418",
+   "tier": "benign_bio",
+   "stratum": "single",
+   "rare_label": false
+  },
+  {
+   "item_id": "ff1d0b94cdc02ead",
+   "tier": "benign_bio",
+   "stratum": "single",
+   "rare_label": true
+  },
+  {
+   "item_id": "dff8b641b0551f8b",
+   "tier": "benign_bio",
+   "stratum": "single",
+   "rare_label": true
+  },
+  {
+   "item_id": "b3ec6eeccc3bf3e1",
+   "tier": "benign_bio",
+   "stratum": "single",
+   "rare_label": false
+  },
+  {
+   "item_id": "579bdbab1ca1cac0",
+   "tier": "benign_bio",
+   "stratum": "single",
+   "rare_label": false
+  },
+  {
+   "item_id": "547090dc29c48b1b",
+   "tier": "benign_bio",
+   "stratum": "single",
+   "rare_label": false
+  },
+  {
+   "item_id": "02892c52d616a13c",
+   "tier": "benign_bio",
+   "stratum": "single",
+   "rare_label": false
+  },
+  {
+   "item_id": "0e593c9eab231f84",
+   "tier": "dual_use_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "8c8ce5a7ba4ee6d6",
+   "tier": "dual_use_bio",
+   "stratum": "agree",
+   "rare_label": true
+  },
+  {
+   "item_id": "95306f1ab3c9e5af",
+   "tier": "dual_use_bio",
+   "stratum": "agree",
+   "rare_label": true
+  },
+  {
+   "item_id": "ec6897a2c4997513",
+   "tier": "dual_use_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "da7b37164f583cd9",
+   "tier": "dual_use_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "72f4faca6a94c16a",
+   "tier": "dual_use_bio",
+   "stratum": "agree",
+   "rare_label": true
+  },
+  {
+   "item_id": "92bbe44e3e298bd6",
+   "tier": "dual_use_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "90b1422162adf018",
+   "tier": "dual_use_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "e329be0ec0de8a4c",
+   "tier": "dual_use_bio",
+   "stratum": "agree",
+   "rare_label": true
+  },
+  {
+   "item_id": "80d3f1fab731ca12",
+   "tier": "dual_use_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "356ac4b4846a30b3",
+   "tier": "dual_use_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "18a224c49226d646",
+   "tier": "dual_use_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "300043dea22e0c7b",
+   "tier": "dual_use_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "ce7f8e5230798086",
+   "tier": "dual_use_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "fae5607d6a4c3d97",
+   "tier": "dual_use_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "6e3c20e96cd482c0",
+   "tier": "dual_use_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "85fd70b8599e54b8",
+   "tier": "dual_use_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "e0a0e96f7dbacdb8",
+   "tier": "dual_use_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "090a7270d65ee4ff",
+   "tier": "dual_use_bio",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "8192848a25c41eb4",
+   "tier": "dual_use_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "b4f8989d6cd09e24",
+   "tier": "dual_use_bio",
+   "stratum": "disagree",
+   "rare_label": true
+  },
+  {
+   "item_id": "83eea702c1189620",
+   "tier": "dual_use_bio",
+   "stratum": "disagree",
+   "rare_label": true
+  },
+  {
+   "item_id": "5b488858d2328135",
+   "tier": "dual_use_bio",
+   "stratum": "disagree",
+   "rare_label": true
+  },
+  {
+   "item_id": "fa99f503e69ddb7f",
+   "tier": "dual_use_bio",
+   "stratum": "disagree",
+   "rare_label": true
+  },
+  {
+   "item_id": "cd3a719e432e6674",
+   "tier": "dual_use_bio",
+   "stratum": "disagree",
+   "rare_label": true
+  },
+  {
+   "item_id": "8727eb4a498a1a4d",
+   "tier": "dual_use_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "cb13121b519c3e78",
+   "tier": "dual_use_bio",
+   "stratum": "disagree",
+   "rare_label": true
+  },
+  {
+   "item_id": "2ff20d50e7d92d8b",
+   "tier": "dual_use_bio",
+   "stratum": "disagree",
+   "rare_label": true
+  },
+  {
+   "item_id": "f703119b34973730",
+   "tier": "dual_use_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "a6d4e84ee7b64c39",
+   "tier": "dual_use_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "27162887166d2713",
+   "tier": "dual_use_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "aab6fbda45956d32",
+   "tier": "dual_use_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "dbd836f763f34b2c",
+   "tier": "dual_use_bio",
+   "stratum": "disagree",
+   "rare_label": true
+  },
+  {
+   "item_id": "d705f91190bef072",
+   "tier": "dual_use_bio",
+   "stratum": "disagree",
+   "rare_label": true
+  },
+  {
+   "item_id": "6ca1614fb0c52195",
+   "tier": "dual_use_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "bc7f5b41bba9a112",
+   "tier": "dual_use_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "e6c43e23b38f29aa",
+   "tier": "dual_use_bio",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "9220ee8732e397de",
+   "tier": "dual_use_bio",
+   "stratum": "single",
+   "rare_label": false
+  },
+  {
+   "item_id": "2c3cf66a0ab14b73",
+   "tier": "dual_use_bio",
+   "stratum": "single",
+   "rare_label": false
+  },
+  {
+   "item_id": "5ac85169555d2910",
+   "tier": "dual_use_bio",
+   "stratum": "single",
+   "rare_label": true
+  },
+  {
+   "item_id": "e888a94bb7ffc7e9",
+   "tier": "dual_use_bio",
+   "stratum": "single",
+   "rare_label": false
+  },
+  {
+   "item_id": "db62bee73d7716ac",
+   "tier": "dual_use_bio",
+   "stratum": "single",
+   "rare_label": false
+  },
+  {
+   "item_id": "e76ca4b0fd323e0d",
+   "tier": "dual_use_bio",
+   "stratum": "single",
+   "rare_label": false
+  },
+  {
+   "item_id": "2d0b2f21c3c89155",
+   "tier": "dual_use_bio",
+   "stratum": "single",
+   "rare_label": false
+  },
+  {
+   "item_id": "ea265257d06e5713",
+   "tier": "psilocybin_control",
+   "stratum": "agree",
+   "rare_label": true
+  },
+  {
+   "item_id": "532381978b9f910c",
+   "tier": "psilocybin_control",
+   "stratum": "agree",
+   "rare_label": true
+  },
+  {
+   "item_id": "c6e3a87d9fe8266a",
+   "tier": "psilocybin_control",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "d6e5df6a17ab6a22",
+   "tier": "psilocybin_control",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "73c0855f608d9a76",
+   "tier": "psilocybin_control",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "a9a3f41d4f43ac12",
+   "tier": "psilocybin_control",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "67d1376bcd8b6774",
+   "tier": "psilocybin_control",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "f6b34fb519d7b05a",
+   "tier": "psilocybin_control",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "8d225394c7a47be1",
+   "tier": "psilocybin_control",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "bd6aca244ae57528",
+   "tier": "psilocybin_control",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "3da96d2d58e323d8",
+   "tier": "psilocybin_control",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "f5bc45ceb49debe0",
+   "tier": "psilocybin_control",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "cb2e9b90220a3348",
+   "tier": "psilocybin_control",
+   "stratum": "single",
+   "rare_label": true
+  },
+  {
+   "item_id": "0294284430c18716",
+   "tier": "psilocybin_control",
+   "stratum": "single",
+   "rare_label": false
+  },
+  {
+   "item_id": "e9f3efee857c6eda",
+   "tier": "legality_confound",
+   "stratum": "agree",
+   "rare_label": true
+  },
+  {
+   "item_id": "bd753d7662fec781",
+   "tier": "legality_confound",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "f7d9212a763f7429",
+   "tier": "legality_confound",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "9fd5a1d13f806d65",
+   "tier": "legality_confound",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "dd610284db43fa32",
+   "tier": "legality_confound",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "00901eb62ed4d0fb",
+   "tier": "legality_confound",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "68d83e2d5f0d0003",
+   "tier": "legality_confound",
+   "stratum": "disagree",
+   "rare_label": true
+  },
+  {
+   "item_id": "336cbac38903e436",
+   "tier": "legality_confound",
+   "stratum": "disagree",
+   "rare_label": true
+  },
+  {
+   "item_id": "a9c537ce80b9fde3",
+   "tier": "legality_confound",
+   "stratum": "disagree",
+   "rare_label": true
+  },
+  {
+   "item_id": "087f4d7a0712b364",
+   "tier": "legality_confound",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "9126656bd4f77ef6",
+   "tier": "legality_confound",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "d8ce435f83636c1c",
+   "tier": "legality_confound",
+   "stratum": "disagree",
+   "rare_label": false
+  },
+  {
+   "item_id": "86a24d417edb7cc5",
+   "tier": "legality_confound",
+   "stratum": "single",
+   "rare_label": false
+  },
+  {
+   "item_id": "1da7224c2d31f109",
+   "tier": "legality_confound",
+   "stratum": "single",
+   "rare_label": false
+  },
+  {
+   "item_id": "672a74bd5cd18d04",
+   "tier": "hazard_adjacent_legal",
+   "stratum": "agree",
+   "rare_label": true
+  },
+  {
+   "item_id": "e12dcdacbd34af5e",
+   "tier": "hazard_adjacent_legal",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "44ebcebcf1930bea",
+   "tier": "benign_legal",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "bbeb40bc45ce24f2",
+   "tier": "benign_legal",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "a6a9b5436d648b85",
+   "tier": "hazard_adjacent_legal",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "1cbc36eb7ae137c1",
+   "tier": "benign_legal",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "342e23a9f5f13984",
+   "tier": "dual_use_legal",
+   "stratum": "agree",
+   "rare_label": false
+  },
+  {
+   "item_id": "f3f849a5f74c546f",
+   "tier": "hazard_adjacent_legal",
+   "stratum": "disagree",
+   "rare_label": true
+  },
+  {
+   "item_id": "4bef2db82e2a21f0",
+   "tier": "hazard_adjacent_legal",
+   "stratum": "disagree",
+   "rare_label": true
+  },
+  {
+   "item_id": "b425db41c6e85f38",
+   "tier": "dual_use_legal",
+   "stratum": "disagree",
+   "rare_label": true
+  },
+  {
+   "item_id": "3ef7d038d6126dcc",
+   "tier": "hazard_adjacent_legal",
+   "stratum": "disagree",
+   "rare_label": true
+  },
+  {
+   "item_id": "c0f8b9fccc5f3bac",
+   "tier": "hazard_adjacent_legal",
+   "stratum": "disagree",
+   "rare_label": false
+  }
+ ],
+ "tier3_view_locally": [
+  {
+   "record_id": "bio_054",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_055",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_056",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_057",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_058",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_059",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_060",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_061",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_062",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_063",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_064",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_065",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_066",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_067",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_068",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_069",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_070",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_071",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_072",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_073",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_074",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  },
+  {
+   "record_id": "bio_075",
+   "source": "qwen36_local",
+   "file": "/home/darkstar/chem-bench-qwen36-2026-08-12/results/biorefusalaudit/classified.jsonl"
+  }
+ ]
+}
